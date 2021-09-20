@@ -1989,9 +1989,11 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 		this.pen2D = new cornerContour_Pen2D(-16776961);
 		this.pen2D.currentColor = -16776961;
 		this.turtleStar();
+		this.turtleTest0();
+		this.haxeLogo();
 	}
 	,renderOnce: function() {
-		haxe_Log.trace("renderOnce",{ fileName : "src/cornerContourWebGLTest/CornerContourWebGLTurtle.js.hx", lineNumber : 144, className : "cornerContourWebGLTest.CornerContourWebGLTurtle", methodName : "renderOnce"});
+		haxe_Log.trace("renderOnce",{ fileName : "src/cornerContourWebGLTest/CornerContourWebGLTurtle.js.hx", lineNumber : 145, className : "cornerContourWebGLTest.CornerContourWebGLTurtle", methodName : "renderOnce"});
 		this.mainSheet = new cornerContourWebGLTest_Sheet();
 		this.mainSheet.create(this.width,this.height,true);
 		this.gl = this.mainSheet.gl;
@@ -2104,37 +2106,1049 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 		this.gl.useProgram(this.programColor);
 		this.gl.drawArrays(4,0,this.bufferLength);
 	}
-	,turtleStar: function() {
+	,haxeLogo: function() {
 		var sketcher = new cornerContour_Sketcher(this.pen2D,4,0);
+		var a = 10;
+		var b = 47;
 		if(sketcher.repeatCommands) {
 			sketcher.turtleCommands.push("SET_POSITION");
-			sketcher.turtleParameters.push(100);
-			sketcher.turtleParameters.push(200);
+			sketcher.turtleParameters.push(500);
+			sketcher.turtleParameters.push(300);
 		} else {
 			if(sketcher.endLine == 2 || sketcher.endLine == 3) {
 				sketcher.contour.end(sketcher.width);
 			}
-			sketcher.x = 100;
-			sketcher.y = 200;
+			sketcher.x = 500;
+			sketcher.y = 300;
 			var l = sketcher.points.length;
 			sketcher.points[l] = [];
-			sketcher.points[l][0] = 100;
-			sketcher.points[l][1] = 200;
+			sketcher.points[l][0] = 500;
+			sketcher.points[l][1] = 300;
 			sketcher.pointsClock[sketcher.pointsClock.length] = sketcher.contour.pointsClock.slice();
 			sketcher.pointsAnti[sketcher.pointsAnti.length] = sketcher.contour.pointsAnti.slice();
 			sketcher.dim[sketcher.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
 			var d = sketcher.dim[sketcher.dim.length - 1];
-			if(100 < d.minX) {
-				d.minX = 100;
+			if(500 < d.minX) {
+				d.minX = 500;
 			}
-			if(100 > d.maxX) {
-				d.maxX = 100;
+			if(500 > d.maxX) {
+				d.maxX = 500;
 			}
-			if(200 < d.minY) {
-				d.minY = 200;
+			if(300 < d.minY) {
+				d.minY = 300;
 			}
-			if(200 > d.maxY) {
-				d.maxY = 200;
+			if(300 > d.maxY) {
+				d.maxY = 300;
+			}
+			sketcher.contour.reset();
+		}
+		var _this = sketcher;
+		_this.width = 5;
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("RED");
+		} else {
+			_this1.pen.currentColor = -65536;
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("CIRCLE");
+			_this.turtleParameters.push(10);
+		} else {
+			var beta = 2 * Math.PI / 24;
+			var alpha = (Math.PI - beta) / 2;
+			var rotate = -(Math.PI / 2 - alpha);
+			var baseLength = 5. * Math.sin(beta / 2);
+			var _g = 0;
+			while(_g < 48) {
+				var i = _g++;
+				_this.rotation += rotate;
+				if(_this.repeatCommands) {
+					_this.turtleCommands.push("FORWARD");
+					_this.turtleParameters.push(baseLength);
+				} else {
+					var nx = _this.x + baseLength * Math.cos(_this.rotation);
+					var ny = _this.y + baseLength * Math.sin(_this.rotation);
+					if(_this.penIsDown) {
+						_this.lineTo(nx,ny);
+					} else {
+						if(_this.endLine == 2 || _this.endLine == 3) {
+							_this.contour.end(_this.width);
+						}
+						_this.x = nx;
+						_this.y = ny;
+						var l = _this.points.length;
+						_this.points[l] = [];
+						_this.points[l][0] = nx;
+						_this.points[l][1] = ny;
+						_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+						_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+						_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d = _this.dim[_this.dim.length - 1];
+						if(nx < d.minX) {
+							d.minX = nx;
+						}
+						if(nx > d.maxX) {
+							d.maxX = nx;
+						}
+						if(ny < d.minY) {
+							d.minY = ny;
+						}
+						if(ny > d.maxY) {
+							d.maxY = ny;
+						}
+						_this.contour.reset();
+					}
+				}
+			}
+		}
+		var _this1 = _this.orange();
+		var degrees = b - a / 2 - 2;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("RIGHT");
+			_this1.turtleParameters.push(degrees);
+		} else {
+			_this1.rotation += degrees * Math.PI / 180;
+		}
+		var _this = _this1;
+		_this.repeatCount = 4;
+		_this.repeatCommands = true;
+		_this.turtleCommands.length = 0;
+		_this.turtleParameters.length = 0;
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("RIGHT");
+			_this1.turtleParameters.push(a);
+		} else {
+			_this1.rotation += a * Math.PI / 180;
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("FORWARD");
+			_this.turtleParameters.push(100);
+		} else {
+			var nx = _this.x + 100 * Math.cos(_this.rotation);
+			var ny = _this.y + 100 * Math.sin(_this.rotation);
+			if(_this.penIsDown) {
+				_this.lineTo(nx,ny);
+			} else {
+				if(_this.endLine == 2 || _this.endLine == 3) {
+					_this.contour.end(_this.width);
+				}
+				_this.x = nx;
+				_this.y = ny;
+				var l = _this.points.length;
+				_this.points[l] = [];
+				_this.points[l][0] = nx;
+				_this.points[l][1] = ny;
+				_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+				_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+				_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this.dim[_this.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this.contour.reset();
+			}
+		}
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("RIGHT");
+			_this1.turtleParameters.push(b);
+		} else {
+			_this1.rotation += b * Math.PI / 180;
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("FORWARD");
+			_this.turtleParameters.push(100);
+		} else {
+			var nx = _this.x + 100 * Math.cos(_this.rotation);
+			var ny = _this.y + 100 * Math.sin(_this.rotation);
+			if(_this.penIsDown) {
+				_this.lineTo(nx,ny);
+			} else {
+				if(_this.endLine == 2 || _this.endLine == 3) {
+					_this.contour.end(_this.width);
+				}
+				_this.x = nx;
+				_this.y = ny;
+				var l = _this.points.length;
+				_this.points[l] = [];
+				_this.points[l][0] = nx;
+				_this.points[l][1] = ny;
+				_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+				_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+				_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this.dim[_this.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this.contour.reset();
+			}
+		}
+		var _this1 = _this;
+		var degrees = a * 2 + b;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("RIGHT");
+			_this1.turtleParameters.push(degrees);
+		} else {
+			_this1.rotation += degrees * Math.PI / 180;
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("RIGHT");
+			_this.turtleParameters.push(a);
+		} else {
+			_this.rotation += a * Math.PI / 180;
+		}
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("FORWARD");
+			_this1.turtleParameters.push(100);
+		} else {
+			var nx = _this1.x + 100 * Math.cos(_this1.rotation);
+			var ny = _this1.y + 100 * Math.sin(_this1.rotation);
+			if(_this1.penIsDown) {
+				_this1.lineTo(nx,ny);
+			} else {
+				if(_this1.endLine == 2 || _this1.endLine == 3) {
+					_this1.contour.end(_this1.width);
+				}
+				_this1.x = nx;
+				_this1.y = ny;
+				var l = _this1.points.length;
+				_this1.points[l] = [];
+				_this1.points[l][0] = nx;
+				_this1.points[l][1] = ny;
+				_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+				_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+				_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this1.dim[_this1.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this1.contour.reset();
+			}
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("RIGHT");
+			_this.turtleParameters.push(b);
+		} else {
+			_this.rotation += b * Math.PI / 180;
+		}
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("FORWARD");
+			_this1.turtleParameters.push(100);
+		} else {
+			var nx = _this1.x + 100 * Math.cos(_this1.rotation);
+			var ny = _this1.y + 100 * Math.sin(_this1.rotation);
+			if(_this1.penIsDown) {
+				_this1.lineTo(nx,ny);
+			} else {
+				if(_this1.endLine == 2 || _this1.endLine == 3) {
+					_this1.contour.end(_this1.width);
+				}
+				_this1.x = nx;
+				_this1.y = ny;
+				var l = _this1.points.length;
+				_this1.points[l] = [];
+				_this1.points[l][0] = nx;
+				_this1.points[l][1] = ny;
+				_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+				_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+				_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this1.dim[_this1.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this1.contour.reset();
+			}
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("LEFT");
+			_this.turtleParameters.push(92);
+		} else {
+			_this.rotation -= 92 * Math.PI / 180;
+		}
+		var _this1 = _this;
+		_this1.repeatCommands = false;
+		var v = _this1.turtleParameters;
+		var j = 0;
+		var _g = 0;
+		var _g1 = _this1.repeatCount;
+		while(_g < _g1) {
+			var k = _g++;
+			var _g2 = 0;
+			var _g3 = _this1.turtleCommands.length;
+			while(_g2 < _g3) {
+				var i = _g2++;
+				var command = _this1.turtleCommands[i];
+				switch(command) {
+				case "ARC":
+					var radius = v[j];
+					var degrees = v[j + 1];
+					if(radius != 0) {
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("ARC");
+							_this1.turtleParameters.push(radius);
+							_this1.turtleParameters.push(degrees);
+						} else {
+							var beta = degrees * Math.PI / 180 / 24;
+							var alpha = (Math.PI - beta) / 2;
+							var rotate = -(Math.PI / 2 - alpha);
+							var baseLength = 0.5 * radius * Math.sin(beta / 2);
+							var _g4 = 0;
+							while(_g4 < 48) {
+								var i1 = _g4++;
+								_this1.rotation += rotate;
+								if(_this1.repeatCommands) {
+									_this1.turtleCommands.push("FORWARD");
+									_this1.turtleParameters.push(baseLength);
+								} else {
+									var nx = _this1.x + baseLength * Math.cos(_this1.rotation);
+									var ny = _this1.y + baseLength * Math.sin(_this1.rotation);
+									if(_this1.penIsDown) {
+										_this1.lineTo(nx,ny);
+									} else {
+										if(_this1.endLine == 2 || _this1.endLine == 3) {
+											_this1.contour.end(_this1.width);
+										}
+										_this1.x = nx;
+										_this1.y = ny;
+										var l = _this1.points.length;
+										_this1.points[l] = [];
+										_this1.points[l][0] = nx;
+										_this1.points[l][1] = ny;
+										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d = _this1.dim[_this1.dim.length - 1];
+										if(nx < d.minX) {
+											d.minX = nx;
+										}
+										if(nx > d.maxX) {
+											d.maxX = nx;
+										}
+										if(ny < d.minY) {
+											d.minY = ny;
+										}
+										if(ny > d.maxY) {
+											d.maxY = ny;
+										}
+										_this1.contour.reset();
+									}
+								}
+							}
+						}
+					}
+					j += 2;
+					break;
+				case "ARC_SIDES":
+					var radius1 = v[j];
+					var degrees1 = v[j + 1];
+					var sides = v[j + 2];
+					if(sides == null) {
+						sides = 24;
+					}
+					if(radius1 != 0) {
+						if(_this1.repeatCommands) {
+							if(sides == 24) {
+								_this1.turtleCommands.push("ARC");
+								_this1.turtleParameters.push(radius1);
+								_this1.turtleParameters.push(degrees1);
+							} else {
+								_this1.turtleCommands.push("ARC_SIDES");
+								_this1.turtleParameters.push(radius1);
+								_this1.turtleParameters.push(degrees1);
+								_this1.turtleParameters.push(sides);
+							}
+						} else {
+							var beta1 = degrees1 * Math.PI / 180 / sides;
+							var alpha1 = (Math.PI - beta1) / 2;
+							var rotate1 = -(Math.PI / 2 - alpha1);
+							var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
+							var _g5 = 0;
+							while(_g5 < 48) {
+								var i2 = _g5++;
+								_this1.rotation += rotate1;
+								if(_this1.repeatCommands) {
+									_this1.turtleCommands.push("FORWARD");
+									_this1.turtleParameters.push(baseLength1);
+								} else {
+									var nx1 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
+									var ny1 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
+									if(_this1.penIsDown) {
+										_this1.lineTo(nx1,ny1);
+									} else {
+										if(_this1.endLine == 2 || _this1.endLine == 3) {
+											_this1.contour.end(_this1.width);
+										}
+										_this1.x = nx1;
+										_this1.y = ny1;
+										var l1 = _this1.points.length;
+										_this1.points[l1] = [];
+										_this1.points[l1][0] = nx1;
+										_this1.points[l1][1] = ny1;
+										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d1 = _this1.dim[_this1.dim.length - 1];
+										if(nx1 < d1.minX) {
+											d1.minX = nx1;
+										}
+										if(nx1 > d1.maxX) {
+											d1.maxX = nx1;
+										}
+										if(ny1 < d1.minY) {
+											d1.minY = ny1;
+										}
+										if(ny1 > d1.maxY) {
+											d1.maxY = ny1;
+										}
+										_this1.contour.reset();
+									}
+								}
+							}
+						}
+					}
+					j += 3;
+					break;
+				case "BACKWARD":
+					var distance = v[j];
+					var nx2 = _this1.x + distance * Math.cos(_this1.rotation + Math.PI);
+					var ny2 = _this1.y + distance * Math.sin(_this1.rotation + Math.PI);
+					if(_this1.penIsDown) {
+						_this1.lineTo(nx2,ny2);
+					} else {
+						if(_this1.endLine == 2 || _this1.endLine == 3) {
+							_this1.contour.end(_this1.width);
+						}
+						_this1.x = nx2;
+						_this1.y = ny2;
+						var l2 = _this1.points.length;
+						_this1.points[l2] = [];
+						_this1.points[l2][0] = nx2;
+						_this1.points[l2][1] = ny2;
+						_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+						_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+						_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d2 = _this1.dim[_this1.dim.length - 1];
+						if(nx2 < d2.minX) {
+							d2.minX = nx2;
+						}
+						if(nx2 > d2.maxX) {
+							d2.maxX = nx2;
+						}
+						if(ny2 < d2.minY) {
+							d2.minY = ny2;
+						}
+						if(ny2 > d2.maxY) {
+							d2.maxY = ny2;
+						}
+						_this1.contour.reset();
+					}
+					++j;
+					break;
+				case "BLACK":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("BLACK");
+					} else {
+						_this1.pen.currentColor = -16777216;
+					}
+					break;
+				case "BLUE":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("BLACK");
+					} else {
+						_this1.pen.currentColor = -16776961;
+					}
+					break;
+				case "BROWN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("BROWN");
+					} else {
+						_this1.pen.currentColor = -6594501;
+					}
+					break;
+				case "CIRCLE":
+					var radius2 = v[j];
+					if(radius2 != 0) {
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("CIRCLE");
+							_this1.turtleParameters.push(radius2);
+						} else {
+							var beta2 = 2 * Math.PI / 24;
+							var alpha2 = (Math.PI - beta2) / 2;
+							var rotate2 = -(Math.PI / 2 - alpha2);
+							var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
+							var _g6 = 0;
+							while(_g6 < 48) {
+								var i3 = _g6++;
+								_this1.rotation += rotate2;
+								if(_this1.repeatCommands) {
+									_this1.turtleCommands.push("FORWARD");
+									_this1.turtleParameters.push(baseLength2);
+								} else {
+									var nx3 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
+									var ny3 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
+									if(_this1.penIsDown) {
+										_this1.lineTo(nx3,ny3);
+									} else {
+										if(_this1.endLine == 2 || _this1.endLine == 3) {
+											_this1.contour.end(_this1.width);
+										}
+										_this1.x = nx3;
+										_this1.y = ny3;
+										var l3 = _this1.points.length;
+										_this1.points[l3] = [];
+										_this1.points[l3][0] = nx3;
+										_this1.points[l3][1] = ny3;
+										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d3 = _this1.dim[_this1.dim.length - 1];
+										if(nx3 < d3.minX) {
+											d3.minX = nx3;
+										}
+										if(nx3 > d3.maxX) {
+											d3.maxX = nx3;
+										}
+										if(ny3 < d3.minY) {
+											d3.minY = ny3;
+										}
+										if(ny3 > d3.maxY) {
+											d3.maxY = ny3;
+										}
+										_this1.contour.reset();
+									}
+								}
+							}
+						}
+					}
+					++j;
+					break;
+				case "CIRCLE_SIDES":
+					var radius3 = v[j];
+					var sides1 = v[j + 1];
+					if(sides1 == null) {
+						sides1 = 24;
+					}
+					if(radius3 != 0) {
+						if(_this1.repeatCommands) {
+							if(sides1 == 24) {
+								_this1.turtleCommands.push("CIRCLE");
+								_this1.turtleParameters.push(radius3);
+							} else {
+								_this1.turtleCommands.push("CIRCLE_SIDES");
+								_this1.turtleParameters.push(radius3);
+								_this1.turtleParameters.push(sides1);
+							}
+						} else {
+							var beta3 = 2 * Math.PI / sides1;
+							var alpha3 = (Math.PI - beta3) / 2;
+							var rotate3 = -(Math.PI / 2 - alpha3);
+							var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
+							var _g7 = 0;
+							while(_g7 < 48) {
+								var i4 = _g7++;
+								_this1.rotation += rotate3;
+								if(_this1.repeatCommands) {
+									_this1.turtleCommands.push("FORWARD");
+									_this1.turtleParameters.push(baseLength3);
+								} else {
+									var nx4 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
+									var ny4 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
+									if(_this1.penIsDown) {
+										_this1.lineTo(nx4,ny4);
+									} else {
+										if(_this1.endLine == 2 || _this1.endLine == 3) {
+											_this1.contour.end(_this1.width);
+										}
+										_this1.x = nx4;
+										_this1.y = ny4;
+										var l4 = _this1.points.length;
+										_this1.points[l4] = [];
+										_this1.points[l4][0] = nx4;
+										_this1.points[l4][1] = ny4;
+										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d4 = _this1.dim[_this1.dim.length - 1];
+										if(nx4 < d4.minX) {
+											d4.minX = nx4;
+										}
+										if(nx4 > d4.maxX) {
+											d4.maxX = nx4;
+										}
+										if(ny4 < d4.minY) {
+											d4.minY = ny4;
+										}
+										if(ny4 > d4.maxY) {
+											d4.maxY = ny4;
+										}
+										_this1.contour.reset();
+									}
+								}
+							}
+						}
+					}
+					j += 2;
+					break;
+				case "CYAN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("CYAN");
+					} else {
+						_this1.pen.currentColor = -16711681;
+					}
+					break;
+				case "DARKISH_BLUE":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("DARKISH_BLUE");
+					} else {
+						_this1.pen.currentColor = -8864837;
+					}
+					break;
+				case "DARK_GREEN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("DARK_GREEN");
+					} else {
+						_this1.pen.currentColor = -10182080;
+					}
+					break;
+				case "EAST":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("EAST");
+					} else {
+						_this1.rotation = Math.PI;
+					}
+					break;
+				case "FORWARD":
+					var distance1 = v[j];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("FORWARD");
+						_this1.turtleParameters.push(distance1);
+					} else {
+						var nx5 = _this1.x + distance1 * Math.cos(_this1.rotation);
+						var ny5 = _this1.y + distance1 * Math.sin(_this1.rotation);
+						if(_this1.penIsDown) {
+							_this1.lineTo(nx5,ny5);
+						} else {
+							if(_this1.endLine == 2 || _this1.endLine == 3) {
+								_this1.contour.end(_this1.width);
+							}
+							_this1.x = nx5;
+							_this1.y = ny5;
+							var l5 = _this1.points.length;
+							_this1.points[l5] = [];
+							_this1.points[l5][0] = nx5;
+							_this1.points[l5][1] = ny5;
+							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d5 = _this1.dim[_this1.dim.length - 1];
+							if(nx5 < d5.minX) {
+								d5.minX = nx5;
+							}
+							if(nx5 > d5.maxX) {
+								d5.maxX = nx5;
+							}
+							if(ny5 < d5.minY) {
+								d5.minY = ny5;
+							}
+							if(ny5 > d5.maxY) {
+								d5.maxY = ny5;
+							}
+							_this1.contour.reset();
+						}
+					}
+					++j;
+					break;
+				case "GREEN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("GREEN");
+					} else {
+						_this1.pen.currentColor = -16711936;
+					}
+					break;
+				case "GREY":
+					_this1.grey();
+					break;
+				case "LEFT":
+					var degrees2 = v[j];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("LEFT");
+						_this1.turtleParameters.push(degrees2);
+					} else {
+						_this1.rotation -= degrees2 * Math.PI / 180;
+					}
+					++j;
+					break;
+				case "LIGHT_BROWN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("LIGHT_BROWN");
+					} else {
+						_this1.pen.currentColor = -3831790;
+					}
+					break;
+				case "MAGENTA":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("MAGENTA");
+					} else {
+						_this1.pen.currentColor = -65281;
+					}
+					break;
+				case "MOVE_PEN":
+					var distance2 = v[j];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("MOVE_PEN");
+						_this1.turtleParameters.push(distance2);
+					} else if(_this1.penIsDown) {
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("PEN_UP");
+						} else {
+							_this1.penIsDown = false;
+						}
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("FORWARD");
+							_this1.turtleParameters.push(distance2);
+						} else {
+							var nx6 = _this1.x + distance2 * Math.cos(_this1.rotation);
+							var ny6 = _this1.y + distance2 * Math.sin(_this1.rotation);
+							if(_this1.penIsDown) {
+								_this1.lineTo(nx6,ny6);
+							} else {
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx6;
+								_this1.y = ny6;
+								var l6 = _this1.points.length;
+								_this1.points[l6] = [];
+								_this1.points[l6][0] = nx6;
+								_this1.points[l6][1] = ny6;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d6 = _this1.dim[_this1.dim.length - 1];
+								if(nx6 < d6.minX) {
+									d6.minX = nx6;
+								}
+								if(nx6 > d6.maxX) {
+									d6.maxX = nx6;
+								}
+								if(ny6 < d6.minY) {
+									d6.minY = ny6;
+								}
+								if(ny6 > d6.maxY) {
+									d6.maxY = ny6;
+								}
+								_this1.contour.reset();
+							}
+						}
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("PEN_DOWN");
+						} else {
+							_this1.penIsDown = true;
+						}
+					} else if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("FORWARD");
+						_this1.turtleParameters.push(distance2);
+					} else {
+						var nx7 = _this1.x + distance2 * Math.cos(_this1.rotation);
+						var ny7 = _this1.y + distance2 * Math.sin(_this1.rotation);
+						if(_this1.penIsDown) {
+							_this1.lineTo(nx7,ny7);
+						} else {
+							if(_this1.endLine == 2 || _this1.endLine == 3) {
+								_this1.contour.end(_this1.width);
+							}
+							_this1.x = nx7;
+							_this1.y = ny7;
+							var l7 = _this1.points.length;
+							_this1.points[l7] = [];
+							_this1.points[l7][0] = nx7;
+							_this1.points[l7][1] = ny7;
+							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d7 = _this1.dim[_this1.dim.length - 1];
+							if(nx7 < d7.minX) {
+								d7.minX = nx7;
+							}
+							if(nx7 > d7.maxX) {
+								d7.maxX = nx7;
+							}
+							if(ny7 < d7.minY) {
+								d7.minY = ny7;
+							}
+							if(ny7 > d7.maxY) {
+								d7.maxY = ny7;
+							}
+							_this1.contour.reset();
+						}
+					}
+					++j;
+					break;
+				case "NORTH":
+					_this1.rotation = -Math.PI / 2;
+					break;
+				case "ORANGE":
+					_this1.orange();
+					break;
+				case "PEN_COLOR":
+					var r = v[j];
+					var g = v[j + 1];
+					var b = v[j + 2];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PEN_COLOR");
+						_this1.turtleParameters.push(r);
+						_this1.turtleParameters.push(g);
+						_this1.turtleParameters.push(b);
+					} else {
+						_this1.pen.currentColor = Math.round(255) << 24 | Math.round(r * 255) << 16 | Math.round(g * 255) << 8 | Math.round(b * 255);
+					}
+					j += 3;
+					break;
+				case "PEN_COLOR_B":
+					var r1 = v[j];
+					var g1 = v[j + 1];
+					var b1 = v[j + 2];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PEN_COLOR_B");
+						_this1.turtleParameters.push(r1);
+						_this1.turtleParameters.push(g1);
+						_this1.turtleParameters.push(b1);
+					} else {
+						_this1.pen.colorB = Math.round(255) << 24 | Math.round(r1 * 255) << 16 | Math.round(g1 * 255) << 8 | Math.round(b1 * 255);
+					}
+					j += 3;
+					break;
+				case "PEN_COLOR_C":
+					var r2 = v[j];
+					var g2 = v[j + 1];
+					var b2 = v[j + 2];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PEN_COLOR_C");
+						_this1.turtleParameters.push(r2);
+						_this1.turtleParameters.push(g2);
+						_this1.turtleParameters.push(b2);
+					} else {
+						_this1.pen.colorC = Math.round(255) << 24 | Math.round(r2 * 255) << 16 | Math.round(g2 * 255) << 8 | Math.round(b2 * 255);
+					}
+					j += 3;
+					break;
+				case "PEN_COLOR_CHANGE":
+					var r3 = v[j];
+					var g3 = v[j + 1];
+					var b3 = v[j + 2];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PEN_COLOR_CHANGE");
+						_this1.turtleParameters.push(r3);
+						_this1.turtleParameters.push(g3);
+						_this1.turtleParameters.push(b3);
+					} else {
+						var c = _this1.pen.currentColor;
+						var r0 = (c >> 16 & 255) / 255;
+						var g0 = (c >> 8 & 255) / 255;
+						var b0 = (c & 255) / 255;
+						_this1.pen.currentColor = Math.round(255) << 24 | Math.round((r0 + r3) * 255) << 16 | Math.round((g0 + g3) * 255) << 8 | Math.round((b0 + b3) * 255);
+					}
+					j += 3;
+					break;
+				case "PEN_DOWN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PEN_DOWN");
+					} else {
+						_this1.penIsDown = true;
+					}
+					break;
+				case "PEN_SIZE":
+					_this1.width = v[j];
+					break;
+				case "PEN_UP":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PEN_UP");
+					} else {
+						_this1.penIsDown = false;
+					}
+					break;
+				case "PLUM":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("PLUM");
+					} else {
+						_this1.pen.currentColor = -7310896;
+					}
+					break;
+				case "RED":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("RED");
+					} else {
+						_this1.pen.currentColor = -65536;
+					}
+					break;
+				case "RIGHT":
+					var degrees3 = v[j];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("RIGHT");
+						_this1.turtleParameters.push(degrees3);
+					} else {
+						_this1.rotation += degrees3 * Math.PI / 180;
+					}
+					++j;
+					break;
+				case "SET_POSITION":
+					var x = v[j];
+					var y = v[j + 1];
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("SET_POSITION");
+						_this1.turtleParameters.push(x);
+						_this1.turtleParameters.push(y);
+					} else {
+						if(_this1.endLine == 2 || _this1.endLine == 3) {
+							_this1.contour.end(_this1.width);
+						}
+						_this1.x = x;
+						_this1.y = y;
+						var l8 = _this1.points.length;
+						_this1.points[l8] = [];
+						_this1.points[l8][0] = x;
+						_this1.points[l8][1] = y;
+						_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+						_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+						_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d8 = _this1.dim[_this1.dim.length - 1];
+						if(x < d8.minX) {
+							d8.minX = x;
+						}
+						if(x > d8.maxX) {
+							d8.maxX = x;
+						}
+						if(y < d8.minY) {
+							d8.minY = y;
+						}
+						if(y > d8.maxY) {
+							d8.maxY = y;
+						}
+						_this1.contour.reset();
+					}
+					j += 2;
+					break;
+				case "SOUTH":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("SOUTH");
+					} else {
+						_this1.rotation = Math.PI / 2;
+					}
+					break;
+				case "TAN":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("TAN");
+					} else {
+						_this1.pen.currentColor = -27273;
+					}
+					break;
+				case "WEST":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("WEST");
+						_this1.turtleParameters.push(_this1.x);
+						_this1.turtleParameters.push(_this1.y);
+					} else {
+						_this1.rotation = 0;
+					}
+					break;
+				case "WHITE":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("WHITE");
+					} else {
+						_this1.pen.currentColor = -1;
+					}
+					break;
+				case "YELLOW":
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("YELLOW");
+					} else {
+						_this1.pen.currentColor = 16776960;
+					}
+					break;
+				}
+			}
+			j = 0;
+		}
+		_this1.turtleCommands.length = 0;
+		_this1.turtleParameters.length = 0;
+		_this1.orange();
+	}
+	,turtleStar: function() {
+		var sketcher = new cornerContour_Sketcher(this.pen2D,4,0);
+		if(sketcher.repeatCommands) {
+			sketcher.turtleCommands.push("SET_POSITION");
+			sketcher.turtleParameters.push(50);
+			sketcher.turtleParameters.push(150);
+		} else {
+			if(sketcher.endLine == 2 || sketcher.endLine == 3) {
+				sketcher.contour.end(sketcher.width);
+			}
+			sketcher.x = 50;
+			sketcher.y = 150;
+			var l = sketcher.points.length;
+			sketcher.points[l] = [];
+			sketcher.points[l][0] = 50;
+			sketcher.points[l][1] = 150;
+			sketcher.pointsClock[sketcher.pointsClock.length] = sketcher.contour.pointsClock.slice();
+			sketcher.pointsAnti[sketcher.pointsAnti.length] = sketcher.contour.pointsAnti.slice();
+			sketcher.dim[sketcher.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+			var d = sketcher.dim[sketcher.dim.length - 1];
+			if(50 < d.minX) {
+				d.minX = 50;
+			}
+			if(50 > d.maxX) {
+				d.maxX = 50;
+			}
+			if(150 < d.minY) {
+				d.minY = 150;
+			}
+			if(150 > d.maxY) {
+				d.maxY = 150;
 			}
 			sketcher.contour.reset();
 		}
@@ -2221,7 +3235,6 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 		_this1.repeatCommands = false;
 		var v = _this1.turtleParameters;
 		var j = 0;
-		haxe_Log.trace("turtleCommands" + _this1.turtleCommands.length,{ fileName : "cornerContour/Sketcher.hx", lineNumber : 527, className : "cornerContour.Sketcher", methodName : "endRepeat"});
 		var _g = 0;
 		var _g1 = _this1.repeatCount;
 		while(_g < _g1) {
@@ -2929,6 +3942,224 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 			_this.turtleCommands.push("BLACK");
 		} else {
 			_this.pen.currentColor = -16776961;
+		}
+	}
+	,turtleTest0: function() {
+		var sketcher = new cornerContour_Sketcher(this.pen2D,4,0);
+		if(sketcher.repeatCommands) {
+			sketcher.turtleCommands.push("SET_POSITION");
+			sketcher.turtleParameters.push(400);
+			sketcher.turtleParameters.push(200);
+		} else {
+			if(sketcher.endLine == 2 || sketcher.endLine == 3) {
+				sketcher.contour.end(sketcher.width);
+			}
+			sketcher.x = 400;
+			sketcher.y = 200;
+			var l = sketcher.points.length;
+			sketcher.points[l] = [];
+			sketcher.points[l][0] = 400;
+			sketcher.points[l][1] = 200;
+			sketcher.pointsClock[sketcher.pointsClock.length] = sketcher.contour.pointsClock.slice();
+			sketcher.pointsAnti[sketcher.pointsAnti.length] = sketcher.contour.pointsAnti.slice();
+			sketcher.dim[sketcher.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+			var d = sketcher.dim[sketcher.dim.length - 1];
+			if(400 < d.minX) {
+				d.minX = 400;
+			}
+			if(400 > d.maxX) {
+				d.maxX = 400;
+			}
+			if(200 < d.minY) {
+				d.minY = 200;
+			}
+			if(200 > d.maxY) {
+				d.maxY = 200;
+			}
+			sketcher.contour.reset();
+		}
+		var _this = sketcher;
+		_this.width = 30;
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("FORWARD");
+			_this1.turtleParameters.push(60);
+		} else {
+			var nx = _this1.x + 60 * Math.cos(_this1.rotation);
+			var ny = _this1.y + 60 * Math.sin(_this1.rotation);
+			if(_this1.penIsDown) {
+				_this1.lineTo(nx,ny);
+			} else {
+				if(_this1.endLine == 2 || _this1.endLine == 3) {
+					_this1.contour.end(_this1.width);
+				}
+				_this1.x = nx;
+				_this1.y = ny;
+				var l = _this1.points.length;
+				_this1.points[l] = [];
+				_this1.points[l][0] = nx;
+				_this1.points[l][1] = ny;
+				_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+				_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+				_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this1.dim[_this1.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this1.contour.reset();
+			}
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("RIGHT");
+			_this.turtleParameters.push(45);
+		} else {
+			_this.rotation += 45 * Math.PI / 180;
+		}
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("FORWARD");
+			_this1.turtleParameters.push(60);
+		} else {
+			var nx = _this1.x + 60 * Math.cos(_this1.rotation);
+			var ny = _this1.y + 60 * Math.sin(_this1.rotation);
+			if(_this1.penIsDown) {
+				_this1.lineTo(nx,ny);
+			} else {
+				if(_this1.endLine == 2 || _this1.endLine == 3) {
+					_this1.contour.end(_this1.width);
+				}
+				_this1.x = nx;
+				_this1.y = ny;
+				var l = _this1.points.length;
+				_this1.points[l] = [];
+				_this1.points[l][0] = nx;
+				_this1.points[l][1] = ny;
+				_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+				_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+				_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this1.dim[_this1.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this1.contour.reset();
+			}
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("RIGHT");
+			_this.turtleParameters.push(45);
+		} else {
+			_this.rotation += 45 * Math.PI / 180;
+		}
+		var _this1 = _this;
+		if(_this1.repeatCommands) {
+			_this1.turtleCommands.push("FORWARD");
+			_this1.turtleParameters.push(70);
+		} else {
+			var nx = _this1.x + 70 * Math.cos(_this1.rotation);
+			var ny = _this1.y + 70 * Math.sin(_this1.rotation);
+			if(_this1.penIsDown) {
+				_this1.lineTo(nx,ny);
+			} else {
+				if(_this1.endLine == 2 || _this1.endLine == 3) {
+					_this1.contour.end(_this1.width);
+				}
+				_this1.x = nx;
+				_this1.y = ny;
+				var l = _this1.points.length;
+				_this1.points[l] = [];
+				_this1.points[l][0] = nx;
+				_this1.points[l][1] = ny;
+				_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+				_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+				_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+				var d = _this1.dim[_this1.dim.length - 1];
+				if(nx < d.minX) {
+					d.minX = nx;
+				}
+				if(nx > d.maxX) {
+					d.maxX = nx;
+				}
+				if(ny < d.minY) {
+					d.minY = ny;
+				}
+				if(ny > d.maxY) {
+					d.maxY = ny;
+				}
+				_this1.contour.reset();
+			}
+		}
+		var _this = _this1;
+		if(_this.repeatCommands) {
+			_this.turtleCommands.push("ARC");
+			_this.turtleParameters.push(50);
+			_this.turtleParameters.push(120);
+		} else {
+			var beta = 120 * Math.PI / 180 / 24;
+			var alpha = (Math.PI - beta) / 2;
+			var rotate = -(Math.PI / 2 - alpha);
+			var baseLength = 25. * Math.sin(beta / 2);
+			var _g = 0;
+			while(_g < 48) {
+				var i = _g++;
+				_this.rotation += rotate;
+				if(_this.repeatCommands) {
+					_this.turtleCommands.push("FORWARD");
+					_this.turtleParameters.push(baseLength);
+				} else {
+					var nx = _this.x + baseLength * Math.cos(_this.rotation);
+					var ny = _this.y + baseLength * Math.sin(_this.rotation);
+					if(_this.penIsDown) {
+						_this.lineTo(nx,ny);
+					} else {
+						if(_this.endLine == 2 || _this.endLine == 3) {
+							_this.contour.end(_this.width);
+						}
+						_this.x = nx;
+						_this.y = ny;
+						var l = _this.points.length;
+						_this.points[l] = [];
+						_this.points[l][0] = nx;
+						_this.points[l][1] = ny;
+						_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+						_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+						_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d = _this.dim[_this.dim.length - 1];
+						if(nx < d.minX) {
+							d.minX = nx;
+						}
+						if(nx > d.maxX) {
+							d.maxX = nx;
+						}
+						if(ny < d.minY) {
+							d.minY = ny;
+						}
+						if(ny > d.maxY) {
+							d.maxY = ny;
+						}
+						_this.contour.reset();
+					}
+				}
+			}
 		}
 	}
 };

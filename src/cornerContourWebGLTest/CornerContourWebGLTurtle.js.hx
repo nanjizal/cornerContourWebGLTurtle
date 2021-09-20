@@ -137,7 +137,8 @@ class CornerContourWebGLTurtle {
         pen2D = new Pen2D( 0xFF0000FF );
         pen2D.currentColor = 0xff0000FF;
         turtleStar();
-        //turtleTest0();
+        turtleTest0();
+        haxeLogo();
     }
     public
     function renderOnce(){
@@ -178,11 +179,38 @@ class CornerContourWebGLTurtle {
     function gy( v: Float ): Float {
         return ( 1 - 2*v/height );
     }
+    // Feel free to improve and pull better one.
+    public 
+    function haxeLogo(){
+        var sketcher = new Sketcher( pen2D, StyleSketch.Fine, StyleEndLine.no );
+        // ( repeat 6 times so the star has last corner round. )
+        var a = 10;
+        var b = 47;
+        sketcher.setPosition( 500, 300 )
+                .penSize( 5 )
+                .red()
+                .circle(10)
+                .orange()
+                .right( b-a/2 - 2 )
+                .beginRepeat( 4 )
+                .right( a )
+                .forward( 100 )
+                .right( b )
+                .forward( 100 )
+                .right( a*2+b )
+                .right( a )
+                .forward( 100 )
+                .right( b )
+                .forward( 100 )
+                .left( 92 )
+                .endRepeat()
+                .orange();
+    }
     public
     function turtleStar(){
         var sketcher = new Sketcher( pen2D, StyleSketch.Fine, StyleEndLine.no );
         // ( repeat 6 times so the star has last corner round. )
-        sketcher.setPosition( 100, 200 )
+        sketcher.setPosition( 50, 150 )
                 .penSize( 10 )
                 .blue()
                 .west()
@@ -196,7 +224,7 @@ class CornerContourWebGLTurtle {
     public
     function turtleTest0(){
         var sketcher = new Sketcher( pen2D, StyleSketch.Fine, StyleEndLine.no );
-        sketcher.setPosition( 300, 300 )
+        sketcher.setPosition( 400, 200 )
             .penSize( 30 )
             .forward( 60 )
             .right( 45 )
