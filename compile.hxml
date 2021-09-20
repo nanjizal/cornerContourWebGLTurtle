@@ -8,7 +8,7 @@
 -lib hxGeomAlgo
 -lib cornerContour
 
--main cornerContourWebGLTest.CornerContourWebGL
+-main cornerContourWebGLTest.CornerContourWebGLTurtle
 -D js-flatten 
 -dce full
 #--no-traces
