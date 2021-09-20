@@ -1,7 +1,7 @@
 # cornerContour WebGL Turtle test
 cornerContour WebGL test of turtle graphics and beginRepeat
 
-[demo](https://nanjizal.github.io/cornerContourWebGLTurtlet/index.html) 
+[demo](https://nanjizal.github.io/cornerContourWebGLTurtle/index.html) 
 
 Star Turtle draw example.
 
