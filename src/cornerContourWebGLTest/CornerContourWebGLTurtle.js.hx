@@ -137,8 +137,10 @@ class CornerContourWebGLTurtle {
         pen2D = new Pen2D( 0xFF0000FF );
         pen2D.currentColor = 0xff0000FF;
         turtleStar();
-        turtleTest0();
+        //turtleTest0();
         haxeLogo();
+        heptagram();
+        enneagram();
     }
     public
     function renderOnce(){
@@ -186,25 +188,74 @@ class CornerContourWebGLTurtle {
         // ( repeat 6 times so the star has last corner round. )
         var a = 10;
         var b = 47;
-        sketcher.setPosition( 500, 300 )
-                .penSize( 5 )
+        sketcher.setPosition( 500, 300 );
+        sketcher.turtleHistoryOn = true;
+        sketcher.penSize( 8 )
                 .red()
-                .circle(10)
+                .fillOff()
+                .circle( 10 )
                 .orange()
+                .north()
+                .forward( 100 )
                 .right( b-a/2 - 2 )
-                .beginRepeat( 4 )
+                .beginRepeat( 40 )
                 .right( a )
-                .forward( 100 )
+                .forwardFactor( .98 )//( 100 )
                 .right( b )
-                .forward( 100 )
+                .forwardFactor( .98 )//100 )
+                .penSizeChange( -0.18 )
                 .right( a*2+b )
                 .right( a )
-                .forward( 100 )
+                .forwardFactor( .98 )//( 100 )
                 .right( b )
-                .forward( 100 )
+                .forwardFactor( .98 )
                 .left( 92 )
+                .penSizeChange( -0.18 )
                 .endRepeat()
                 .orange();
+        sketcher.turtleHistoryOn = false;
+        sketcher.setPosition( 300, 500 );
+        sketcher.north();
+        sketcher.traceHistory();
+        sketcher.playHistory( 0 );
+    }
+    
+    public
+    function enneagram(){
+        var sketcher = new Sketcher( pen2D, StyleSketch.Fine, StyleEndLine.no );
+        var sides = 9;
+        var angle: Float = turtleGram( 9 );
+        sketcher.setPosition( 700, 180 )
+                .penSize( 10 )
+                .yellow()
+                .penColorChange( -0.09, 0.01, 0.09 )
+                .west()
+                .fillOff()
+                .beginRepeat( sides+1 ) // to make corners nice, do extra turn.
+                .forwardCurveRight( 300, 150, -10 )
+                .right( angle )
+                .penColorChange( -0.09, 0.01, 0.09 )
+                .endRepeat()
+                .blue();
+    }
+    inline
+    function turtleGram( sides: Int ){
+        return 4.*(90.-360./sides);
+    }
+    public
+    function heptagram(){
+        var sketcher = new Sketcher( pen2D, StyleSketch.Fine, StyleEndLine.no );
+        sketcher.setPosition(700, 400 )
+                .penSize( 10 )
+                .plum()
+                .west()
+                .fillOff()
+                .beginRepeat( 7+1 ) // to make corners nice, do extra turn.
+                .forwardCurveRight( 300, 150, 30 )
+                .right( 4*(90-360/7) )
+                .penColorChange( 0.09, 0.1, -0.09 )
+                .endRepeat()
+                .blue();
     }
     public
     function turtleStar(){
@@ -214,8 +265,9 @@ class CornerContourWebGLTurtle {
                 .penSize( 10 )
                 .blue()
                 .west()
+                .fillOff()
                 .beginRepeat( 6 )
-                .forward( 300 )
+                .forwardCurveRight( 300, 150, 30 )
                 .right( 144 )
                 .penColorChange( 0.09, 0.1, -0.09 )
                 .endRepeat()
