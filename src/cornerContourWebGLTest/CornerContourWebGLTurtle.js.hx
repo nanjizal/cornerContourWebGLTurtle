@@ -232,7 +232,7 @@ class CornerContourWebGLTurtle {
                 .west()
                 .fillOff()
                 .beginRepeat( sides+1 ) // to make corners nice, do extra turn.
-                .forwardCurveRight( 300, 150, -10 )
+                .archBezier( 300, 150, -10 )
                 .right( angle )
                 .penColorChange( -0.09, 0.01, 0.09 )
                 .endRepeat()
@@ -251,7 +251,7 @@ class CornerContourWebGLTurtle {
                 .west()
                 .fillOff()
                 .beginRepeat( 7+1 ) // to make corners nice, do extra turn.
-                .forwardCurveRight( 300, 150, 30 )
+                .archBezier( 300, 150, 30 )
                 .right( 4*(90-360/7) )
                 .penColorChange( 0.09, 0.1, -0.09 )
                 .endRepeat()
@@ -267,7 +267,7 @@ class CornerContourWebGLTurtle {
                 .west()
                 .fillOff()
                 .beginRepeat( 6 )
-                .forwardCurveRight( 300, 150, 30 )
+                .archBezier( 300, 150, 30 )
                 .right( 144 )
                 .penColorChange( 0.09, 0.1, -0.09 )
                 .endRepeat()

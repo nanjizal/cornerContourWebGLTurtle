@@ -1960,8 +1960,171 @@ cornerContour_Sketcher.prototype = {
 				}
 				j += 2;
 				break;
+			case "ARCH_BEZIER":
+				var distance = v[j];
+				var distance2 = v[j + 1];
+				var radius1 = v[j + 2];
+				if(this.turtleHistoryOn) {
+					this.historyAdd("ARCH_BEZIER");
+					this.historyParameters.push(distance);
+					this.historyParameters.push(distance2);
+					this.historyParameters.push(radius1);
+				}
+				if(this.repeatCommands) {
+					this.turtleCommands.push("ARCH_BEZIER");
+					this.turtleParameters.push(distance);
+					this.turtleParameters.push(distance2);
+					this.turtleParameters.push(radius1);
+				} else {
+					var nx1 = this.x + distance * Math.cos(this.rotation);
+					var ny1 = this.y + distance * Math.sin(this.rotation);
+					if(this.penIsDown) {
+						var thruX = this.x + distance2 * Math.cos(this.rotation) - radius1 * Math.cos(this.rotation + Math.PI / 2);
+						var thruY = this.y + distance2 * Math.sin(this.rotation) - radius1 * Math.sin(this.rotation + Math.PI / 2);
+						var newx = 2 * thruX - 0.5 * (this.x + nx1);
+						var newy = 2 * thruY - 0.5 * (this.y + ny1);
+						this.tempArr = [];
+						var p = this.tempArr;
+						var ax = this.x;
+						var ay = this.y;
+						var x = ax - newx;
+						var y = ay - newy;
+						var x1 = newx - nx1;
+						var y1 = newy - ny1;
+						var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+						if(approxDistance == 0) {
+							approxDistance = 0.000001;
+						}
+						var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+						var l2 = p.length;
+						p[l2++] = ax;
+						p[l2++] = ay;
+						var t = step;
+						while(t < 1.) {
+							var u = 1 - t;
+							p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+							var u1 = 1 - t;
+							p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+							t += step;
+						}
+						p[l2++] = nx1;
+						p[l2++] = ny1;
+						var arr1 = this.tempArr;
+						var withMove = false;
+						if(withMove == null) {
+							withMove = true;
+						}
+						var l3 = arr1.length;
+						var i3 = 2;
+						if(withMove) {
+							var x_ = arr1[0];
+							var y_ = arr1[1];
+							if(this.endLine == 2 || this.endLine == 3) {
+								this.contour.end(this.width);
+							}
+							this.x = x_;
+							this.y = y_;
+							var l4 = this.points.length;
+							this.points[l4] = [];
+							this.points[l4][0] = x_;
+							this.points[l4][1] = y_;
+							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d1 = this.dim[this.dim.length - 1];
+							if(x_ < d1.minX) {
+								d1.minX = x_;
+							}
+							if(x_ > d1.maxX) {
+								d1.maxX = x_;
+							}
+							if(y_ < d1.minY) {
+								d1.minY = y_;
+							}
+							if(y_ > d1.maxY) {
+								d1.maxY = y_;
+							}
+							this.contour.reset();
+						} else {
+							this.lineTo(arr1[0],arr1[1]);
+						}
+						var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+						var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+						var ox1 = this.x;
+						var oy1 = this.y;
+						while(i3 < l3) {
+							if(this.fill && this.penIsDown) {
+								if(i3 > 0 && i3 < l3 - 2) {
+									this.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+								}
+							}
+							this.lineTo(arr1[i3],arr1[i3 + 1]);
+							i3 += 2;
+						}
+						if(this.fill && this.penIsDown) {
+							if(this.endLine == 2 || this.endLine == 3) {
+								this.contour.end(this.width);
+							}
+							this.x = ox1;
+							this.y = oy1;
+							var l5 = this.points.length;
+							this.points[l5] = [];
+							this.points[l5][0] = ox1;
+							this.points[l5][1] = oy1;
+							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d2 = this.dim[this.dim.length - 1];
+							if(ox1 < d2.minX) {
+								d2.minX = ox1;
+							}
+							if(ox1 > d2.maxX) {
+								d2.maxX = ox1;
+							}
+							if(oy1 < d2.minY) {
+								d2.minY = oy1;
+							}
+							if(oy1 > d2.maxY) {
+								d2.maxY = oy1;
+							}
+							this.contour.reset();
+							this.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+						}
+						this.x = nx1;
+						this.y = ny1;
+					} else {
+						if(this.endLine == 2 || this.endLine == 3) {
+							this.contour.end(this.width);
+						}
+						this.x = nx1;
+						this.y = ny1;
+						var l6 = this.points.length;
+						this.points[l6] = [];
+						this.points[l6][0] = nx1;
+						this.points[l6][1] = ny1;
+						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d3 = this.dim[this.dim.length - 1];
+						if(nx1 < d3.minX) {
+							d3.minX = nx1;
+						}
+						if(nx1 > d3.maxX) {
+							d3.maxX = nx1;
+						}
+						if(ny1 < d3.minY) {
+							d3.minY = ny1;
+						}
+						if(ny1 > d3.maxY) {
+							d3.maxY = ny1;
+						}
+						this.contour.reset();
+					}
+				}
+				j += 3;
+				break;
 			case "ARC_SIDES":
-				var radius1 = v[j];
+				var radius2 = v[j];
 				var degrees1 = v[j + 1];
 				var sides = v[j + 2];
 				if(sides == null) {
@@ -1970,24 +2133,24 @@ cornerContour_Sketcher.prototype = {
 				if(this.turtleHistoryOn) {
 					if(sides == 24) {
 						this.historyAdd("ARC");
-						this.historyParameters.push(radius1);
+						this.historyParameters.push(radius2);
 						this.historyParameters.push(degrees1);
 					} else {
 						this.historyAdd("ARC_SIDES");
-						this.historyParameters.push(radius1);
+						this.historyParameters.push(radius2);
 						this.historyParameters.push(degrees1);
 						this.historyParameters.push(sides);
 					}
 				}
-				if(radius1 != 0) {
+				if(radius2 != 0) {
 					if(this.repeatCommands) {
 						if(sides == 24) {
 							this.turtleCommands.push("ARC");
-							this.turtleParameters.push(radius1);
+							this.turtleParameters.push(radius2);
 							this.turtleParameters.push(degrees1);
 						} else {
 							this.turtleCommands.push("ARC_SIDES");
-							this.turtleParameters.push(radius1);
+							this.turtleParameters.push(radius2);
 							this.turtleParameters.push(degrees1);
 							this.turtleParameters.push(sides);
 						}
@@ -1995,15 +2158,15 @@ cornerContour_Sketcher.prototype = {
 						var beta1 = degrees1 * Math.PI / 180 / sides;
 						var alpha1 = (Math.PI - beta1) / 2;
 						var rotate1 = -(Math.PI / 2 - alpha1);
-						var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-						var ox1 = this.x;
-						var oy1 = this.y;
-						var arr1 = [];
-						arr1.push(this.x);
-						arr1.push(this.y);
+						var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+						var ox2 = this.x;
+						var oy2 = this.y;
+						var arr2 = [];
+						arr2.push(this.x);
+						arr2.push(this.y);
 						var _g3 = 0;
 						while(_g3 < 48) {
-							var i3 = _g3++;
+							var i4 = _g3++;
 							this.rotation += rotate1;
 							var wasHistoryOn1 = this.turtleHistoryOn;
 							this.turtleHistoryOn = false;
@@ -2015,107 +2178,107 @@ cornerContour_Sketcher.prototype = {
 								this.turtleCommands.push("FORWARD");
 								this.turtleParameters.push(baseLength1);
 							} else {
-								var nx1 = this.x + baseLength1 * Math.cos(this.rotation);
-								var ny1 = this.y + baseLength1 * Math.sin(this.rotation);
+								var nx2 = this.x + baseLength1 * Math.cos(this.rotation);
+								var ny2 = this.y + baseLength1 * Math.sin(this.rotation);
 								if(this.penIsDown) {
 									this.lastDistance = baseLength1;
-									this.lineTo(nx1,ny1);
+									this.lineTo(nx2,ny2);
 								} else {
 									if(this.endLine == 2 || this.endLine == 3) {
 										this.contour.end(this.width);
 									}
-									this.x = nx1;
-									this.y = ny1;
-									var l2 = this.points.length;
-									this.points[l2] = [];
-									this.points[l2][0] = nx1;
-									this.points[l2][1] = ny1;
+									this.x = nx2;
+									this.y = ny2;
+									var l7 = this.points.length;
+									this.points[l7] = [];
+									this.points[l7][0] = nx2;
+									this.points[l7][1] = ny2;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d1 = this.dim[this.dim.length - 1];
-									if(nx1 < d1.minX) {
-										d1.minX = nx1;
+									var d4 = this.dim[this.dim.length - 1];
+									if(nx2 < d4.minX) {
+										d4.minX = nx2;
 									}
-									if(nx1 > d1.maxX) {
-										d1.maxX = nx1;
+									if(nx2 > d4.maxX) {
+										d4.maxX = nx2;
 									}
-									if(ny1 < d1.minY) {
-										d1.minY = ny1;
+									if(ny2 < d4.minY) {
+										d4.minY = ny2;
 									}
-									if(ny1 > d1.maxY) {
-										d1.maxY = ny1;
+									if(ny2 > d4.maxY) {
+										d4.maxY = ny2;
 									}
 									this.contour.reset();
 								}
 							}
 							this.turtleHistoryOn = wasHistoryOn1;
 							if(this.fill) {
-								arr1.push(this.x);
-								arr1.push(this.y);
+								arr2.push(this.x);
+								arr2.push(this.y);
 							}
 						}
 						if(this.fill) {
-							var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-							var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-							var l3 = arr1.length;
-							var i4 = 2;
+							var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+							var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+							var l8 = arr2.length;
+							var i5 = 2;
 							var lx1 = 0.;
 							var ly1 = 0.;
-							this.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-							while(i4 < l3) {
-								if(i4 > 2) {
-									this.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+							this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+							while(i5 < l8) {
+								if(i5 > 2) {
+									this.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 								}
-								lx1 = arr1[i4];
-								ly1 = arr1[i4 + 1];
-								i4 += 2;
+								lx1 = arr2[i5];
+								ly1 = arr2[i5 + 1];
+								i5 += 2;
 							}
 						}
-						arr1.length = 0;
+						arr2.length = 0;
 					}
 				}
 				j += 3;
 				break;
 			case "BACKWARD":
-				var distance = v[j];
+				var distance1 = v[j];
 				if(this.turtleHistoryOn) {
 					this.historyAdd("BACKWARD");
-					this.historyParameters.push(distance);
+					this.historyParameters.push(distance1);
 				}
 				if(this.repeatCommands) {
 					this.turtleCommands.push("BACKWARD");
-					this.turtleParameters.push(distance);
+					this.turtleParameters.push(distance1);
 				} else {
-					var nx2 = this.x + distance * Math.cos(this.rotation + Math.PI);
-					var ny2 = this.y + distance * Math.sin(this.rotation + Math.PI);
+					var nx3 = this.x + distance1 * Math.cos(this.rotation + Math.PI);
+					var ny3 = this.y + distance1 * Math.sin(this.rotation + Math.PI);
 					if(this.penIsDown) {
-						this.lineTo(nx2,ny2);
+						this.lineTo(nx3,ny3);
 					} else {
 						if(this.endLine == 2 || this.endLine == 3) {
 							this.contour.end(this.width);
 						}
-						this.x = nx2;
-						this.y = ny2;
-						var l4 = this.points.length;
-						this.points[l4] = [];
-						this.points[l4][0] = nx2;
-						this.points[l4][1] = ny2;
+						this.x = nx3;
+						this.y = ny3;
+						var l9 = this.points.length;
+						this.points[l9] = [];
+						this.points[l9][0] = nx3;
+						this.points[l9][1] = ny3;
 						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d2 = this.dim[this.dim.length - 1];
-						if(nx2 < d2.minX) {
-							d2.minX = nx2;
+						var d5 = this.dim[this.dim.length - 1];
+						if(nx3 < d5.minX) {
+							d5.minX = nx3;
 						}
-						if(nx2 > d2.maxX) {
-							d2.maxX = nx2;
+						if(nx3 > d5.maxX) {
+							d5.maxX = nx3;
 						}
-						if(ny2 < d2.minY) {
-							d2.minY = ny2;
+						if(ny3 < d5.minY) {
+							d5.minY = ny3;
 						}
-						if(ny2 > d2.maxY) {
-							d2.maxY = ny2;
+						if(ny3 > d5.maxY) {
+							d5.maxY = ny3;
 						}
 						this.contour.reset();
 					}
@@ -2144,35 +2307,35 @@ cornerContour_Sketcher.prototype = {
 						var _g6 = 0;
 						var _g7 = this.turtleCommands.length;
 						while(_g6 < _g7) {
-							var i5 = _g6++;
-							var command1 = this.turtleCommands[i5];
+							var i6 = _g6++;
+							var command1 = this.turtleCommands[i6];
 							switch(command1) {
 							case "ARC":
-								var radius2 = v1[j1];
+								var radius3 = v1[j1];
 								var degrees2 = v1[j1 + 1];
 								if(this.turtleHistoryOn) {
 									this.historyAdd("ARC");
-									this.historyParameters.push(radius2);
+									this.historyParameters.push(radius3);
 									this.historyParameters.push(degrees2);
 								}
-								if(radius2 != 0) {
+								if(radius3 != 0) {
 									if(this.repeatCommands) {
 										this.turtleCommands.push("ARC");
-										this.turtleParameters.push(radius2);
+										this.turtleParameters.push(radius3);
 										this.turtleParameters.push(degrees2);
 									} else {
 										var beta2 = degrees2 * Math.PI / 180 / 24;
 										var alpha2 = (Math.PI - beta2) / 2;
 										var rotate2 = -(Math.PI / 2 - alpha2);
-										var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-										var ox2 = this.x;
-										var oy2 = this.y;
-										var arr2 = [];
-										arr2.push(this.x);
-										arr2.push(this.y);
+										var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+										var ox3 = this.x;
+										var oy3 = this.y;
+										var arr3 = [];
+										arr3.push(this.x);
+										arr3.push(this.y);
 										var _g8 = 0;
 										while(_g8 < 48) {
-											var i6 = _g8++;
+											var i7 = _g8++;
 											this.rotation += rotate2;
 											var wasHistoryOn3 = this.turtleHistoryOn;
 											this.turtleHistoryOn = false;
@@ -2184,70 +2347,233 @@ cornerContour_Sketcher.prototype = {
 												this.turtleCommands.push("FORWARD");
 												this.turtleParameters.push(baseLength2);
 											} else {
-												var nx3 = this.x + baseLength2 * Math.cos(this.rotation);
-												var ny3 = this.y + baseLength2 * Math.sin(this.rotation);
+												var nx4 = this.x + baseLength2 * Math.cos(this.rotation);
+												var ny4 = this.y + baseLength2 * Math.sin(this.rotation);
 												if(this.penIsDown) {
 													this.lastDistance = baseLength2;
-													this.lineTo(nx3,ny3);
+													this.lineTo(nx4,ny4);
 												} else {
 													if(this.endLine == 2 || this.endLine == 3) {
 														this.contour.end(this.width);
 													}
-													this.x = nx3;
-													this.y = ny3;
-													var l5 = this.points.length;
-													this.points[l5] = [];
-													this.points[l5][0] = nx3;
-													this.points[l5][1] = ny3;
+													this.x = nx4;
+													this.y = ny4;
+													var l10 = this.points.length;
+													this.points[l10] = [];
+													this.points[l10][0] = nx4;
+													this.points[l10][1] = ny4;
 													this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 													this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 													this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-													var d3 = this.dim[this.dim.length - 1];
-													if(nx3 < d3.minX) {
-														d3.minX = nx3;
+													var d6 = this.dim[this.dim.length - 1];
+													if(nx4 < d6.minX) {
+														d6.minX = nx4;
 													}
-													if(nx3 > d3.maxX) {
-														d3.maxX = nx3;
+													if(nx4 > d6.maxX) {
+														d6.maxX = nx4;
 													}
-													if(ny3 < d3.minY) {
-														d3.minY = ny3;
+													if(ny4 < d6.minY) {
+														d6.minY = ny4;
 													}
-													if(ny3 > d3.maxY) {
-														d3.maxY = ny3;
+													if(ny4 > d6.maxY) {
+														d6.maxY = ny4;
 													}
 													this.contour.reset();
 												}
 											}
 											this.turtleHistoryOn = wasHistoryOn3;
 											if(this.fill) {
-												arr2.push(this.x);
-												arr2.push(this.y);
+												arr3.push(this.x);
+												arr3.push(this.y);
 											}
 										}
 										if(this.fill) {
-											var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-											var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-											var l6 = arr2.length;
-											var i7 = 2;
+											var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+											var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+											var l11 = arr3.length;
+											var i8 = 2;
 											var lx2 = 0.;
 											var ly2 = 0.;
-											this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
-											while(i7 < l6) {
-												if(i7 > 2) {
-													this.pen.triangle2DFill(lx2,ly2,arr2[i7],arr2[i7 + 1],cx2,cy2);
+											this.pen.triangle2DFill(ox3,oy3,arr3[0],arr3[1],cx3,cy3);
+											while(i8 < l11) {
+												if(i8 > 2) {
+													this.pen.triangle2DFill(lx2,ly2,arr3[i8],arr3[i8 + 1],cx3,cy3);
 												}
-												lx2 = arr2[i7];
-												ly2 = arr2[i7 + 1];
-												i7 += 2;
+												lx2 = arr3[i8];
+												ly2 = arr3[i8 + 1];
+												i8 += 2;
 											}
 										}
-										arr2.length = 0;
+										arr3.length = 0;
 									}
 								}
 								j1 += 2;
 								break;
+							case "ARCH_BEZIER":
+								var distance3 = v1[j1];
+								var distance21 = v1[j1 + 1];
+								var radius4 = v1[j1 + 2];
+								if(this.turtleHistoryOn) {
+									this.historyAdd("ARCH_BEZIER");
+									this.historyParameters.push(distance3);
+									this.historyParameters.push(distance21);
+									this.historyParameters.push(radius4);
+								}
+								if(this.repeatCommands) {
+									this.turtleCommands.push("ARCH_BEZIER");
+									this.turtleParameters.push(distance3);
+									this.turtleParameters.push(distance21);
+									this.turtleParameters.push(radius4);
+								} else {
+									var nx5 = this.x + distance3 * Math.cos(this.rotation);
+									var ny5 = this.y + distance3 * Math.sin(this.rotation);
+									if(this.penIsDown) {
+										var thruX1 = this.x + distance21 * Math.cos(this.rotation) - radius4 * Math.cos(this.rotation + Math.PI / 2);
+										var thruY1 = this.y + distance21 * Math.sin(this.rotation) - radius4 * Math.sin(this.rotation + Math.PI / 2);
+										var newx1 = 2 * thruX1 - 0.5 * (this.x + nx5);
+										var newy1 = 2 * thruY1 - 0.5 * (this.y + ny5);
+										this.tempArr = [];
+										var p1 = this.tempArr;
+										var ax1 = this.x;
+										var ay1 = this.y;
+										var x2 = ax1 - newx1;
+										var y2 = ay1 - newy1;
+										var x3 = newx1 - nx5;
+										var y3 = newy1 - ny5;
+										var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
+										if(approxDistance1 == 0) {
+											approxDistance1 = 0.000001;
+										}
+										var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
+										var l12 = p1.length;
+										p1[l12++] = ax1;
+										p1[l12++] = ay1;
+										var t1 = step1;
+										while(t1 < 1.) {
+											var u2 = 1 - t1;
+											p1[l12++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx5;
+											var u3 = 1 - t1;
+											p1[l12++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny5;
+											t1 += step1;
+										}
+										p1[l12++] = nx5;
+										p1[l12++] = ny5;
+										var arr4 = this.tempArr;
+										var withMove1 = false;
+										if(withMove1 == null) {
+											withMove1 = true;
+										}
+										var l13 = arr4.length;
+										var i9 = 2;
+										if(withMove1) {
+											var x_1 = arr4[0];
+											var y_1 = arr4[1];
+											if(this.endLine == 2 || this.endLine == 3) {
+												this.contour.end(this.width);
+											}
+											this.x = x_1;
+											this.y = y_1;
+											var l14 = this.points.length;
+											this.points[l14] = [];
+											this.points[l14][0] = x_1;
+											this.points[l14][1] = y_1;
+											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+											var d7 = this.dim[this.dim.length - 1];
+											if(x_1 < d7.minX) {
+												d7.minX = x_1;
+											}
+											if(x_1 > d7.maxX) {
+												d7.maxX = x_1;
+											}
+											if(y_1 < d7.minY) {
+												d7.minY = y_1;
+											}
+											if(y_1 > d7.maxY) {
+												d7.maxY = y_1;
+											}
+											this.contour.reset();
+										} else {
+											this.lineTo(arr4[0],arr4[1]);
+										}
+										var cx4 = (arr4[0] + arr4[l13 - 2]) / 2;
+										var cy4 = (arr4[1] + arr4[l13 - 1]) / 2;
+										var ox4 = this.x;
+										var oy4 = this.y;
+										while(i9 < l13) {
+											if(this.fill && this.penIsDown) {
+												if(i9 > 0 && i9 < l13 - 2) {
+													this.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
+												}
+											}
+											this.lineTo(arr4[i9],arr4[i9 + 1]);
+											i9 += 2;
+										}
+										if(this.fill && this.penIsDown) {
+											if(this.endLine == 2 || this.endLine == 3) {
+												this.contour.end(this.width);
+											}
+											this.x = ox4;
+											this.y = oy4;
+											var l15 = this.points.length;
+											this.points[l15] = [];
+											this.points[l15][0] = ox4;
+											this.points[l15][1] = oy4;
+											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+											var d8 = this.dim[this.dim.length - 1];
+											if(ox4 < d8.minX) {
+												d8.minX = ox4;
+											}
+											if(ox4 > d8.maxX) {
+												d8.maxX = ox4;
+											}
+											if(oy4 < d8.minY) {
+												d8.minY = oy4;
+											}
+											if(oy4 > d8.maxY) {
+												d8.maxY = oy4;
+											}
+											this.contour.reset();
+											this.lineTo(arr4[l13 - 2],arr4[l13 - 1]);
+										}
+										this.x = nx5;
+										this.y = ny5;
+									} else {
+										if(this.endLine == 2 || this.endLine == 3) {
+											this.contour.end(this.width);
+										}
+										this.x = nx5;
+										this.y = ny5;
+										var l16 = this.points.length;
+										this.points[l16] = [];
+										this.points[l16][0] = nx5;
+										this.points[l16][1] = ny5;
+										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d9 = this.dim[this.dim.length - 1];
+										if(nx5 < d9.minX) {
+											d9.minX = nx5;
+										}
+										if(nx5 > d9.maxX) {
+											d9.maxX = nx5;
+										}
+										if(ny5 < d9.minY) {
+											d9.minY = ny5;
+										}
+										if(ny5 > d9.maxY) {
+											d9.maxY = ny5;
+										}
+										this.contour.reset();
+									}
+								}
+								j1 += 3;
+								break;
 							case "ARC_SIDES":
-								var radius3 = v1[j1];
+								var radius5 = v1[j1];
 								var degrees3 = v1[j1 + 1];
 								var sides1 = v1[j1 + 2];
 								if(sides1 == null) {
@@ -2256,24 +2582,24 @@ cornerContour_Sketcher.prototype = {
 								if(this.turtleHistoryOn) {
 									if(sides1 == 24) {
 										this.historyAdd("ARC");
-										this.historyParameters.push(radius3);
+										this.historyParameters.push(radius5);
 										this.historyParameters.push(degrees3);
 									} else {
 										this.historyAdd("ARC_SIDES");
-										this.historyParameters.push(radius3);
+										this.historyParameters.push(radius5);
 										this.historyParameters.push(degrees3);
 										this.historyParameters.push(sides1);
 									}
 								}
-								if(radius3 != 0) {
+								if(radius5 != 0) {
 									if(this.repeatCommands) {
 										if(sides1 == 24) {
 											this.turtleCommands.push("ARC");
-											this.turtleParameters.push(radius3);
+											this.turtleParameters.push(radius5);
 											this.turtleParameters.push(degrees3);
 										} else {
 											this.turtleCommands.push("ARC_SIDES");
-											this.turtleParameters.push(radius3);
+											this.turtleParameters.push(radius5);
 											this.turtleParameters.push(degrees3);
 											this.turtleParameters.push(sides1);
 										}
@@ -2281,15 +2607,15 @@ cornerContour_Sketcher.prototype = {
 										var beta3 = degrees3 * Math.PI / 180 / sides1;
 										var alpha3 = (Math.PI - beta3) / 2;
 										var rotate3 = -(Math.PI / 2 - alpha3);
-										var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-										var ox3 = this.x;
-										var oy3 = this.y;
-										var arr3 = [];
-										arr3.push(this.x);
-										arr3.push(this.y);
+										var baseLength3 = 0.5 * radius5 * Math.sin(beta3 / 2);
+										var ox5 = this.x;
+										var oy5 = this.y;
+										var arr5 = [];
+										arr5.push(this.x);
+										arr5.push(this.y);
 										var _g9 = 0;
 										while(_g9 < 48) {
-											var i8 = _g9++;
+											var i10 = _g9++;
 											this.rotation += rotate3;
 											var wasHistoryOn4 = this.turtleHistoryOn;
 											this.turtleHistoryOn = false;
@@ -2301,107 +2627,107 @@ cornerContour_Sketcher.prototype = {
 												this.turtleCommands.push("FORWARD");
 												this.turtleParameters.push(baseLength3);
 											} else {
-												var nx4 = this.x + baseLength3 * Math.cos(this.rotation);
-												var ny4 = this.y + baseLength3 * Math.sin(this.rotation);
+												var nx6 = this.x + baseLength3 * Math.cos(this.rotation);
+												var ny6 = this.y + baseLength3 * Math.sin(this.rotation);
 												if(this.penIsDown) {
 													this.lastDistance = baseLength3;
-													this.lineTo(nx4,ny4);
+													this.lineTo(nx6,ny6);
 												} else {
 													if(this.endLine == 2 || this.endLine == 3) {
 														this.contour.end(this.width);
 													}
-													this.x = nx4;
-													this.y = ny4;
-													var l7 = this.points.length;
-													this.points[l7] = [];
-													this.points[l7][0] = nx4;
-													this.points[l7][1] = ny4;
+													this.x = nx6;
+													this.y = ny6;
+													var l17 = this.points.length;
+													this.points[l17] = [];
+													this.points[l17][0] = nx6;
+													this.points[l17][1] = ny6;
 													this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 													this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 													this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-													var d4 = this.dim[this.dim.length - 1];
-													if(nx4 < d4.minX) {
-														d4.minX = nx4;
+													var d10 = this.dim[this.dim.length - 1];
+													if(nx6 < d10.minX) {
+														d10.minX = nx6;
 													}
-													if(nx4 > d4.maxX) {
-														d4.maxX = nx4;
+													if(nx6 > d10.maxX) {
+														d10.maxX = nx6;
 													}
-													if(ny4 < d4.minY) {
-														d4.minY = ny4;
+													if(ny6 < d10.minY) {
+														d10.minY = ny6;
 													}
-													if(ny4 > d4.maxY) {
-														d4.maxY = ny4;
+													if(ny6 > d10.maxY) {
+														d10.maxY = ny6;
 													}
 													this.contour.reset();
 												}
 											}
 											this.turtleHistoryOn = wasHistoryOn4;
 											if(this.fill) {
-												arr3.push(this.x);
-												arr3.push(this.y);
+												arr5.push(this.x);
+												arr5.push(this.y);
 											}
 										}
 										if(this.fill) {
-											var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-											var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-											var l8 = arr3.length;
-											var i9 = 2;
+											var cx5 = (ox5 + arr5[arr5.length - 2]) / 2;
+											var cy5 = (oy5 + arr5[arr5.length - 1]) / 2;
+											var l18 = arr5.length;
+											var i11 = 2;
 											var lx3 = 0.;
 											var ly3 = 0.;
-											this.pen.triangle2DFill(ox3,oy3,arr3[0],arr3[1],cx3,cy3);
-											while(i9 < l8) {
-												if(i9 > 2) {
-													this.pen.triangle2DFill(lx3,ly3,arr3[i9],arr3[i9 + 1],cx3,cy3);
+											this.pen.triangle2DFill(ox5,oy5,arr5[0],arr5[1],cx5,cy5);
+											while(i11 < l18) {
+												if(i11 > 2) {
+													this.pen.triangle2DFill(lx3,ly3,arr5[i11],arr5[i11 + 1],cx5,cy5);
 												}
-												lx3 = arr3[i9];
-												ly3 = arr3[i9 + 1];
-												i9 += 2;
+												lx3 = arr5[i11];
+												ly3 = arr5[i11 + 1];
+												i11 += 2;
 											}
 										}
-										arr3.length = 0;
+										arr5.length = 0;
 									}
 								}
 								j1 += 3;
 								break;
 							case "BACKWARD":
-								var distance1 = v1[j1];
+								var distance4 = v1[j1];
 								if(this.turtleHistoryOn) {
 									this.historyAdd("BACKWARD");
-									this.historyParameters.push(distance1);
+									this.historyParameters.push(distance4);
 								}
 								if(this.repeatCommands) {
 									this.turtleCommands.push("BACKWARD");
-									this.turtleParameters.push(distance1);
+									this.turtleParameters.push(distance4);
 								} else {
-									var nx5 = this.x + distance1 * Math.cos(this.rotation + Math.PI);
-									var ny5 = this.y + distance1 * Math.sin(this.rotation + Math.PI);
+									var nx7 = this.x + distance4 * Math.cos(this.rotation + Math.PI);
+									var ny7 = this.y + distance4 * Math.sin(this.rotation + Math.PI);
 									if(this.penIsDown) {
-										this.lineTo(nx5,ny5);
+										this.lineTo(nx7,ny7);
 									} else {
 										if(this.endLine == 2 || this.endLine == 3) {
 											this.contour.end(this.width);
 										}
-										this.x = nx5;
-										this.y = ny5;
-										var l9 = this.points.length;
-										this.points[l9] = [];
-										this.points[l9][0] = nx5;
-										this.points[l9][1] = ny5;
+										this.x = nx7;
+										this.y = ny7;
+										var l19 = this.points.length;
+										this.points[l19] = [];
+										this.points[l19][0] = nx7;
+										this.points[l19][1] = ny7;
 										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d5 = this.dim[this.dim.length - 1];
-										if(nx5 < d5.minX) {
-											d5.minX = nx5;
+										var d11 = this.dim[this.dim.length - 1];
+										if(nx7 < d11.minX) {
+											d11.minX = nx7;
 										}
-										if(nx5 > d5.maxX) {
-											d5.maxX = nx5;
+										if(nx7 > d11.maxX) {
+											d11.maxX = nx7;
 										}
-										if(ny5 < d5.minY) {
-											d5.minY = ny5;
+										if(ny7 < d11.minY) {
+											d11.minY = ny7;
 										}
-										if(ny5 > d5.maxY) {
-											d5.maxY = ny5;
+										if(ny7 > d11.maxY) {
+											d11.maxY = ny7;
 										}
 										this.contour.reset();
 									}
@@ -2441,26 +2767,26 @@ cornerContour_Sketcher.prototype = {
 								}
 								break;
 							case "CIRCLE":
-								var radius4 = v1[j1];
+								var radius6 = v1[j1];
 								if(this.turtleHistoryOn) {
 									this.historyAdd("CIRCLE");
-									this.historyParameters.push(radius4);
+									this.historyParameters.push(radius6);
 								}
-								if(radius4 != 0) {
+								if(radius6 != 0) {
 									if(this.repeatCommands) {
 										this.turtleCommands.push("CIRCLE");
-										this.turtleParameters.push(radius4);
+										this.turtleParameters.push(radius6);
 									} else {
 										var beta4 = 2 * Math.PI / 24;
 										var alpha4 = (Math.PI - beta4) / 2;
 										var rotate4 = -(Math.PI / 2 - alpha4);
-										var baseLength4 = 0.5 * radius4 * Math.sin(beta4 / 2);
-										var ox4 = this.x;
-										var oy4 = this.y;
-										var arr4 = [];
+										var baseLength4 = 0.5 * radius6 * Math.sin(beta4 / 2);
+										var ox6 = this.x;
+										var oy6 = this.y;
+										var arr6 = [];
 										var _g10 = 0;
 										while(_g10 < 48) {
-											var i10 = _g10++;
+											var i12 = _g10++;
 											this.rotation += rotate4;
 											var wasHistoryOn5 = this.turtleHistoryOn;
 											this.turtleHistoryOn = false;
@@ -2472,69 +2798,69 @@ cornerContour_Sketcher.prototype = {
 												this.turtleCommands.push("FORWARD");
 												this.turtleParameters.push(baseLength4);
 											} else {
-												var nx6 = this.x + baseLength4 * Math.cos(this.rotation);
-												var ny6 = this.y + baseLength4 * Math.sin(this.rotation);
+												var nx8 = this.x + baseLength4 * Math.cos(this.rotation);
+												var ny8 = this.y + baseLength4 * Math.sin(this.rotation);
 												if(this.penIsDown) {
 													this.lastDistance = baseLength4;
-													this.lineTo(nx6,ny6);
+													this.lineTo(nx8,ny8);
 												} else {
 													if(this.endLine == 2 || this.endLine == 3) {
 														this.contour.end(this.width);
 													}
-													this.x = nx6;
-													this.y = ny6;
-													var l10 = this.points.length;
-													this.points[l10] = [];
-													this.points[l10][0] = nx6;
-													this.points[l10][1] = ny6;
+													this.x = nx8;
+													this.y = ny8;
+													var l20 = this.points.length;
+													this.points[l20] = [];
+													this.points[l20][0] = nx8;
+													this.points[l20][1] = ny8;
 													this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 													this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 													this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-													var d6 = this.dim[this.dim.length - 1];
-													if(nx6 < d6.minX) {
-														d6.minX = nx6;
+													var d12 = this.dim[this.dim.length - 1];
+													if(nx8 < d12.minX) {
+														d12.minX = nx8;
 													}
-													if(nx6 > d6.maxX) {
-														d6.maxX = nx6;
+													if(nx8 > d12.maxX) {
+														d12.maxX = nx8;
 													}
-													if(ny6 < d6.minY) {
-														d6.minY = ny6;
+													if(ny8 < d12.minY) {
+														d12.minY = ny8;
 													}
-													if(ny6 > d6.maxY) {
-														d6.maxY = ny6;
+													if(ny8 > d12.maxY) {
+														d12.maxY = ny8;
 													}
 													this.contour.reset();
 												}
 											}
 											this.turtleHistoryOn = wasHistoryOn5;
 											if(this.fill) {
-												arr4.push(this.x);
-												arr4.push(this.y);
+												arr6.push(this.x);
+												arr6.push(this.y);
 											}
 										}
 										if(this.fill) {
-											var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
-											var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
-											var l11 = arr4.length;
-											var i11 = 2;
+											var cx6 = (ox6 + arr6[arr6.length - 2]) / 2;
+											var cy6 = (oy6 + arr6[arr6.length - 1]) / 2;
+											var l21 = arr6.length;
+											var i13 = 2;
 											var lx4 = 0.;
 											var ly4 = 0.;
-											while(i11 < l11) {
-												if(i11 > 2) {
-													this.pen.triangle2DFill(lx4,ly4,arr4[i11],arr4[i11 + 1],cx4,cy4);
+											while(i13 < l21) {
+												if(i13 > 2) {
+													this.pen.triangle2DFill(lx4,ly4,arr6[i13],arr6[i13 + 1],cx6,cy6);
 												}
-												lx4 = arr4[i11];
-												ly4 = arr4[i11 + 1];
-												i11 += 2;
+												lx4 = arr6[i13];
+												ly4 = arr6[i13 + 1];
+												i13 += 2;
 											}
 										}
-										arr4.length = 0;
+										arr6.length = 0;
 									}
 								}
 								++j1;
 								break;
 							case "CIRCLE_SIDES":
-								var radius5 = v1[j1];
+								var radius7 = v1[j1];
 								var sides2 = v1[j1 + 1];
 								if(sides2 == null) {
 									sides2 = 24;
@@ -2542,34 +2868,34 @@ cornerContour_Sketcher.prototype = {
 								if(this.turtleHistoryOn) {
 									if(sides2 == 24) {
 										this.historyAdd("CIRCLE");
-										this.historyParameters.push(radius5);
+										this.historyParameters.push(radius7);
 									} else {
 										this.historyAdd("CIRCLE_SIDES");
-										this.historyParameters.push(radius5);
+										this.historyParameters.push(radius7);
 										this.historyParameters.push(sides2);
 									}
 								}
-								if(radius5 != 0) {
+								if(radius7 != 0) {
 									if(this.repeatCommands) {
 										if(sides2 == 24) {
 											this.turtleCommands.push("CIRCLE");
-											this.turtleParameters.push(radius5);
+											this.turtleParameters.push(radius7);
 										} else {
 											this.turtleCommands.push("CIRCLE_SIDES");
-											this.turtleParameters.push(radius5);
+											this.turtleParameters.push(radius7);
 											this.turtleParameters.push(sides2);
 										}
 									} else {
 										var beta5 = 2 * Math.PI / sides2;
 										var alpha5 = (Math.PI - beta5) / 2;
 										var rotate5 = -(Math.PI / 2 - alpha5);
-										var baseLength5 = 0.5 * radius5 * Math.sin(beta5 / 2);
-										var ox5 = this.x;
-										var oy5 = this.y;
-										var arr5 = [];
+										var baseLength5 = 0.5 * radius7 * Math.sin(beta5 / 2);
+										var ox7 = this.x;
+										var oy7 = this.y;
+										var arr7 = [];
 										var _g11 = 0;
 										while(_g11 < 48) {
-											var i12 = _g11++;
+											var i14 = _g11++;
 											this.rotation += rotate5;
 											var wasHistoryOn6 = this.turtleHistoryOn;
 											this.turtleHistoryOn = false;
@@ -2581,63 +2907,63 @@ cornerContour_Sketcher.prototype = {
 												this.turtleCommands.push("FORWARD");
 												this.turtleParameters.push(baseLength5);
 											} else {
-												var nx7 = this.x + baseLength5 * Math.cos(this.rotation);
-												var ny7 = this.y + baseLength5 * Math.sin(this.rotation);
+												var nx9 = this.x + baseLength5 * Math.cos(this.rotation);
+												var ny9 = this.y + baseLength5 * Math.sin(this.rotation);
 												if(this.penIsDown) {
 													this.lastDistance = baseLength5;
-													this.lineTo(nx7,ny7);
+													this.lineTo(nx9,ny9);
 												} else {
 													if(this.endLine == 2 || this.endLine == 3) {
 														this.contour.end(this.width);
 													}
-													this.x = nx7;
-													this.y = ny7;
-													var l12 = this.points.length;
-													this.points[l12] = [];
-													this.points[l12][0] = nx7;
-													this.points[l12][1] = ny7;
+													this.x = nx9;
+													this.y = ny9;
+													var l22 = this.points.length;
+													this.points[l22] = [];
+													this.points[l22][0] = nx9;
+													this.points[l22][1] = ny9;
 													this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 													this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 													this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-													var d7 = this.dim[this.dim.length - 1];
-													if(nx7 < d7.minX) {
-														d7.minX = nx7;
+													var d13 = this.dim[this.dim.length - 1];
+													if(nx9 < d13.minX) {
+														d13.minX = nx9;
 													}
-													if(nx7 > d7.maxX) {
-														d7.maxX = nx7;
+													if(nx9 > d13.maxX) {
+														d13.maxX = nx9;
 													}
-													if(ny7 < d7.minY) {
-														d7.minY = ny7;
+													if(ny9 < d13.minY) {
+														d13.minY = ny9;
 													}
-													if(ny7 > d7.maxY) {
-														d7.maxY = ny7;
+													if(ny9 > d13.maxY) {
+														d13.maxY = ny9;
 													}
 													this.contour.reset();
 												}
 											}
 											this.turtleHistoryOn = wasHistoryOn6;
 											if(this.fill) {
-												arr5.push(this.x);
-												arr5.push(this.y);
+												arr7.push(this.x);
+												arr7.push(this.y);
 											}
 										}
 										if(this.fill) {
-											var cx5 = (ox5 + arr5[arr5.length - 2]) / 2;
-											var cy5 = (oy5 + arr5[arr5.length - 1]) / 2;
-											var l13 = arr5.length;
-											var i13 = 2;
+											var cx7 = (ox7 + arr7[arr7.length - 2]) / 2;
+											var cy7 = (oy7 + arr7[arr7.length - 1]) / 2;
+											var l23 = arr7.length;
+											var i15 = 2;
 											var lx5 = 0.;
 											var ly5 = 0.;
-											while(i13 < l13) {
-												if(i13 > 2) {
-													this.pen.triangle2DFill(lx5,ly5,arr5[i13],arr5[i13 + 1],cx5,cy5);
+											while(i15 < l23) {
+												if(i15 > 2) {
+													this.pen.triangle2DFill(lx5,ly5,arr7[i15],arr7[i15 + 1],cx7,cy7);
 												}
-												lx5 = arr5[i13];
-												ly5 = arr5[i13 + 1];
-												i13 += 2;
+												lx5 = arr7[i15];
+												ly5 = arr7[i15 + 1];
+												i15 += 2;
 											}
 										}
-										arr5.length = 0;
+										arr7.length = 0;
 									}
 								}
 								j1 += 2;
@@ -2705,45 +3031,45 @@ cornerContour_Sketcher.prototype = {
 								}
 								break;
 							case "FORWARD":
-								var distance2 = v1[j1];
+								var distance5 = v1[j1];
 								if(this.turtleHistoryOn) {
 									this.historyAdd("FORWARD");
-									this.historyParameters.push(distance2);
+									this.historyParameters.push(distance5);
 								}
 								if(this.repeatCommands) {
 									this.turtleCommands.push("FORWARD");
-									this.turtleParameters.push(distance2);
+									this.turtleParameters.push(distance5);
 								} else {
-									var nx8 = this.x + distance2 * Math.cos(this.rotation);
-									var ny8 = this.y + distance2 * Math.sin(this.rotation);
+									var nx10 = this.x + distance5 * Math.cos(this.rotation);
+									var ny10 = this.y + distance5 * Math.sin(this.rotation);
 									if(this.penIsDown) {
-										this.lastDistance = distance2;
-										this.lineTo(nx8,ny8);
+										this.lastDistance = distance5;
+										this.lineTo(nx10,ny10);
 									} else {
 										if(this.endLine == 2 || this.endLine == 3) {
 											this.contour.end(this.width);
 										}
-										this.x = nx8;
-										this.y = ny8;
-										var l14 = this.points.length;
-										this.points[l14] = [];
-										this.points[l14][0] = nx8;
-										this.points[l14][1] = ny8;
+										this.x = nx10;
+										this.y = ny10;
+										var l24 = this.points.length;
+										this.points[l24] = [];
+										this.points[l24][0] = nx10;
+										this.points[l24][1] = ny10;
 										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d8 = this.dim[this.dim.length - 1];
-										if(nx8 < d8.minX) {
-											d8.minX = nx8;
+										var d14 = this.dim[this.dim.length - 1];
+										if(nx10 < d14.minX) {
+											d14.minX = nx10;
 										}
-										if(nx8 > d8.maxX) {
-											d8.maxX = nx8;
+										if(nx10 > d14.maxX) {
+											d14.maxX = nx10;
 										}
-										if(ny8 < d8.minY) {
-											d8.minY = ny8;
+										if(ny10 < d14.minY) {
+											d14.minY = ny10;
 										}
-										if(ny8 > d8.maxY) {
-											d8.maxY = ny8;
+										if(ny10 > d14.maxY) {
+											d14.maxY = ny10;
 										}
 										this.contour.reset();
 									}
@@ -2760,338 +3086,12 @@ cornerContour_Sketcher.prototype = {
 									this.turtleCommands.push("FORWARD_CHANGE");
 									this.turtleParameters.push(deltaDistance);
 								} else {
-									var distance3 = this.lastDistance + deltaDistance;
-									var nx9 = this.x + distance3 * Math.cos(this.rotation);
-									var ny9 = this.y + distance3 * Math.sin(this.rotation);
+									var distance6 = this.lastDistance + deltaDistance;
+									var nx11 = this.x + distance6 * Math.cos(this.rotation);
+									var ny11 = this.y + distance6 * Math.sin(this.rotation);
 									if(this.penIsDown) {
-										this.lastDistance = distance3 + deltaDistance;
-										this.lineTo(nx9,ny9);
-									} else {
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = nx9;
-										this.y = ny9;
-										var l15 = this.points.length;
-										this.points[l15] = [];
-										this.points[l15][0] = nx9;
-										this.points[l15][1] = ny9;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d9 = this.dim[this.dim.length - 1];
-										if(nx9 < d9.minX) {
-											d9.minX = nx9;
-										}
-										if(nx9 > d9.maxX) {
-											d9.maxX = nx9;
-										}
-										if(ny9 < d9.minY) {
-											d9.minY = ny9;
-										}
-										if(ny9 > d9.maxY) {
-											d9.maxY = ny9;
-										}
-										this.contour.reset();
-									}
-								}
-								++j1;
-								break;
-							case "FORWARD_CURVE_LEFT":
-								var distance4 = v1[j1];
-								var distance21 = v1[j1 + 1];
-								var radius6 = v1[j1 + 2];
-								if(this.turtleHistoryOn) {
-									this.historyAdd("FORWARD_CURVE_LEFT");
-									this.historyParameters.push(distance4);
-									this.historyParameters.push(distance21);
-									this.historyParameters.push(radius6);
-								}
-								if(this.repeatCommands) {
-									this.turtleCommands.push("FORWARD_CURVE_LEFT");
-									this.turtleParameters.push(distance4);
-									this.turtleParameters.push(distance21);
-									this.turtleParameters.push(radius6);
-								} else {
-									var nx10 = this.x + distance4 * Math.cos(this.rotation);
-									var ny10 = this.y + distance4 * Math.sin(this.rotation);
-									if(this.penIsDown) {
-										var thruX = this.x + distance21 * Math.cos(this.rotation) + radius6 * Math.cos(this.rotation + Math.PI / 2);
-										var thruY = this.y + distance21 * Math.sin(this.rotation) + radius6 * Math.sin(this.rotation + Math.PI / 2);
-										var newx = 2 * thruX - 0.5 * (this.x + nx10);
-										var newy = 2 * thruY - 0.5 * (this.y + ny10);
-										this.tempArr = [];
-										var p = this.tempArr;
-										var ax = this.x;
-										var ay = this.y;
-										var x = ax - newx;
-										var y = ay - newy;
-										var x1 = newx - nx10;
-										var y1 = newy - ny10;
-										var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-										if(approxDistance == 0) {
-											approxDistance = 0.000001;
-										}
-										var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-										var l16 = p.length;
-										p[l16++] = ax;
-										p[l16++] = ay;
-										var t = step;
-										while(t < 1.) {
-											var u = 1 - t;
-											p[l16++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx10;
-											var u1 = 1 - t;
-											p[l16++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny10;
-											t += step;
-										}
-										p[l16++] = nx10;
-										p[l16++] = ny10;
-										var arr6 = this.tempArr;
-										var withMove = false;
-										if(withMove == null) {
-											withMove = true;
-										}
-										var l17 = arr6.length;
-										var i14 = 2;
-										if(withMove) {
-											var x_ = arr6[0];
-											var y_ = arr6[1];
-											if(this.endLine == 2 || this.endLine == 3) {
-												this.contour.end(this.width);
-											}
-											this.x = x_;
-											this.y = y_;
-											var l18 = this.points.length;
-											this.points[l18] = [];
-											this.points[l18][0] = x_;
-											this.points[l18][1] = y_;
-											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d10 = this.dim[this.dim.length - 1];
-											if(x_ < d10.minX) {
-												d10.minX = x_;
-											}
-											if(x_ > d10.maxX) {
-												d10.maxX = x_;
-											}
-											if(y_ < d10.minY) {
-												d10.minY = y_;
-											}
-											if(y_ > d10.maxY) {
-												d10.maxY = y_;
-											}
-											this.contour.reset();
-										} else {
-											this.lineTo(arr6[0],arr6[1]);
-										}
-										var cx6 = (arr6[0] + arr6[l17 - 2]) / 2;
-										var cy6 = (arr6[1] + arr6[l17 - 1]) / 2;
-										var ox6 = this.x;
-										var oy6 = this.y;
-										while(i14 < l17) {
-											if(this.fill && this.penIsDown) {
-												if(i14 > 0 && i14 < l17 - 2) {
-													this.pen.triangle2DFill(arr6[i14 - 2],arr6[i14 - 1],arr6[i14],arr6[i14 + 1],cx6,cy6);
-												}
-											}
-											this.lineTo(arr6[i14],arr6[i14 + 1]);
-											i14 += 2;
-										}
-										if(this.fill && this.penIsDown) {
-											if(this.endLine == 2 || this.endLine == 3) {
-												this.contour.end(this.width);
-											}
-											this.x = ox6;
-											this.y = oy6;
-											var l19 = this.points.length;
-											this.points[l19] = [];
-											this.points[l19][0] = ox6;
-											this.points[l19][1] = oy6;
-											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d11 = this.dim[this.dim.length - 1];
-											if(ox6 < d11.minX) {
-												d11.minX = ox6;
-											}
-											if(ox6 > d11.maxX) {
-												d11.maxX = ox6;
-											}
-											if(oy6 < d11.minY) {
-												d11.minY = oy6;
-											}
-											if(oy6 > d11.maxY) {
-												d11.maxY = oy6;
-											}
-											this.contour.reset();
-											this.lineTo(arr6[l17 - 2],arr6[l17 - 1]);
-										}
-										this.x = nx10;
-										this.y = ny10;
-									} else {
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = nx10;
-										this.y = ny10;
-										var l20 = this.points.length;
-										this.points[l20] = [];
-										this.points[l20][0] = nx10;
-										this.points[l20][1] = ny10;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d12 = this.dim[this.dim.length - 1];
-										if(nx10 < d12.minX) {
-											d12.minX = nx10;
-										}
-										if(nx10 > d12.maxX) {
-											d12.maxX = nx10;
-										}
-										if(ny10 < d12.minY) {
-											d12.minY = ny10;
-										}
-										if(ny10 > d12.maxY) {
-											d12.maxY = ny10;
-										}
-										this.contour.reset();
-									}
-								}
-								j1 += 3;
-								break;
-							case "FORWARD_CURVE_RIGHT":
-								var distance5 = v1[j1];
-								var distance22 = v1[j1 + 1];
-								var radius7 = v1[j1 + 2];
-								if(this.turtleHistoryOn) {
-									this.historyAdd("FORWARD_CURVE_RIGHT");
-									this.historyParameters.push(distance5);
-									this.historyParameters.push(distance22);
-									this.historyParameters.push(radius7);
-								}
-								if(this.repeatCommands) {
-									this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-									this.turtleParameters.push(distance5);
-									this.turtleParameters.push(distance22);
-									this.turtleParameters.push(radius7);
-								} else {
-									var nx11 = this.x + distance5 * Math.cos(this.rotation);
-									var ny11 = this.y + distance5 * Math.sin(this.rotation);
-									if(this.penIsDown) {
-										var thruX1 = this.x + distance22 * Math.cos(this.rotation) - radius7 * Math.cos(this.rotation + Math.PI / 2);
-										var thruY1 = this.y + distance22 * Math.sin(this.rotation) - radius7 * Math.sin(this.rotation + Math.PI / 2);
-										var newx1 = 2 * thruX1 - 0.5 * (this.x + nx11);
-										var newy1 = 2 * thruY1 - 0.5 * (this.y + ny11);
-										this.tempArr = [];
-										var p1 = this.tempArr;
-										var ax1 = this.x;
-										var ay1 = this.y;
-										var x2 = ax1 - newx1;
-										var y2 = ay1 - newy1;
-										var x3 = newx1 - nx11;
-										var y3 = newy1 - ny11;
-										var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-										if(approxDistance1 == 0) {
-											approxDistance1 = 0.000001;
-										}
-										var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-										var l21 = p1.length;
-										p1[l21++] = ax1;
-										p1[l21++] = ay1;
-										var t1 = step1;
-										while(t1 < 1.) {
-											var u2 = 1 - t1;
-											p1[l21++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx11;
-											var u3 = 1 - t1;
-											p1[l21++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny11;
-											t1 += step1;
-										}
-										p1[l21++] = nx11;
-										p1[l21++] = ny11;
-										var arr7 = this.tempArr;
-										var withMove1 = false;
-										if(withMove1 == null) {
-											withMove1 = true;
-										}
-										var l22 = arr7.length;
-										var i15 = 2;
-										if(withMove1) {
-											var x_1 = arr7[0];
-											var y_1 = arr7[1];
-											if(this.endLine == 2 || this.endLine == 3) {
-												this.contour.end(this.width);
-											}
-											this.x = x_1;
-											this.y = y_1;
-											var l23 = this.points.length;
-											this.points[l23] = [];
-											this.points[l23][0] = x_1;
-											this.points[l23][1] = y_1;
-											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d13 = this.dim[this.dim.length - 1];
-											if(x_1 < d13.minX) {
-												d13.minX = x_1;
-											}
-											if(x_1 > d13.maxX) {
-												d13.maxX = x_1;
-											}
-											if(y_1 < d13.minY) {
-												d13.minY = y_1;
-											}
-											if(y_1 > d13.maxY) {
-												d13.maxY = y_1;
-											}
-											this.contour.reset();
-										} else {
-											this.lineTo(arr7[0],arr7[1]);
-										}
-										var cx7 = (arr7[0] + arr7[l22 - 2]) / 2;
-										var cy7 = (arr7[1] + arr7[l22 - 1]) / 2;
-										var ox7 = this.x;
-										var oy7 = this.y;
-										while(i15 < l22) {
-											if(this.fill && this.penIsDown) {
-												if(i15 > 0 && i15 < l22 - 2) {
-													this.pen.triangle2DFill(arr7[i15 - 2],arr7[i15 - 1],arr7[i15],arr7[i15 + 1],cx7,cy7);
-												}
-											}
-											this.lineTo(arr7[i15],arr7[i15 + 1]);
-											i15 += 2;
-										}
-										if(this.fill && this.penIsDown) {
-											if(this.endLine == 2 || this.endLine == 3) {
-												this.contour.end(this.width);
-											}
-											this.x = ox7;
-											this.y = oy7;
-											var l24 = this.points.length;
-											this.points[l24] = [];
-											this.points[l24][0] = ox7;
-											this.points[l24][1] = oy7;
-											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d14 = this.dim[this.dim.length - 1];
-											if(ox7 < d14.minX) {
-												d14.minX = ox7;
-											}
-											if(ox7 > d14.maxX) {
-												d14.maxX = ox7;
-											}
-											if(oy7 < d14.minY) {
-												d14.minY = oy7;
-											}
-											if(oy7 > d14.maxY) {
-												d14.maxY = oy7;
-											}
-											this.contour.reset();
-											this.lineTo(arr7[l22 - 2],arr7[l22 - 1]);
-										}
-										this.x = nx11;
-										this.y = ny11;
+										this.lastDistance = distance6 + deltaDistance;
+										this.lineTo(nx11,ny11);
 									} else {
 										if(this.endLine == 2 || this.endLine == 3) {
 											this.contour.end(this.width);
@@ -3121,7 +3121,7 @@ cornerContour_Sketcher.prototype = {
 										this.contour.reset();
 									}
 								}
-								j1 += 3;
+								++j1;
 								break;
 							case "FORWARD_FACTOR":
 								var factor = v1[j1];
@@ -3133,11 +3133,11 @@ cornerContour_Sketcher.prototype = {
 									this.turtleCommands.push("FORWARD_FACTOR");
 									this.turtleParameters.push(factor);
 								} else {
-									var distance6 = this.lastDistance * factor;
-									var nx12 = this.x + distance6 * Math.cos(this.rotation);
-									var ny12 = this.y + distance6 * Math.sin(this.rotation);
+									var distance7 = this.lastDistance * factor;
+									var nx12 = this.x + distance7 * Math.cos(this.rotation);
+									var ny12 = this.y + distance7 * Math.sin(this.rotation);
 									if(this.penIsDown) {
-										this.lastDistance = distance6;
+										this.lastDistance = distance7;
 										this.lineTo(nx12,ny12);
 									} else {
 										if(this.endLine == 2 || this.endLine == 3) {
@@ -3169,178 +3169,6 @@ cornerContour_Sketcher.prototype = {
 									}
 								}
 								++j1;
-								break;
-							case "FORWARD_TRIANGLE_LEFT":
-								var distance7 = v1[j1];
-								var distance23 = v1[j1 + 1];
-								var radius8 = v1[j1 + 2];
-								if(this.turtleHistoryOn) {
-									this.historyAdd("FORWARD_TRIANGLE_LEFT");
-									this.historyParameters.push(distance7);
-									this.historyParameters.push(distance23);
-									this.historyParameters.push(radius8);
-								}
-								if(this.repeatCommands) {
-									this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-									this.turtleParameters.push(distance7);
-									this.turtleParameters.push(distance23);
-									this.turtleParameters.push(radius8);
-								} else {
-									var nx13 = this.x + distance7 * Math.cos(this.rotation);
-									var ny13 = this.y + distance7 * Math.sin(this.rotation);
-									if(this.penIsDown) {
-										var thruX2 = this.x + distance23 * Math.cos(this.rotation) + radius8 * Math.cos(this.rotation + Math.PI / 2);
-										var thruY2 = this.y + distance23 * Math.sin(this.rotation) + radius8 * Math.sin(this.rotation + Math.PI / 2);
-										if(this.fill) {
-											this.pen.triangle2DFill(this.x,this.y,thruX2,thruY2,nx13,ny13);
-										}
-										this.lineTo(thruX2,thruY2);
-										this.lineTo(nx13,ny13);
-										if(this.fill) {
-											this.lineTo(this.x,this.y);
-										}
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = nx13;
-										this.y = ny13;
-										var l27 = this.points.length;
-										this.points[l27] = [];
-										this.points[l27][0] = nx13;
-										this.points[l27][1] = ny13;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d17 = this.dim[this.dim.length - 1];
-										if(nx13 < d17.minX) {
-											d17.minX = nx13;
-										}
-										if(nx13 > d17.maxX) {
-											d17.maxX = nx13;
-										}
-										if(ny13 < d17.minY) {
-											d17.minY = ny13;
-										}
-										if(ny13 > d17.maxY) {
-											d17.maxY = ny13;
-										}
-										this.contour.reset();
-									} else {
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = nx13;
-										this.y = ny13;
-										var l28 = this.points.length;
-										this.points[l28] = [];
-										this.points[l28][0] = nx13;
-										this.points[l28][1] = ny13;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d18 = this.dim[this.dim.length - 1];
-										if(nx13 < d18.minX) {
-											d18.minX = nx13;
-										}
-										if(nx13 > d18.maxX) {
-											d18.maxX = nx13;
-										}
-										if(ny13 < d18.minY) {
-											d18.minY = ny13;
-										}
-										if(ny13 > d18.maxY) {
-											d18.maxY = ny13;
-										}
-										this.contour.reset();
-									}
-								}
-								j1 += 3;
-								break;
-							case "FORWARD_TRIANGLE_RIGHT":
-								var distance8 = v1[j1];
-								var distance24 = v1[j1 + 1];
-								var radius9 = v1[j1 + 2];
-								if(this.turtleHistoryOn) {
-									this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-									this.historyParameters.push(distance8);
-									this.historyParameters.push(distance24);
-									this.historyParameters.push(radius9);
-								}
-								if(this.repeatCommands) {
-									this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-									this.turtleParameters.push(distance8);
-									this.turtleParameters.push(distance24);
-									this.turtleParameters.push(radius9);
-								} else {
-									var nx14 = this.x + distance8 * Math.cos(this.rotation);
-									var ny14 = this.y + distance8 * Math.sin(this.rotation);
-									if(this.penIsDown) {
-										var thruX3 = this.x + distance24 * Math.cos(this.rotation) - radius9 * Math.cos(this.rotation + Math.PI / 2);
-										var thruY3 = this.y + distance24 * Math.sin(this.rotation) - radius9 * Math.sin(this.rotation + Math.PI / 2);
-										if(this.fill) {
-											this.pen.triangle2DFill(this.x,this.y,thruX3,thruY3,nx14,ny14);
-										}
-										this.lineTo(thruX3,thruY3);
-										this.lineTo(nx14,ny14);
-										if(this.fill) {
-											this.lineTo(this.x,this.y);
-										}
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = nx14;
-										this.y = ny14;
-										var l29 = this.points.length;
-										this.points[l29] = [];
-										this.points[l29][0] = nx14;
-										this.points[l29][1] = ny14;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d19 = this.dim[this.dim.length - 1];
-										if(nx14 < d19.minX) {
-											d19.minX = nx14;
-										}
-										if(nx14 > d19.maxX) {
-											d19.maxX = nx14;
-										}
-										if(ny14 < d19.minY) {
-											d19.minY = ny14;
-										}
-										if(ny14 > d19.maxY) {
-											d19.maxY = ny14;
-										}
-										this.contour.reset();
-									} else {
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = nx14;
-										this.y = ny14;
-										var l30 = this.points.length;
-										this.points[l30] = [];
-										this.points[l30][0] = nx14;
-										this.points[l30][1] = ny14;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d20 = this.dim[this.dim.length - 1];
-										if(nx14 < d20.minX) {
-											d20.minX = nx14;
-										}
-										if(nx14 > d20.maxX) {
-											d20.maxX = nx14;
-										}
-										if(ny14 < d20.minY) {
-											d20.minY = ny14;
-										}
-										if(ny14 > d20.maxY) {
-											d20.maxY = ny14;
-										}
-										this.contour.reset();
-									}
-								}
-								j1 += 3;
 								break;
 							case "GREEN":
 								if(this.turtleHistoryOn) {
@@ -3397,10 +3225,10 @@ cornerContour_Sketcher.prototype = {
 								}
 								break;
 							case "MOVE_PEN":
-								var distance9 = v1[j1];
+								var distance8 = v1[j1];
 								if(this.repeatCommands) {
 									this.turtleCommands.push("MOVE_PEN");
-									this.turtleParameters.push(distance9);
+									this.turtleParameters.push(distance8);
 								} else if(this.penIsDown) {
 									if(this.turtleHistoryOn) {
 										this.historyAdd("PEN_UP");
@@ -3412,42 +3240,42 @@ cornerContour_Sketcher.prototype = {
 									}
 									if(this.turtleHistoryOn) {
 										this.historyAdd("FORWARD");
-										this.historyParameters.push(distance9);
+										this.historyParameters.push(distance8);
 									}
 									if(this.repeatCommands) {
 										this.turtleCommands.push("FORWARD");
-										this.turtleParameters.push(distance9);
+										this.turtleParameters.push(distance8);
 									} else {
-										var nx15 = this.x + distance9 * Math.cos(this.rotation);
-										var ny15 = this.y + distance9 * Math.sin(this.rotation);
+										var nx13 = this.x + distance8 * Math.cos(this.rotation);
+										var ny13 = this.y + distance8 * Math.sin(this.rotation);
 										if(this.penIsDown) {
-											this.lastDistance = distance9;
-											this.lineTo(nx15,ny15);
+											this.lastDistance = distance8;
+											this.lineTo(nx13,ny13);
 										} else {
 											if(this.endLine == 2 || this.endLine == 3) {
 												this.contour.end(this.width);
 											}
-											this.x = nx15;
-											this.y = ny15;
-											var l31 = this.points.length;
-											this.points[l31] = [];
-											this.points[l31][0] = nx15;
-											this.points[l31][1] = ny15;
+											this.x = nx13;
+											this.y = ny13;
+											var l27 = this.points.length;
+											this.points[l27] = [];
+											this.points[l27][0] = nx13;
+											this.points[l27][1] = ny13;
 											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d21 = this.dim[this.dim.length - 1];
-											if(nx15 < d21.minX) {
-												d21.minX = nx15;
+											var d17 = this.dim[this.dim.length - 1];
+											if(nx13 < d17.minX) {
+												d17.minX = nx13;
 											}
-											if(nx15 > d21.maxX) {
-												d21.maxX = nx15;
+											if(nx13 > d17.maxX) {
+												d17.maxX = nx13;
 											}
-											if(ny15 < d21.minY) {
-												d21.minY = ny15;
+											if(ny13 < d17.minY) {
+												d17.minY = ny13;
 											}
-											if(ny15 > d21.maxY) {
-												d21.maxY = ny15;
+											if(ny13 > d17.maxY) {
+												d17.maxY = ny13;
 											}
 											this.contour.reset();
 										}
@@ -3463,42 +3291,42 @@ cornerContour_Sketcher.prototype = {
 								} else {
 									if(this.turtleHistoryOn) {
 										this.historyAdd("FORWARD");
-										this.historyParameters.push(distance9);
+										this.historyParameters.push(distance8);
 									}
 									if(this.repeatCommands) {
 										this.turtleCommands.push("FORWARD");
-										this.turtleParameters.push(distance9);
+										this.turtleParameters.push(distance8);
 									} else {
-										var nx16 = this.x + distance9 * Math.cos(this.rotation);
-										var ny16 = this.y + distance9 * Math.sin(this.rotation);
+										var nx14 = this.x + distance8 * Math.cos(this.rotation);
+										var ny14 = this.y + distance8 * Math.sin(this.rotation);
 										if(this.penIsDown) {
-											this.lastDistance = distance9;
-											this.lineTo(nx16,ny16);
+											this.lastDistance = distance8;
+											this.lineTo(nx14,ny14);
 										} else {
 											if(this.endLine == 2 || this.endLine == 3) {
 												this.contour.end(this.width);
 											}
-											this.x = nx16;
-											this.y = ny16;
-											var l32 = this.points.length;
-											this.points[l32] = [];
-											this.points[l32][0] = nx16;
-											this.points[l32][1] = ny16;
+											this.x = nx14;
+											this.y = ny14;
+											var l28 = this.points.length;
+											this.points[l28] = [];
+											this.points[l28][0] = nx14;
+											this.points[l28][1] = ny14;
 											this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 											this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 											this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d22 = this.dim[this.dim.length - 1];
-											if(nx16 < d22.minX) {
-												d22.minX = nx16;
+											var d18 = this.dim[this.dim.length - 1];
+											if(nx14 < d18.minX) {
+												d18.minX = nx14;
 											}
-											if(nx16 > d22.maxX) {
-												d22.maxX = nx16;
+											if(nx14 > d18.maxX) {
+												d18.maxX = nx14;
 											}
-											if(ny16 < d22.minY) {
-												d22.minY = ny16;
+											if(ny14 < d18.minY) {
+												d18.minY = ny14;
 											}
-											if(ny16 > d22.maxY) {
-												d22.maxY = ny16;
+											if(ny14 > d18.maxY) {
+												d18.maxY = ny14;
 											}
 											this.contour.reset();
 										}
@@ -3787,25 +3615,25 @@ cornerContour_Sketcher.prototype = {
 									}
 									this.x = x4;
 									this.y = y4;
-									var l33 = this.points.length;
-									this.points[l33] = [];
-									this.points[l33][0] = x4;
-									this.points[l33][1] = y4;
+									var l29 = this.points.length;
+									this.points[l29] = [];
+									this.points[l29][0] = x4;
+									this.points[l29][1] = y4;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d23 = this.dim[this.dim.length - 1];
-									if(x4 < d23.minX) {
-										d23.minX = x4;
+									var d19 = this.dim[this.dim.length - 1];
+									if(x4 < d19.minX) {
+										d19.minX = x4;
 									}
-									if(x4 > d23.maxX) {
-										d23.maxX = x4;
+									if(x4 > d19.maxX) {
+										d19.maxX = x4;
 									}
-									if(y4 < d23.minY) {
-										d23.minY = y4;
+									if(y4 < d19.minY) {
+										d19.minY = y4;
 									}
-									if(y4 > d23.maxY) {
-										d23.maxY = y4;
+									if(y4 > d19.maxY) {
+										d19.maxY = y4;
 									}
 									this.contour.reset();
 								}
@@ -3830,6 +3658,92 @@ cornerContour_Sketcher.prototype = {
 								} else {
 									this.pen.currentColor = -27273;
 								}
+								break;
+							case "TRIANGLE_ARCH":
+								var distance9 = v1[j1];
+								var distance22 = v1[j1 + 1];
+								var radius8 = v1[j1 + 2];
+								if(this.turtleHistoryOn) {
+									this.historyAdd("TRIANGLE_ARCH");
+									this.historyParameters.push(distance9);
+									this.historyParameters.push(distance22);
+									this.historyParameters.push(radius8);
+								}
+								if(this.repeatCommands) {
+									this.turtleCommands.push("TRIANGLE_ARCH");
+									this.turtleParameters.push(distance9);
+									this.turtleParameters.push(distance22);
+									this.turtleParameters.push(radius8);
+								} else {
+									var nx15 = this.x + distance9 * Math.cos(this.rotation);
+									var ny15 = this.y + distance9 * Math.sin(this.rotation);
+									if(this.penIsDown) {
+										var thruX2 = this.x + distance22 * Math.cos(this.rotation) - radius8 * Math.cos(this.rotation + Math.PI / 2);
+										var thruY2 = this.y + distance22 * Math.sin(this.rotation) - radius8 * Math.sin(this.rotation + Math.PI / 2);
+										if(this.fill) {
+											this.pen.triangle2DFill(this.x,this.y,thruX2,thruY2,nx15,ny15);
+										}
+										this.lineTo(thruX2,thruY2);
+										this.lineTo(nx15,ny15);
+										if(this.fill) {
+											this.lineTo(this.x,this.y);
+										}
+										if(this.endLine == 2 || this.endLine == 3) {
+											this.contour.end(this.width);
+										}
+										this.x = nx15;
+										this.y = ny15;
+										var l30 = this.points.length;
+										this.points[l30] = [];
+										this.points[l30][0] = nx15;
+										this.points[l30][1] = ny15;
+										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d20 = this.dim[this.dim.length - 1];
+										if(nx15 < d20.minX) {
+											d20.minX = nx15;
+										}
+										if(nx15 > d20.maxX) {
+											d20.maxX = nx15;
+										}
+										if(ny15 < d20.minY) {
+											d20.minY = ny15;
+										}
+										if(ny15 > d20.maxY) {
+											d20.maxY = ny15;
+										}
+										this.contour.reset();
+									} else {
+										if(this.endLine == 2 || this.endLine == 3) {
+											this.contour.end(this.width);
+										}
+										this.x = nx15;
+										this.y = ny15;
+										var l31 = this.points.length;
+										this.points[l31] = [];
+										this.points[l31][0] = nx15;
+										this.points[l31][1] = ny15;
+										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d21 = this.dim[this.dim.length - 1];
+										if(nx15 < d21.minX) {
+											d21.minX = nx15;
+										}
+										if(nx15 > d21.maxX) {
+											d21.maxX = nx15;
+										}
+										if(ny15 < d21.minY) {
+											d21.minY = ny15;
+										}
+										if(ny15 > d21.maxY) {
+											d21.maxY = ny15;
+										}
+										this.contour.reset();
+									}
+								}
+								j1 += 3;
 								break;
 							case "WEST":
 								if(this.turtleHistoryOn) {
@@ -3908,20 +3822,20 @@ cornerContour_Sketcher.prototype = {
 				}
 				break;
 			case "CIRCLE":
-				var radius10 = v[j];
+				var radius9 = v[j];
 				if(this.turtleHistoryOn) {
 					this.historyAdd("CIRCLE");
-					this.historyParameters.push(radius10);
+					this.historyParameters.push(radius9);
 				}
-				if(radius10 != 0) {
+				if(radius9 != 0) {
 					if(this.repeatCommands) {
 						this.turtleCommands.push("CIRCLE");
-						this.turtleParameters.push(radius10);
+						this.turtleParameters.push(radius9);
 					} else {
 						var beta6 = 2 * Math.PI / 24;
 						var alpha6 = (Math.PI - beta6) / 2;
 						var rotate6 = -(Math.PI / 2 - alpha6);
-						var baseLength6 = 0.5 * radius10 * Math.sin(beta6 / 2);
+						var baseLength6 = 0.5 * radius9 * Math.sin(beta6 / 2);
 						var ox8 = this.x;
 						var oy8 = this.y;
 						var arr8 = [];
@@ -3939,36 +3853,36 @@ cornerContour_Sketcher.prototype = {
 								this.turtleCommands.push("FORWARD");
 								this.turtleParameters.push(baseLength6);
 							} else {
-								var nx17 = this.x + baseLength6 * Math.cos(this.rotation);
-								var ny17 = this.y + baseLength6 * Math.sin(this.rotation);
+								var nx16 = this.x + baseLength6 * Math.cos(this.rotation);
+								var ny16 = this.y + baseLength6 * Math.sin(this.rotation);
 								if(this.penIsDown) {
 									this.lastDistance = baseLength6;
-									this.lineTo(nx17,ny17);
+									this.lineTo(nx16,ny16);
 								} else {
 									if(this.endLine == 2 || this.endLine == 3) {
 										this.contour.end(this.width);
 									}
-									this.x = nx17;
-									this.y = ny17;
-									var l34 = this.points.length;
-									this.points[l34] = [];
-									this.points[l34][0] = nx17;
-									this.points[l34][1] = ny17;
+									this.x = nx16;
+									this.y = ny16;
+									var l32 = this.points.length;
+									this.points[l32] = [];
+									this.points[l32][0] = nx16;
+									this.points[l32][1] = ny16;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d24 = this.dim[this.dim.length - 1];
-									if(nx17 < d24.minX) {
-										d24.minX = nx17;
+									var d22 = this.dim[this.dim.length - 1];
+									if(nx16 < d22.minX) {
+										d22.minX = nx16;
 									}
-									if(nx17 > d24.maxX) {
-										d24.maxX = nx17;
+									if(nx16 > d22.maxX) {
+										d22.maxX = nx16;
 									}
-									if(ny17 < d24.minY) {
-										d24.minY = ny17;
+									if(ny16 < d22.minY) {
+										d22.minY = ny16;
 									}
-									if(ny17 > d24.maxY) {
-										d24.maxY = ny17;
+									if(ny16 > d22.maxY) {
+										d22.maxY = ny16;
 									}
 									this.contour.reset();
 								}
@@ -3982,11 +3896,11 @@ cornerContour_Sketcher.prototype = {
 						if(this.fill) {
 							var cx8 = (ox8 + arr8[arr8.length - 2]) / 2;
 							var cy8 = (oy8 + arr8[arr8.length - 1]) / 2;
-							var l35 = arr8.length;
+							var l33 = arr8.length;
 							var i17 = 2;
 							var lx6 = 0.;
 							var ly6 = 0.;
-							while(i17 < l35) {
+							while(i17 < l33) {
 								if(i17 > 2) {
 									this.pen.triangle2DFill(lx6,ly6,arr8[i17],arr8[i17 + 1],cx8,cy8);
 								}
@@ -4001,7 +3915,7 @@ cornerContour_Sketcher.prototype = {
 				++j;
 				break;
 			case "CIRCLE_SIDES":
-				var radius11 = v[j];
+				var radius10 = v[j];
 				var sides3 = v[j + 1];
 				if(sides3 == null) {
 					sides3 = 24;
@@ -4009,28 +3923,28 @@ cornerContour_Sketcher.prototype = {
 				if(this.turtleHistoryOn) {
 					if(sides3 == 24) {
 						this.historyAdd("CIRCLE");
-						this.historyParameters.push(radius11);
+						this.historyParameters.push(radius10);
 					} else {
 						this.historyAdd("CIRCLE_SIDES");
-						this.historyParameters.push(radius11);
+						this.historyParameters.push(radius10);
 						this.historyParameters.push(sides3);
 					}
 				}
-				if(radius11 != 0) {
+				if(radius10 != 0) {
 					if(this.repeatCommands) {
 						if(sides3 == 24) {
 							this.turtleCommands.push("CIRCLE");
-							this.turtleParameters.push(radius11);
+							this.turtleParameters.push(radius10);
 						} else {
 							this.turtleCommands.push("CIRCLE_SIDES");
-							this.turtleParameters.push(radius11);
+							this.turtleParameters.push(radius10);
 							this.turtleParameters.push(sides3);
 						}
 					} else {
 						var beta7 = 2 * Math.PI / sides3;
 						var alpha7 = (Math.PI - beta7) / 2;
 						var rotate7 = -(Math.PI / 2 - alpha7);
-						var baseLength7 = 0.5 * radius11 * Math.sin(beta7 / 2);
+						var baseLength7 = 0.5 * radius10 * Math.sin(beta7 / 2);
 						var ox9 = this.x;
 						var oy9 = this.y;
 						var arr9 = [];
@@ -4048,36 +3962,36 @@ cornerContour_Sketcher.prototype = {
 								this.turtleCommands.push("FORWARD");
 								this.turtleParameters.push(baseLength7);
 							} else {
-								var nx18 = this.x + baseLength7 * Math.cos(this.rotation);
-								var ny18 = this.y + baseLength7 * Math.sin(this.rotation);
+								var nx17 = this.x + baseLength7 * Math.cos(this.rotation);
+								var ny17 = this.y + baseLength7 * Math.sin(this.rotation);
 								if(this.penIsDown) {
 									this.lastDistance = baseLength7;
-									this.lineTo(nx18,ny18);
+									this.lineTo(nx17,ny17);
 								} else {
 									if(this.endLine == 2 || this.endLine == 3) {
 										this.contour.end(this.width);
 									}
-									this.x = nx18;
-									this.y = ny18;
-									var l36 = this.points.length;
-									this.points[l36] = [];
-									this.points[l36][0] = nx18;
-									this.points[l36][1] = ny18;
+									this.x = nx17;
+									this.y = ny17;
+									var l34 = this.points.length;
+									this.points[l34] = [];
+									this.points[l34][0] = nx17;
+									this.points[l34][1] = ny17;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d25 = this.dim[this.dim.length - 1];
-									if(nx18 < d25.minX) {
-										d25.minX = nx18;
+									var d23 = this.dim[this.dim.length - 1];
+									if(nx17 < d23.minX) {
+										d23.minX = nx17;
 									}
-									if(nx18 > d25.maxX) {
-										d25.maxX = nx18;
+									if(nx17 > d23.maxX) {
+										d23.maxX = nx17;
 									}
-									if(ny18 < d25.minY) {
-										d25.minY = ny18;
+									if(ny17 < d23.minY) {
+										d23.minY = ny17;
 									}
-									if(ny18 > d25.maxY) {
-										d25.maxY = ny18;
+									if(ny17 > d23.maxY) {
+										d23.maxY = ny17;
 									}
 									this.contour.reset();
 								}
@@ -4091,11 +4005,11 @@ cornerContour_Sketcher.prototype = {
 						if(this.fill) {
 							var cx9 = (ox9 + arr9[arr9.length - 2]) / 2;
 							var cy9 = (oy9 + arr9[arr9.length - 1]) / 2;
-							var l37 = arr9.length;
+							var l35 = arr9.length;
 							var i19 = 2;
 							var lx7 = 0.;
 							var ly7 = 0.;
-							while(i19 < l37) {
+							while(i19 < l35) {
 								if(i19 > 2) {
 									this.pen.triangle2DFill(lx7,ly7,arr9[i19],arr9[i19 + 1],cx9,cy9);
 								}
@@ -4169,23 +4083,23 @@ cornerContour_Sketcher.prototype = {
 						var command2 = this.turtleCommands[i20];
 						switch(command2) {
 						case "ARC":
-							var radius12 = v2[j2];
+							var radius11 = v2[j2];
 							var degrees7 = v2[j2 + 1];
 							if(this.turtleHistoryOn) {
 								this.historyAdd("ARC");
-								this.historyParameters.push(radius12);
+								this.historyParameters.push(radius11);
 								this.historyParameters.push(degrees7);
 							}
-							if(radius12 != 0) {
+							if(radius11 != 0) {
 								if(this.repeatCommands) {
 									this.turtleCommands.push("ARC");
-									this.turtleParameters.push(radius12);
+									this.turtleParameters.push(radius11);
 									this.turtleParameters.push(degrees7);
 								} else {
 									var beta8 = degrees7 * Math.PI / 180 / 24;
 									var alpha8 = (Math.PI - beta8) / 2;
 									var rotate8 = -(Math.PI / 2 - alpha8);
-									var baseLength8 = 0.5 * radius12 * Math.sin(beta8 / 2);
+									var baseLength8 = 0.5 * radius11 * Math.sin(beta8 / 2);
 									var ox10 = this.x;
 									var oy10 = this.y;
 									var arr10 = [];
@@ -4205,36 +4119,36 @@ cornerContour_Sketcher.prototype = {
 											this.turtleCommands.push("FORWARD");
 											this.turtleParameters.push(baseLength8);
 										} else {
-											var nx19 = this.x + baseLength8 * Math.cos(this.rotation);
-											var ny19 = this.y + baseLength8 * Math.sin(this.rotation);
+											var nx18 = this.x + baseLength8 * Math.cos(this.rotation);
+											var ny18 = this.y + baseLength8 * Math.sin(this.rotation);
 											if(this.penIsDown) {
 												this.lastDistance = baseLength8;
-												this.lineTo(nx19,ny19);
+												this.lineTo(nx18,ny18);
 											} else {
 												if(this.endLine == 2 || this.endLine == 3) {
 													this.contour.end(this.width);
 												}
-												this.x = nx19;
-												this.y = ny19;
-												var l38 = this.points.length;
-												this.points[l38] = [];
-												this.points[l38][0] = nx19;
-												this.points[l38][1] = ny19;
+												this.x = nx18;
+												this.y = ny18;
+												var l36 = this.points.length;
+												this.points[l36] = [];
+												this.points[l36][0] = nx18;
+												this.points[l36][1] = ny18;
 												this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 												this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 												this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-												var d26 = this.dim[this.dim.length - 1];
-												if(nx19 < d26.minX) {
-													d26.minX = nx19;
+												var d24 = this.dim[this.dim.length - 1];
+												if(nx18 < d24.minX) {
+													d24.minX = nx18;
 												}
-												if(nx19 > d26.maxX) {
-													d26.maxX = nx19;
+												if(nx18 > d24.maxX) {
+													d24.maxX = nx18;
 												}
-												if(ny19 < d26.minY) {
-													d26.minY = ny19;
+												if(ny18 < d24.minY) {
+													d24.minY = ny18;
 												}
-												if(ny19 > d26.maxY) {
-													d26.maxY = ny19;
+												if(ny18 > d24.maxY) {
+													d24.maxY = ny18;
 												}
 												this.contour.reset();
 											}
@@ -4248,12 +4162,12 @@ cornerContour_Sketcher.prototype = {
 									if(this.fill) {
 										var cx10 = (ox10 + arr10[arr10.length - 2]) / 2;
 										var cy10 = (oy10 + arr10[arr10.length - 1]) / 2;
-										var l39 = arr10.length;
+										var l37 = arr10.length;
 										var i22 = 2;
 										var lx8 = 0.;
 										var ly8 = 0.;
 										this.pen.triangle2DFill(ox10,oy10,arr10[0],arr10[1],cx10,cy10);
-										while(i22 < l39) {
+										while(i22 < l37) {
 											if(i22 > 2) {
 												this.pen.triangle2DFill(lx8,ly8,arr10[i22],arr10[i22 + 1],cx10,cy10);
 											}
@@ -4266,6 +4180,169 @@ cornerContour_Sketcher.prototype = {
 								}
 							}
 							j2 += 2;
+							break;
+						case "ARCH_BEZIER":
+							var distance10 = v2[j2];
+							var distance23 = v2[j2 + 1];
+							var radius12 = v2[j2 + 2];
+							if(this.turtleHistoryOn) {
+								this.historyAdd("ARCH_BEZIER");
+								this.historyParameters.push(distance10);
+								this.historyParameters.push(distance23);
+								this.historyParameters.push(radius12);
+							}
+							if(this.repeatCommands) {
+								this.turtleCommands.push("ARCH_BEZIER");
+								this.turtleParameters.push(distance10);
+								this.turtleParameters.push(distance23);
+								this.turtleParameters.push(radius12);
+							} else {
+								var nx19 = this.x + distance10 * Math.cos(this.rotation);
+								var ny19 = this.y + distance10 * Math.sin(this.rotation);
+								if(this.penIsDown) {
+									var thruX3 = this.x + distance23 * Math.cos(this.rotation) - radius12 * Math.cos(this.rotation + Math.PI / 2);
+									var thruY3 = this.y + distance23 * Math.sin(this.rotation) - radius12 * Math.sin(this.rotation + Math.PI / 2);
+									var newx2 = 2 * thruX3 - 0.5 * (this.x + nx19);
+									var newy2 = 2 * thruY3 - 0.5 * (this.y + ny19);
+									this.tempArr = [];
+									var p2 = this.tempArr;
+									var ax2 = this.x;
+									var ay2 = this.y;
+									var x5 = ax2 - newx2;
+									var y5 = ay2 - newy2;
+									var x6 = newx2 - nx19;
+									var y6 = newy2 - ny19;
+									var approxDistance2 = Math.sqrt(x5 * x5 + y5 * y5) + Math.sqrt(x6 * x6 + y6 * y6);
+									if(approxDistance2 == 0) {
+										approxDistance2 = 0.000001;
+									}
+									var step2 = Math.min(1 / (approxDistance2 * 0.707),cornerContour_CurveMath_quadStep);
+									var l38 = p2.length;
+									p2[l38++] = ax2;
+									p2[l38++] = ay2;
+									var t2 = step2;
+									while(t2 < 1.) {
+										var u4 = 1 - t2;
+										p2[l38++] = Math.pow(u4,2) * ax2 + 2 * u4 * t2 * newx2 + Math.pow(t2,2) * nx19;
+										var u5 = 1 - t2;
+										p2[l38++] = Math.pow(u5,2) * ay2 + 2 * u5 * t2 * newy2 + Math.pow(t2,2) * ny19;
+										t2 += step2;
+									}
+									p2[l38++] = nx19;
+									p2[l38++] = ny19;
+									var arr11 = this.tempArr;
+									var withMove2 = false;
+									if(withMove2 == null) {
+										withMove2 = true;
+									}
+									var l39 = arr11.length;
+									var i23 = 2;
+									if(withMove2) {
+										var x_2 = arr11[0];
+										var y_2 = arr11[1];
+										if(this.endLine == 2 || this.endLine == 3) {
+											this.contour.end(this.width);
+										}
+										this.x = x_2;
+										this.y = y_2;
+										var l40 = this.points.length;
+										this.points[l40] = [];
+										this.points[l40][0] = x_2;
+										this.points[l40][1] = y_2;
+										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d25 = this.dim[this.dim.length - 1];
+										if(x_2 < d25.minX) {
+											d25.minX = x_2;
+										}
+										if(x_2 > d25.maxX) {
+											d25.maxX = x_2;
+										}
+										if(y_2 < d25.minY) {
+											d25.minY = y_2;
+										}
+										if(y_2 > d25.maxY) {
+											d25.maxY = y_2;
+										}
+										this.contour.reset();
+									} else {
+										this.lineTo(arr11[0],arr11[1]);
+									}
+									var cx11 = (arr11[0] + arr11[l39 - 2]) / 2;
+									var cy11 = (arr11[1] + arr11[l39 - 1]) / 2;
+									var ox11 = this.x;
+									var oy11 = this.y;
+									while(i23 < l39) {
+										if(this.fill && this.penIsDown) {
+											if(i23 > 0 && i23 < l39 - 2) {
+												this.pen.triangle2DFill(arr11[i23 - 2],arr11[i23 - 1],arr11[i23],arr11[i23 + 1],cx11,cy11);
+											}
+										}
+										this.lineTo(arr11[i23],arr11[i23 + 1]);
+										i23 += 2;
+									}
+									if(this.fill && this.penIsDown) {
+										if(this.endLine == 2 || this.endLine == 3) {
+											this.contour.end(this.width);
+										}
+										this.x = ox11;
+										this.y = oy11;
+										var l41 = this.points.length;
+										this.points[l41] = [];
+										this.points[l41][0] = ox11;
+										this.points[l41][1] = oy11;
+										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+										var d26 = this.dim[this.dim.length - 1];
+										if(ox11 < d26.minX) {
+											d26.minX = ox11;
+										}
+										if(ox11 > d26.maxX) {
+											d26.maxX = ox11;
+										}
+										if(oy11 < d26.minY) {
+											d26.minY = oy11;
+										}
+										if(oy11 > d26.maxY) {
+											d26.maxY = oy11;
+										}
+										this.contour.reset();
+										this.lineTo(arr11[l39 - 2],arr11[l39 - 1]);
+									}
+									this.x = nx19;
+									this.y = ny19;
+								} else {
+									if(this.endLine == 2 || this.endLine == 3) {
+										this.contour.end(this.width);
+									}
+									this.x = nx19;
+									this.y = ny19;
+									var l42 = this.points.length;
+									this.points[l42] = [];
+									this.points[l42][0] = nx19;
+									this.points[l42][1] = ny19;
+									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d27 = this.dim[this.dim.length - 1];
+									if(nx19 < d27.minX) {
+										d27.minX = nx19;
+									}
+									if(nx19 > d27.maxX) {
+										d27.maxX = nx19;
+									}
+									if(ny19 < d27.minY) {
+										d27.minY = ny19;
+									}
+									if(ny19 > d27.maxY) {
+										d27.maxY = ny19;
+									}
+									this.contour.reset();
+								}
+							}
+							j2 += 3;
 							break;
 						case "ARC_SIDES":
 							var radius13 = v2[j2];
@@ -4303,14 +4380,14 @@ cornerContour_Sketcher.prototype = {
 									var alpha9 = (Math.PI - beta9) / 2;
 									var rotate9 = -(Math.PI / 2 - alpha9);
 									var baseLength9 = 0.5 * radius13 * Math.sin(beta9 / 2);
-									var ox11 = this.x;
-									var oy11 = this.y;
-									var arr11 = [];
-									arr11.push(this.x);
-									arr11.push(this.y);
+									var ox12 = this.x;
+									var oy12 = this.y;
+									var arr12 = [];
+									arr12.push(this.x);
+									arr12.push(this.y);
 									var _g19 = 0;
 									while(_g19 < 48) {
-										var i23 = _g19++;
+										var i24 = _g19++;
 										this.rotation += rotate9;
 										var wasHistoryOn11 = this.turtleHistoryOn;
 										this.turtleHistoryOn = false;
@@ -4333,69 +4410,69 @@ cornerContour_Sketcher.prototype = {
 												}
 												this.x = nx20;
 												this.y = ny20;
-												var l40 = this.points.length;
-												this.points[l40] = [];
-												this.points[l40][0] = nx20;
-												this.points[l40][1] = ny20;
+												var l43 = this.points.length;
+												this.points[l43] = [];
+												this.points[l43][0] = nx20;
+												this.points[l43][1] = ny20;
 												this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 												this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 												this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-												var d27 = this.dim[this.dim.length - 1];
-												if(nx20 < d27.minX) {
-													d27.minX = nx20;
+												var d28 = this.dim[this.dim.length - 1];
+												if(nx20 < d28.minX) {
+													d28.minX = nx20;
 												}
-												if(nx20 > d27.maxX) {
-													d27.maxX = nx20;
+												if(nx20 > d28.maxX) {
+													d28.maxX = nx20;
 												}
-												if(ny20 < d27.minY) {
-													d27.minY = ny20;
+												if(ny20 < d28.minY) {
+													d28.minY = ny20;
 												}
-												if(ny20 > d27.maxY) {
-													d27.maxY = ny20;
+												if(ny20 > d28.maxY) {
+													d28.maxY = ny20;
 												}
 												this.contour.reset();
 											}
 										}
 										this.turtleHistoryOn = wasHistoryOn11;
 										if(this.fill) {
-											arr11.push(this.x);
-											arr11.push(this.y);
+											arr12.push(this.x);
+											arr12.push(this.y);
 										}
 									}
 									if(this.fill) {
-										var cx11 = (ox11 + arr11[arr11.length - 2]) / 2;
-										var cy11 = (oy11 + arr11[arr11.length - 1]) / 2;
-										var l41 = arr11.length;
-										var i24 = 2;
+										var cx12 = (ox12 + arr12[arr12.length - 2]) / 2;
+										var cy12 = (oy12 + arr12[arr12.length - 1]) / 2;
+										var l44 = arr12.length;
+										var i25 = 2;
 										var lx9 = 0.;
 										var ly9 = 0.;
-										this.pen.triangle2DFill(ox11,oy11,arr11[0],arr11[1],cx11,cy11);
-										while(i24 < l41) {
-											if(i24 > 2) {
-												this.pen.triangle2DFill(lx9,ly9,arr11[i24],arr11[i24 + 1],cx11,cy11);
+										this.pen.triangle2DFill(ox12,oy12,arr12[0],arr12[1],cx12,cy12);
+										while(i25 < l44) {
+											if(i25 > 2) {
+												this.pen.triangle2DFill(lx9,ly9,arr12[i25],arr12[i25 + 1],cx12,cy12);
 											}
-											lx9 = arr11[i24];
-											ly9 = arr11[i24 + 1];
-											i24 += 2;
+											lx9 = arr12[i25];
+											ly9 = arr12[i25 + 1];
+											i25 += 2;
 										}
 									}
-									arr11.length = 0;
+									arr12.length = 0;
 								}
 							}
 							j2 += 3;
 							break;
 						case "BACKWARD":
-							var distance10 = v2[j2];
+							var distance11 = v2[j2];
 							if(this.turtleHistoryOn) {
 								this.historyAdd("BACKWARD");
-								this.historyParameters.push(distance10);
+								this.historyParameters.push(distance11);
 							}
 							if(this.repeatCommands) {
 								this.turtleCommands.push("BACKWARD");
-								this.turtleParameters.push(distance10);
+								this.turtleParameters.push(distance11);
 							} else {
-								var nx21 = this.x + distance10 * Math.cos(this.rotation + Math.PI);
-								var ny21 = this.y + distance10 * Math.sin(this.rotation + Math.PI);
+								var nx21 = this.x + distance11 * Math.cos(this.rotation + Math.PI);
+								var ny21 = this.y + distance11 * Math.sin(this.rotation + Math.PI);
 								if(this.penIsDown) {
 									this.lineTo(nx21,ny21);
 								} else {
@@ -4404,25 +4481,25 @@ cornerContour_Sketcher.prototype = {
 									}
 									this.x = nx21;
 									this.y = ny21;
-									var l42 = this.points.length;
-									this.points[l42] = [];
-									this.points[l42][0] = nx21;
-									this.points[l42][1] = ny21;
+									var l45 = this.points.length;
+									this.points[l45] = [];
+									this.points[l45][0] = nx21;
+									this.points[l45][1] = ny21;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d28 = this.dim[this.dim.length - 1];
-									if(nx21 < d28.minX) {
-										d28.minX = nx21;
+									var d29 = this.dim[this.dim.length - 1];
+									if(nx21 < d29.minX) {
+										d29.minX = nx21;
 									}
-									if(nx21 > d28.maxX) {
-										d28.maxX = nx21;
+									if(nx21 > d29.maxX) {
+										d29.maxX = nx21;
 									}
-									if(ny21 < d28.minY) {
-										d28.minY = ny21;
+									if(ny21 < d29.minY) {
+										d29.minY = ny21;
 									}
-									if(ny21 > d28.maxY) {
-										d28.maxY = ny21;
+									if(ny21 > d29.maxY) {
+										d29.maxY = ny21;
 									}
 									this.contour.reset();
 								}
@@ -4476,12 +4553,12 @@ cornerContour_Sketcher.prototype = {
 									var alpha10 = (Math.PI - beta10) / 2;
 									var rotate10 = -(Math.PI / 2 - alpha10);
 									var baseLength10 = 0.5 * radius14 * Math.sin(beta10 / 2);
-									var ox12 = this.x;
-									var oy12 = this.y;
-									var arr12 = [];
+									var ox13 = this.x;
+									var oy13 = this.y;
+									var arr13 = [];
 									var _g20 = 0;
 									while(_g20 < 48) {
-										var i25 = _g20++;
+										var i26 = _g20++;
 										this.rotation += rotate10;
 										var wasHistoryOn12 = this.turtleHistoryOn;
 										this.turtleHistoryOn = false;
@@ -4504,52 +4581,52 @@ cornerContour_Sketcher.prototype = {
 												}
 												this.x = nx22;
 												this.y = ny22;
-												var l43 = this.points.length;
-												this.points[l43] = [];
-												this.points[l43][0] = nx22;
-												this.points[l43][1] = ny22;
+												var l46 = this.points.length;
+												this.points[l46] = [];
+												this.points[l46][0] = nx22;
+												this.points[l46][1] = ny22;
 												this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 												this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 												this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-												var d29 = this.dim[this.dim.length - 1];
-												if(nx22 < d29.minX) {
-													d29.minX = nx22;
+												var d30 = this.dim[this.dim.length - 1];
+												if(nx22 < d30.minX) {
+													d30.minX = nx22;
 												}
-												if(nx22 > d29.maxX) {
-													d29.maxX = nx22;
+												if(nx22 > d30.maxX) {
+													d30.maxX = nx22;
 												}
-												if(ny22 < d29.minY) {
-													d29.minY = ny22;
+												if(ny22 < d30.minY) {
+													d30.minY = ny22;
 												}
-												if(ny22 > d29.maxY) {
-													d29.maxY = ny22;
+												if(ny22 > d30.maxY) {
+													d30.maxY = ny22;
 												}
 												this.contour.reset();
 											}
 										}
 										this.turtleHistoryOn = wasHistoryOn12;
 										if(this.fill) {
-											arr12.push(this.x);
-											arr12.push(this.y);
+											arr13.push(this.x);
+											arr13.push(this.y);
 										}
 									}
 									if(this.fill) {
-										var cx12 = (ox12 + arr12[arr12.length - 2]) / 2;
-										var cy12 = (oy12 + arr12[arr12.length - 1]) / 2;
-										var l44 = arr12.length;
-										var i26 = 2;
+										var cx13 = (ox13 + arr13[arr13.length - 2]) / 2;
+										var cy13 = (oy13 + arr13[arr13.length - 1]) / 2;
+										var l47 = arr13.length;
+										var i27 = 2;
 										var lx10 = 0.;
 										var ly10 = 0.;
-										while(i26 < l44) {
-											if(i26 > 2) {
-												this.pen.triangle2DFill(lx10,ly10,arr12[i26],arr12[i26 + 1],cx12,cy12);
+										while(i27 < l47) {
+											if(i27 > 2) {
+												this.pen.triangle2DFill(lx10,ly10,arr13[i27],arr13[i27 + 1],cx13,cy13);
 											}
-											lx10 = arr12[i26];
-											ly10 = arr12[i26 + 1];
-											i26 += 2;
+											lx10 = arr13[i27];
+											ly10 = arr13[i27 + 1];
+											i27 += 2;
 										}
 									}
-									arr12.length = 0;
+									arr13.length = 0;
 								}
 							}
 							++j2;
@@ -4585,12 +4662,12 @@ cornerContour_Sketcher.prototype = {
 									var alpha11 = (Math.PI - beta11) / 2;
 									var rotate11 = -(Math.PI / 2 - alpha11);
 									var baseLength11 = 0.5 * radius15 * Math.sin(beta11 / 2);
-									var ox13 = this.x;
-									var oy13 = this.y;
-									var arr13 = [];
+									var ox14 = this.x;
+									var oy14 = this.y;
+									var arr14 = [];
 									var _g21 = 0;
 									while(_g21 < 48) {
-										var i27 = _g21++;
+										var i28 = _g21++;
 										this.rotation += rotate11;
 										var wasHistoryOn13 = this.turtleHistoryOn;
 										this.turtleHistoryOn = false;
@@ -4613,52 +4690,52 @@ cornerContour_Sketcher.prototype = {
 												}
 												this.x = nx23;
 												this.y = ny23;
-												var l45 = this.points.length;
-												this.points[l45] = [];
-												this.points[l45][0] = nx23;
-												this.points[l45][1] = ny23;
+												var l48 = this.points.length;
+												this.points[l48] = [];
+												this.points[l48][0] = nx23;
+												this.points[l48][1] = ny23;
 												this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 												this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 												this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-												var d30 = this.dim[this.dim.length - 1];
-												if(nx23 < d30.minX) {
-													d30.minX = nx23;
+												var d31 = this.dim[this.dim.length - 1];
+												if(nx23 < d31.minX) {
+													d31.minX = nx23;
 												}
-												if(nx23 > d30.maxX) {
-													d30.maxX = nx23;
+												if(nx23 > d31.maxX) {
+													d31.maxX = nx23;
 												}
-												if(ny23 < d30.minY) {
-													d30.minY = ny23;
+												if(ny23 < d31.minY) {
+													d31.minY = ny23;
 												}
-												if(ny23 > d30.maxY) {
-													d30.maxY = ny23;
+												if(ny23 > d31.maxY) {
+													d31.maxY = ny23;
 												}
 												this.contour.reset();
 											}
 										}
 										this.turtleHistoryOn = wasHistoryOn13;
 										if(this.fill) {
-											arr13.push(this.x);
-											arr13.push(this.y);
+											arr14.push(this.x);
+											arr14.push(this.y);
 										}
 									}
 									if(this.fill) {
-										var cx13 = (ox13 + arr13[arr13.length - 2]) / 2;
-										var cy13 = (oy13 + arr13[arr13.length - 1]) / 2;
-										var l46 = arr13.length;
-										var i28 = 2;
+										var cx14 = (ox14 + arr14[arr14.length - 2]) / 2;
+										var cy14 = (oy14 + arr14[arr14.length - 1]) / 2;
+										var l49 = arr14.length;
+										var i29 = 2;
 										var lx11 = 0.;
 										var ly11 = 0.;
-										while(i28 < l46) {
-											if(i28 > 2) {
-												this.pen.triangle2DFill(lx11,ly11,arr13[i28],arr13[i28 + 1],cx13,cy13);
+										while(i29 < l49) {
+											if(i29 > 2) {
+												this.pen.triangle2DFill(lx11,ly11,arr14[i29],arr14[i29 + 1],cx14,cy14);
 											}
-											lx11 = arr13[i28];
-											ly11 = arr13[i28 + 1];
-											i28 += 2;
+											lx11 = arr14[i29];
+											ly11 = arr14[i29 + 1];
+											i29 += 2;
 										}
 									}
-									arr13.length = 0;
+									arr14.length = 0;
 								}
 							}
 							j2 += 2;
@@ -4726,19 +4803,19 @@ cornerContour_Sketcher.prototype = {
 							}
 							break;
 						case "FORWARD":
-							var distance11 = v2[j2];
+							var distance12 = v2[j2];
 							if(this.turtleHistoryOn) {
 								this.historyAdd("FORWARD");
-								this.historyParameters.push(distance11);
+								this.historyParameters.push(distance12);
 							}
 							if(this.repeatCommands) {
 								this.turtleCommands.push("FORWARD");
-								this.turtleParameters.push(distance11);
+								this.turtleParameters.push(distance12);
 							} else {
-								var nx24 = this.x + distance11 * Math.cos(this.rotation);
-								var ny24 = this.y + distance11 * Math.sin(this.rotation);
+								var nx24 = this.x + distance12 * Math.cos(this.rotation);
+								var ny24 = this.y + distance12 * Math.sin(this.rotation);
 								if(this.penIsDown) {
-									this.lastDistance = distance11;
+									this.lastDistance = distance12;
 									this.lineTo(nx24,ny24);
 								} else {
 									if(this.endLine == 2 || this.endLine == 3) {
@@ -4746,25 +4823,25 @@ cornerContour_Sketcher.prototype = {
 									}
 									this.x = nx24;
 									this.y = ny24;
-									var l47 = this.points.length;
-									this.points[l47] = [];
-									this.points[l47][0] = nx24;
-									this.points[l47][1] = ny24;
+									var l50 = this.points.length;
+									this.points[l50] = [];
+									this.points[l50][0] = nx24;
+									this.points[l50][1] = ny24;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d31 = this.dim[this.dim.length - 1];
-									if(nx24 < d31.minX) {
-										d31.minX = nx24;
+									var d32 = this.dim[this.dim.length - 1];
+									if(nx24 < d32.minX) {
+										d32.minX = nx24;
 									}
-									if(nx24 > d31.maxX) {
-										d31.maxX = nx24;
+									if(nx24 > d32.maxX) {
+										d32.maxX = nx24;
 									}
-									if(ny24 < d31.minY) {
-										d31.minY = ny24;
+									if(ny24 < d32.minY) {
+										d32.minY = ny24;
 									}
-									if(ny24 > d31.maxY) {
-										d31.maxY = ny24;
+									if(ny24 > d32.maxY) {
+										d32.maxY = ny24;
 									}
 									this.contour.reset();
 								}
@@ -4781,11 +4858,11 @@ cornerContour_Sketcher.prototype = {
 								this.turtleCommands.push("FORWARD_CHANGE");
 								this.turtleParameters.push(deltaDistance1);
 							} else {
-								var distance12 = this.lastDistance + deltaDistance1;
-								var nx25 = this.x + distance12 * Math.cos(this.rotation);
-								var ny25 = this.y + distance12 * Math.sin(this.rotation);
+								var distance13 = this.lastDistance + deltaDistance1;
+								var nx25 = this.x + distance13 * Math.cos(this.rotation);
+								var ny25 = this.y + distance13 * Math.sin(this.rotation);
 								if(this.penIsDown) {
-									this.lastDistance = distance12 + deltaDistance1;
+									this.lastDistance = distance13 + deltaDistance1;
 									this.lineTo(nx25,ny25);
 								} else {
 									if(this.endLine == 2 || this.endLine == 3) {
@@ -4793,356 +4870,30 @@ cornerContour_Sketcher.prototype = {
 									}
 									this.x = nx25;
 									this.y = ny25;
-									var l48 = this.points.length;
-									this.points[l48] = [];
-									this.points[l48][0] = nx25;
-									this.points[l48][1] = ny25;
+									var l51 = this.points.length;
+									this.points[l51] = [];
+									this.points[l51][0] = nx25;
+									this.points[l51][1] = ny25;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d32 = this.dim[this.dim.length - 1];
-									if(nx25 < d32.minX) {
-										d32.minX = nx25;
+									var d33 = this.dim[this.dim.length - 1];
+									if(nx25 < d33.minX) {
+										d33.minX = nx25;
 									}
-									if(nx25 > d32.maxX) {
-										d32.maxX = nx25;
+									if(nx25 > d33.maxX) {
+										d33.maxX = nx25;
 									}
-									if(ny25 < d32.minY) {
-										d32.minY = ny25;
+									if(ny25 < d33.minY) {
+										d33.minY = ny25;
 									}
-									if(ny25 > d32.maxY) {
-										d32.maxY = ny25;
+									if(ny25 > d33.maxY) {
+										d33.maxY = ny25;
 									}
 									this.contour.reset();
 								}
 							}
 							++j2;
-							break;
-						case "FORWARD_CURVE_LEFT":
-							var distance13 = v2[j2];
-							var distance25 = v2[j2 + 1];
-							var radius16 = v2[j2 + 2];
-							if(this.turtleHistoryOn) {
-								this.historyAdd("FORWARD_CURVE_LEFT");
-								this.historyParameters.push(distance13);
-								this.historyParameters.push(distance25);
-								this.historyParameters.push(radius16);
-							}
-							if(this.repeatCommands) {
-								this.turtleCommands.push("FORWARD_CURVE_LEFT");
-								this.turtleParameters.push(distance13);
-								this.turtleParameters.push(distance25);
-								this.turtleParameters.push(radius16);
-							} else {
-								var nx26 = this.x + distance13 * Math.cos(this.rotation);
-								var ny26 = this.y + distance13 * Math.sin(this.rotation);
-								if(this.penIsDown) {
-									var thruX4 = this.x + distance25 * Math.cos(this.rotation) + radius16 * Math.cos(this.rotation + Math.PI / 2);
-									var thruY4 = this.y + distance25 * Math.sin(this.rotation) + radius16 * Math.sin(this.rotation + Math.PI / 2);
-									var newx2 = 2 * thruX4 - 0.5 * (this.x + nx26);
-									var newy2 = 2 * thruY4 - 0.5 * (this.y + ny26);
-									this.tempArr = [];
-									var p2 = this.tempArr;
-									var ax2 = this.x;
-									var ay2 = this.y;
-									var x5 = ax2 - newx2;
-									var y5 = ay2 - newy2;
-									var x6 = newx2 - nx26;
-									var y6 = newy2 - ny26;
-									var approxDistance2 = Math.sqrt(x5 * x5 + y5 * y5) + Math.sqrt(x6 * x6 + y6 * y6);
-									if(approxDistance2 == 0) {
-										approxDistance2 = 0.000001;
-									}
-									var step2 = Math.min(1 / (approxDistance2 * 0.707),cornerContour_CurveMath_quadStep);
-									var l49 = p2.length;
-									p2[l49++] = ax2;
-									p2[l49++] = ay2;
-									var t2 = step2;
-									while(t2 < 1.) {
-										var u4 = 1 - t2;
-										p2[l49++] = Math.pow(u4,2) * ax2 + 2 * u4 * t2 * newx2 + Math.pow(t2,2) * nx26;
-										var u5 = 1 - t2;
-										p2[l49++] = Math.pow(u5,2) * ay2 + 2 * u5 * t2 * newy2 + Math.pow(t2,2) * ny26;
-										t2 += step2;
-									}
-									p2[l49++] = nx26;
-									p2[l49++] = ny26;
-									var arr14 = this.tempArr;
-									var withMove2 = false;
-									if(withMove2 == null) {
-										withMove2 = true;
-									}
-									var l50 = arr14.length;
-									var i29 = 2;
-									if(withMove2) {
-										var x_2 = arr14[0];
-										var y_2 = arr14[1];
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = x_2;
-										this.y = y_2;
-										var l51 = this.points.length;
-										this.points[l51] = [];
-										this.points[l51][0] = x_2;
-										this.points[l51][1] = y_2;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d33 = this.dim[this.dim.length - 1];
-										if(x_2 < d33.minX) {
-											d33.minX = x_2;
-										}
-										if(x_2 > d33.maxX) {
-											d33.maxX = x_2;
-										}
-										if(y_2 < d33.minY) {
-											d33.minY = y_2;
-										}
-										if(y_2 > d33.maxY) {
-											d33.maxY = y_2;
-										}
-										this.contour.reset();
-									} else {
-										this.lineTo(arr14[0],arr14[1]);
-									}
-									var cx14 = (arr14[0] + arr14[l50 - 2]) / 2;
-									var cy14 = (arr14[1] + arr14[l50 - 1]) / 2;
-									var ox14 = this.x;
-									var oy14 = this.y;
-									while(i29 < l50) {
-										if(this.fill && this.penIsDown) {
-											if(i29 > 0 && i29 < l50 - 2) {
-												this.pen.triangle2DFill(arr14[i29 - 2],arr14[i29 - 1],arr14[i29],arr14[i29 + 1],cx14,cy14);
-											}
-										}
-										this.lineTo(arr14[i29],arr14[i29 + 1]);
-										i29 += 2;
-									}
-									if(this.fill && this.penIsDown) {
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = ox14;
-										this.y = oy14;
-										var l52 = this.points.length;
-										this.points[l52] = [];
-										this.points[l52][0] = ox14;
-										this.points[l52][1] = oy14;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d34 = this.dim[this.dim.length - 1];
-										if(ox14 < d34.minX) {
-											d34.minX = ox14;
-										}
-										if(ox14 > d34.maxX) {
-											d34.maxX = ox14;
-										}
-										if(oy14 < d34.minY) {
-											d34.minY = oy14;
-										}
-										if(oy14 > d34.maxY) {
-											d34.maxY = oy14;
-										}
-										this.contour.reset();
-										this.lineTo(arr14[l50 - 2],arr14[l50 - 1]);
-									}
-									this.x = nx26;
-									this.y = ny26;
-								} else {
-									if(this.endLine == 2 || this.endLine == 3) {
-										this.contour.end(this.width);
-									}
-									this.x = nx26;
-									this.y = ny26;
-									var l53 = this.points.length;
-									this.points[l53] = [];
-									this.points[l53][0] = nx26;
-									this.points[l53][1] = ny26;
-									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d35 = this.dim[this.dim.length - 1];
-									if(nx26 < d35.minX) {
-										d35.minX = nx26;
-									}
-									if(nx26 > d35.maxX) {
-										d35.maxX = nx26;
-									}
-									if(ny26 < d35.minY) {
-										d35.minY = ny26;
-									}
-									if(ny26 > d35.maxY) {
-										d35.maxY = ny26;
-									}
-									this.contour.reset();
-								}
-							}
-							j2 += 3;
-							break;
-						case "FORWARD_CURVE_RIGHT":
-							var distance14 = v2[j2];
-							var distance26 = v2[j2 + 1];
-							var radius17 = v2[j2 + 2];
-							if(this.turtleHistoryOn) {
-								this.historyAdd("FORWARD_CURVE_RIGHT");
-								this.historyParameters.push(distance14);
-								this.historyParameters.push(distance26);
-								this.historyParameters.push(radius17);
-							}
-							if(this.repeatCommands) {
-								this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-								this.turtleParameters.push(distance14);
-								this.turtleParameters.push(distance26);
-								this.turtleParameters.push(radius17);
-							} else {
-								var nx27 = this.x + distance14 * Math.cos(this.rotation);
-								var ny27 = this.y + distance14 * Math.sin(this.rotation);
-								if(this.penIsDown) {
-									var thruX5 = this.x + distance26 * Math.cos(this.rotation) - radius17 * Math.cos(this.rotation + Math.PI / 2);
-									var thruY5 = this.y + distance26 * Math.sin(this.rotation) - radius17 * Math.sin(this.rotation + Math.PI / 2);
-									var newx3 = 2 * thruX5 - 0.5 * (this.x + nx27);
-									var newy3 = 2 * thruY5 - 0.5 * (this.y + ny27);
-									this.tempArr = [];
-									var p3 = this.tempArr;
-									var ax3 = this.x;
-									var ay3 = this.y;
-									var x7 = ax3 - newx3;
-									var y7 = ay3 - newy3;
-									var x8 = newx3 - nx27;
-									var y8 = newy3 - ny27;
-									var approxDistance3 = Math.sqrt(x7 * x7 + y7 * y7) + Math.sqrt(x8 * x8 + y8 * y8);
-									if(approxDistance3 == 0) {
-										approxDistance3 = 0.000001;
-									}
-									var step3 = Math.min(1 / (approxDistance3 * 0.707),cornerContour_CurveMath_quadStep);
-									var l54 = p3.length;
-									p3[l54++] = ax3;
-									p3[l54++] = ay3;
-									var t3 = step3;
-									while(t3 < 1.) {
-										var u6 = 1 - t3;
-										p3[l54++] = Math.pow(u6,2) * ax3 + 2 * u6 * t3 * newx3 + Math.pow(t3,2) * nx27;
-										var u7 = 1 - t3;
-										p3[l54++] = Math.pow(u7,2) * ay3 + 2 * u7 * t3 * newy3 + Math.pow(t3,2) * ny27;
-										t3 += step3;
-									}
-									p3[l54++] = nx27;
-									p3[l54++] = ny27;
-									var arr15 = this.tempArr;
-									var withMove3 = false;
-									if(withMove3 == null) {
-										withMove3 = true;
-									}
-									var l55 = arr15.length;
-									var i30 = 2;
-									if(withMove3) {
-										var x_3 = arr15[0];
-										var y_3 = arr15[1];
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = x_3;
-										this.y = y_3;
-										var l56 = this.points.length;
-										this.points[l56] = [];
-										this.points[l56][0] = x_3;
-										this.points[l56][1] = y_3;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d36 = this.dim[this.dim.length - 1];
-										if(x_3 < d36.minX) {
-											d36.minX = x_3;
-										}
-										if(x_3 > d36.maxX) {
-											d36.maxX = x_3;
-										}
-										if(y_3 < d36.minY) {
-											d36.minY = y_3;
-										}
-										if(y_3 > d36.maxY) {
-											d36.maxY = y_3;
-										}
-										this.contour.reset();
-									} else {
-										this.lineTo(arr15[0],arr15[1]);
-									}
-									var cx15 = (arr15[0] + arr15[l55 - 2]) / 2;
-									var cy15 = (arr15[1] + arr15[l55 - 1]) / 2;
-									var ox15 = this.x;
-									var oy15 = this.y;
-									while(i30 < l55) {
-										if(this.fill && this.penIsDown) {
-											if(i30 > 0 && i30 < l55 - 2) {
-												this.pen.triangle2DFill(arr15[i30 - 2],arr15[i30 - 1],arr15[i30],arr15[i30 + 1],cx15,cy15);
-											}
-										}
-										this.lineTo(arr15[i30],arr15[i30 + 1]);
-										i30 += 2;
-									}
-									if(this.fill && this.penIsDown) {
-										if(this.endLine == 2 || this.endLine == 3) {
-											this.contour.end(this.width);
-										}
-										this.x = ox15;
-										this.y = oy15;
-										var l57 = this.points.length;
-										this.points[l57] = [];
-										this.points[l57][0] = ox15;
-										this.points[l57][1] = oy15;
-										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d37 = this.dim[this.dim.length - 1];
-										if(ox15 < d37.minX) {
-											d37.minX = ox15;
-										}
-										if(ox15 > d37.maxX) {
-											d37.maxX = ox15;
-										}
-										if(oy15 < d37.minY) {
-											d37.minY = oy15;
-										}
-										if(oy15 > d37.maxY) {
-											d37.maxY = oy15;
-										}
-										this.contour.reset();
-										this.lineTo(arr15[l55 - 2],arr15[l55 - 1]);
-									}
-									this.x = nx27;
-									this.y = ny27;
-								} else {
-									if(this.endLine == 2 || this.endLine == 3) {
-										this.contour.end(this.width);
-									}
-									this.x = nx27;
-									this.y = ny27;
-									var l58 = this.points.length;
-									this.points[l58] = [];
-									this.points[l58][0] = nx27;
-									this.points[l58][1] = ny27;
-									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d38 = this.dim[this.dim.length - 1];
-									if(nx27 < d38.minX) {
-										d38.minX = nx27;
-									}
-									if(nx27 > d38.maxX) {
-										d38.maxX = nx27;
-									}
-									if(ny27 < d38.minY) {
-										d38.minY = ny27;
-									}
-									if(ny27 > d38.maxY) {
-										d38.maxY = ny27;
-									}
-									this.contour.reset();
-								}
-							}
-							j2 += 3;
 							break;
 						case "FORWARD_FACTOR":
 							var factor2 = v2[j2];
@@ -5154,214 +4905,42 @@ cornerContour_Sketcher.prototype = {
 								this.turtleCommands.push("FORWARD_FACTOR");
 								this.turtleParameters.push(factor2);
 							} else {
-								var distance15 = this.lastDistance * factor2;
-								var nx28 = this.x + distance15 * Math.cos(this.rotation);
-								var ny28 = this.y + distance15 * Math.sin(this.rotation);
+								var distance14 = this.lastDistance * factor2;
+								var nx26 = this.x + distance14 * Math.cos(this.rotation);
+								var ny26 = this.y + distance14 * Math.sin(this.rotation);
 								if(this.penIsDown) {
-									this.lastDistance = distance15;
-									this.lineTo(nx28,ny28);
+									this.lastDistance = distance14;
+									this.lineTo(nx26,ny26);
 								} else {
 									if(this.endLine == 2 || this.endLine == 3) {
 										this.contour.end(this.width);
 									}
-									this.x = nx28;
-									this.y = ny28;
-									var l59 = this.points.length;
-									this.points[l59] = [];
-									this.points[l59][0] = nx28;
-									this.points[l59][1] = ny28;
+									this.x = nx26;
+									this.y = ny26;
+									var l52 = this.points.length;
+									this.points[l52] = [];
+									this.points[l52][0] = nx26;
+									this.points[l52][1] = ny26;
 									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d39 = this.dim[this.dim.length - 1];
-									if(nx28 < d39.minX) {
-										d39.minX = nx28;
+									var d34 = this.dim[this.dim.length - 1];
+									if(nx26 < d34.minX) {
+										d34.minX = nx26;
 									}
-									if(nx28 > d39.maxX) {
-										d39.maxX = nx28;
+									if(nx26 > d34.maxX) {
+										d34.maxX = nx26;
 									}
-									if(ny28 < d39.minY) {
-										d39.minY = ny28;
+									if(ny26 < d34.minY) {
+										d34.minY = ny26;
 									}
-									if(ny28 > d39.maxY) {
-										d39.maxY = ny28;
+									if(ny26 > d34.maxY) {
+										d34.maxY = ny26;
 									}
 									this.contour.reset();
 								}
 							}
 							++j2;
-							break;
-						case "FORWARD_TRIANGLE_LEFT":
-							var distance16 = v2[j2];
-							var distance27 = v2[j2 + 1];
-							var radius18 = v2[j2 + 2];
-							if(this.turtleHistoryOn) {
-								this.historyAdd("FORWARD_TRIANGLE_LEFT");
-								this.historyParameters.push(distance16);
-								this.historyParameters.push(distance27);
-								this.historyParameters.push(radius18);
-							}
-							if(this.repeatCommands) {
-								this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-								this.turtleParameters.push(distance16);
-								this.turtleParameters.push(distance27);
-								this.turtleParameters.push(radius18);
-							} else {
-								var nx29 = this.x + distance16 * Math.cos(this.rotation);
-								var ny29 = this.y + distance16 * Math.sin(this.rotation);
-								if(this.penIsDown) {
-									var thruX6 = this.x + distance27 * Math.cos(this.rotation) + radius18 * Math.cos(this.rotation + Math.PI / 2);
-									var thruY6 = this.y + distance27 * Math.sin(this.rotation) + radius18 * Math.sin(this.rotation + Math.PI / 2);
-									if(this.fill) {
-										this.pen.triangle2DFill(this.x,this.y,thruX6,thruY6,nx29,ny29);
-									}
-									this.lineTo(thruX6,thruY6);
-									this.lineTo(nx29,ny29);
-									if(this.fill) {
-										this.lineTo(this.x,this.y);
-									}
-									if(this.endLine == 2 || this.endLine == 3) {
-										this.contour.end(this.width);
-									}
-									this.x = nx29;
-									this.y = ny29;
-									var l60 = this.points.length;
-									this.points[l60] = [];
-									this.points[l60][0] = nx29;
-									this.points[l60][1] = ny29;
-									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d40 = this.dim[this.dim.length - 1];
-									if(nx29 < d40.minX) {
-										d40.minX = nx29;
-									}
-									if(nx29 > d40.maxX) {
-										d40.maxX = nx29;
-									}
-									if(ny29 < d40.minY) {
-										d40.minY = ny29;
-									}
-									if(ny29 > d40.maxY) {
-										d40.maxY = ny29;
-									}
-									this.contour.reset();
-								} else {
-									if(this.endLine == 2 || this.endLine == 3) {
-										this.contour.end(this.width);
-									}
-									this.x = nx29;
-									this.y = ny29;
-									var l61 = this.points.length;
-									this.points[l61] = [];
-									this.points[l61][0] = nx29;
-									this.points[l61][1] = ny29;
-									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d41 = this.dim[this.dim.length - 1];
-									if(nx29 < d41.minX) {
-										d41.minX = nx29;
-									}
-									if(nx29 > d41.maxX) {
-										d41.maxX = nx29;
-									}
-									if(ny29 < d41.minY) {
-										d41.minY = ny29;
-									}
-									if(ny29 > d41.maxY) {
-										d41.maxY = ny29;
-									}
-									this.contour.reset();
-								}
-							}
-							j2 += 3;
-							break;
-						case "FORWARD_TRIANGLE_RIGHT":
-							var distance17 = v2[j2];
-							var distance28 = v2[j2 + 1];
-							var radius19 = v2[j2 + 2];
-							if(this.turtleHistoryOn) {
-								this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-								this.historyParameters.push(distance17);
-								this.historyParameters.push(distance28);
-								this.historyParameters.push(radius19);
-							}
-							if(this.repeatCommands) {
-								this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-								this.turtleParameters.push(distance17);
-								this.turtleParameters.push(distance28);
-								this.turtleParameters.push(radius19);
-							} else {
-								var nx30 = this.x + distance17 * Math.cos(this.rotation);
-								var ny30 = this.y + distance17 * Math.sin(this.rotation);
-								if(this.penIsDown) {
-									var thruX7 = this.x + distance28 * Math.cos(this.rotation) - radius19 * Math.cos(this.rotation + Math.PI / 2);
-									var thruY7 = this.y + distance28 * Math.sin(this.rotation) - radius19 * Math.sin(this.rotation + Math.PI / 2);
-									if(this.fill) {
-										this.pen.triangle2DFill(this.x,this.y,thruX7,thruY7,nx30,ny30);
-									}
-									this.lineTo(thruX7,thruY7);
-									this.lineTo(nx30,ny30);
-									if(this.fill) {
-										this.lineTo(this.x,this.y);
-									}
-									if(this.endLine == 2 || this.endLine == 3) {
-										this.contour.end(this.width);
-									}
-									this.x = nx30;
-									this.y = ny30;
-									var l62 = this.points.length;
-									this.points[l62] = [];
-									this.points[l62][0] = nx30;
-									this.points[l62][1] = ny30;
-									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d42 = this.dim[this.dim.length - 1];
-									if(nx30 < d42.minX) {
-										d42.minX = nx30;
-									}
-									if(nx30 > d42.maxX) {
-										d42.maxX = nx30;
-									}
-									if(ny30 < d42.minY) {
-										d42.minY = ny30;
-									}
-									if(ny30 > d42.maxY) {
-										d42.maxY = ny30;
-									}
-									this.contour.reset();
-								} else {
-									if(this.endLine == 2 || this.endLine == 3) {
-										this.contour.end(this.width);
-									}
-									this.x = nx30;
-									this.y = ny30;
-									var l63 = this.points.length;
-									this.points[l63] = [];
-									this.points[l63][0] = nx30;
-									this.points[l63][1] = ny30;
-									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d43 = this.dim[this.dim.length - 1];
-									if(nx30 < d43.minX) {
-										d43.minX = nx30;
-									}
-									if(nx30 > d43.maxX) {
-										d43.maxX = nx30;
-									}
-									if(ny30 < d43.minY) {
-										d43.minY = ny30;
-									}
-									if(ny30 > d43.maxY) {
-										d43.maxY = ny30;
-									}
-									this.contour.reset();
-								}
-							}
-							j2 += 3;
 							break;
 						case "GREEN":
 							if(this.turtleHistoryOn) {
@@ -5418,10 +4997,10 @@ cornerContour_Sketcher.prototype = {
 							}
 							break;
 						case "MOVE_PEN":
-							var distance18 = v2[j2];
+							var distance15 = v2[j2];
 							if(this.repeatCommands) {
 								this.turtleCommands.push("MOVE_PEN");
-								this.turtleParameters.push(distance18);
+								this.turtleParameters.push(distance15);
 							} else if(this.penIsDown) {
 								if(this.turtleHistoryOn) {
 									this.historyAdd("PEN_UP");
@@ -5433,42 +5012,42 @@ cornerContour_Sketcher.prototype = {
 								}
 								if(this.turtleHistoryOn) {
 									this.historyAdd("FORWARD");
-									this.historyParameters.push(distance18);
+									this.historyParameters.push(distance15);
 								}
 								if(this.repeatCommands) {
 									this.turtleCommands.push("FORWARD");
-									this.turtleParameters.push(distance18);
+									this.turtleParameters.push(distance15);
 								} else {
-									var nx31 = this.x + distance18 * Math.cos(this.rotation);
-									var ny31 = this.y + distance18 * Math.sin(this.rotation);
+									var nx27 = this.x + distance15 * Math.cos(this.rotation);
+									var ny27 = this.y + distance15 * Math.sin(this.rotation);
 									if(this.penIsDown) {
-										this.lastDistance = distance18;
-										this.lineTo(nx31,ny31);
+										this.lastDistance = distance15;
+										this.lineTo(nx27,ny27);
 									} else {
 										if(this.endLine == 2 || this.endLine == 3) {
 											this.contour.end(this.width);
 										}
-										this.x = nx31;
-										this.y = ny31;
-										var l64 = this.points.length;
-										this.points[l64] = [];
-										this.points[l64][0] = nx31;
-										this.points[l64][1] = ny31;
+										this.x = nx27;
+										this.y = ny27;
+										var l53 = this.points.length;
+										this.points[l53] = [];
+										this.points[l53][0] = nx27;
+										this.points[l53][1] = ny27;
 										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d44 = this.dim[this.dim.length - 1];
-										if(nx31 < d44.minX) {
-											d44.minX = nx31;
+										var d35 = this.dim[this.dim.length - 1];
+										if(nx27 < d35.minX) {
+											d35.minX = nx27;
 										}
-										if(nx31 > d44.maxX) {
-											d44.maxX = nx31;
+										if(nx27 > d35.maxX) {
+											d35.maxX = nx27;
 										}
-										if(ny31 < d44.minY) {
-											d44.minY = ny31;
+										if(ny27 < d35.minY) {
+											d35.minY = ny27;
 										}
-										if(ny31 > d44.maxY) {
-											d44.maxY = ny31;
+										if(ny27 > d35.maxY) {
+											d35.maxY = ny27;
 										}
 										this.contour.reset();
 									}
@@ -5484,42 +5063,42 @@ cornerContour_Sketcher.prototype = {
 							} else {
 								if(this.turtleHistoryOn) {
 									this.historyAdd("FORWARD");
-									this.historyParameters.push(distance18);
+									this.historyParameters.push(distance15);
 								}
 								if(this.repeatCommands) {
 									this.turtleCommands.push("FORWARD");
-									this.turtleParameters.push(distance18);
+									this.turtleParameters.push(distance15);
 								} else {
-									var nx32 = this.x + distance18 * Math.cos(this.rotation);
-									var ny32 = this.y + distance18 * Math.sin(this.rotation);
+									var nx28 = this.x + distance15 * Math.cos(this.rotation);
+									var ny28 = this.y + distance15 * Math.sin(this.rotation);
 									if(this.penIsDown) {
-										this.lastDistance = distance18;
-										this.lineTo(nx32,ny32);
+										this.lastDistance = distance15;
+										this.lineTo(nx28,ny28);
 									} else {
 										if(this.endLine == 2 || this.endLine == 3) {
 											this.contour.end(this.width);
 										}
-										this.x = nx32;
-										this.y = ny32;
-										var l65 = this.points.length;
-										this.points[l65] = [];
-										this.points[l65][0] = nx32;
-										this.points[l65][1] = ny32;
+										this.x = nx28;
+										this.y = ny28;
+										var l54 = this.points.length;
+										this.points[l54] = [];
+										this.points[l54][0] = nx28;
+										this.points[l54][1] = ny28;
 										this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 										this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 										this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d45 = this.dim[this.dim.length - 1];
-										if(nx32 < d45.minX) {
-											d45.minX = nx32;
+										var d36 = this.dim[this.dim.length - 1];
+										if(nx28 < d36.minX) {
+											d36.minX = nx28;
 										}
-										if(nx32 > d45.maxX) {
-											d45.maxX = nx32;
+										if(nx28 > d36.maxX) {
+											d36.maxX = nx28;
 										}
-										if(ny32 < d45.minY) {
-											d45.minY = ny32;
+										if(ny28 < d36.minY) {
+											d36.minY = ny28;
 										}
-										if(ny32 > d45.maxY) {
-											d45.maxY = ny32;
+										if(ny28 > d36.maxY) {
+											d36.maxY = ny28;
 										}
 										this.contour.reset();
 									}
@@ -5791,42 +5370,42 @@ cornerContour_Sketcher.prototype = {
 							++j2;
 							break;
 						case "SET_POSITION":
-							var x9 = v2[j2];
-							var y9 = v2[j2 + 1];
+							var x7 = v2[j2];
+							var y7 = v2[j2 + 1];
 							if(this.turtleHistoryOn) {
 								this.historyAdd("SET_POSITION");
-								this.historyParameters.push(x9);
-								this.historyParameters.push(y9);
+								this.historyParameters.push(x7);
+								this.historyParameters.push(y7);
 							}
 							if(this.repeatCommands) {
 								this.turtleCommands.push("SET_POSITION");
-								this.turtleParameters.push(x9);
-								this.turtleParameters.push(y9);
+								this.turtleParameters.push(x7);
+								this.turtleParameters.push(y7);
 							} else {
 								if(this.endLine == 2 || this.endLine == 3) {
 									this.contour.end(this.width);
 								}
-								this.x = x9;
-								this.y = y9;
-								var l66 = this.points.length;
-								this.points[l66] = [];
-								this.points[l66][0] = x9;
-								this.points[l66][1] = y9;
+								this.x = x7;
+								this.y = y7;
+								var l55 = this.points.length;
+								this.points[l55] = [];
+								this.points[l55][0] = x7;
+								this.points[l55][1] = y7;
 								this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 								this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 								this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d46 = this.dim[this.dim.length - 1];
-								if(x9 < d46.minX) {
-									d46.minX = x9;
+								var d37 = this.dim[this.dim.length - 1];
+								if(x7 < d37.minX) {
+									d37.minX = x7;
 								}
-								if(x9 > d46.maxX) {
-									d46.maxX = x9;
+								if(x7 > d37.maxX) {
+									d37.maxX = x7;
 								}
-								if(y9 < d46.minY) {
-									d46.minY = y9;
+								if(y7 < d37.minY) {
+									d37.minY = y7;
 								}
-								if(y9 > d46.maxY) {
-									d46.maxY = y9;
+								if(y7 > d37.maxY) {
+									d37.maxY = y7;
 								}
 								this.contour.reset();
 							}
@@ -5851,6 +5430,92 @@ cornerContour_Sketcher.prototype = {
 							} else {
 								this.pen.currentColor = -27273;
 							}
+							break;
+						case "TRIANGLE_ARCH":
+							var distance16 = v2[j2];
+							var distance24 = v2[j2 + 1];
+							var radius16 = v2[j2 + 2];
+							if(this.turtleHistoryOn) {
+								this.historyAdd("TRIANGLE_ARCH");
+								this.historyParameters.push(distance16);
+								this.historyParameters.push(distance24);
+								this.historyParameters.push(radius16);
+							}
+							if(this.repeatCommands) {
+								this.turtleCommands.push("TRIANGLE_ARCH");
+								this.turtleParameters.push(distance16);
+								this.turtleParameters.push(distance24);
+								this.turtleParameters.push(radius16);
+							} else {
+								var nx29 = this.x + distance16 * Math.cos(this.rotation);
+								var ny29 = this.y + distance16 * Math.sin(this.rotation);
+								if(this.penIsDown) {
+									var thruX4 = this.x + distance24 * Math.cos(this.rotation) - radius16 * Math.cos(this.rotation + Math.PI / 2);
+									var thruY4 = this.y + distance24 * Math.sin(this.rotation) - radius16 * Math.sin(this.rotation + Math.PI / 2);
+									if(this.fill) {
+										this.pen.triangle2DFill(this.x,this.y,thruX4,thruY4,nx29,ny29);
+									}
+									this.lineTo(thruX4,thruY4);
+									this.lineTo(nx29,ny29);
+									if(this.fill) {
+										this.lineTo(this.x,this.y);
+									}
+									if(this.endLine == 2 || this.endLine == 3) {
+										this.contour.end(this.width);
+									}
+									this.x = nx29;
+									this.y = ny29;
+									var l56 = this.points.length;
+									this.points[l56] = [];
+									this.points[l56][0] = nx29;
+									this.points[l56][1] = ny29;
+									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d38 = this.dim[this.dim.length - 1];
+									if(nx29 < d38.minX) {
+										d38.minX = nx29;
+									}
+									if(nx29 > d38.maxX) {
+										d38.maxX = nx29;
+									}
+									if(ny29 < d38.minY) {
+										d38.minY = ny29;
+									}
+									if(ny29 > d38.maxY) {
+										d38.maxY = ny29;
+									}
+									this.contour.reset();
+								} else {
+									if(this.endLine == 2 || this.endLine == 3) {
+										this.contour.end(this.width);
+									}
+									this.x = nx29;
+									this.y = ny29;
+									var l57 = this.points.length;
+									this.points[l57] = [];
+									this.points[l57][0] = nx29;
+									this.points[l57][1] = ny29;
+									this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+									this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+									this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d39 = this.dim[this.dim.length - 1];
+									if(nx29 < d39.minX) {
+										d39.minX = nx29;
+									}
+									if(nx29 > d39.maxX) {
+										d39.maxX = nx29;
+									}
+									if(ny29 < d39.minY) {
+										d39.minY = ny29;
+									}
+									if(ny29 > d39.maxY) {
+										d39.maxY = ny29;
+									}
+									this.contour.reset();
+								}
+							}
+							j2 += 3;
 							break;
 						case "WEST":
 							if(this.turtleHistoryOn) {
@@ -5911,45 +5576,45 @@ cornerContour_Sketcher.prototype = {
 				}
 				break;
 			case "FORWARD":
-				var distance19 = v[j];
+				var distance17 = v[j];
 				if(this.turtleHistoryOn) {
 					this.historyAdd("FORWARD");
-					this.historyParameters.push(distance19);
+					this.historyParameters.push(distance17);
 				}
 				if(this.repeatCommands) {
 					this.turtleCommands.push("FORWARD");
-					this.turtleParameters.push(distance19);
+					this.turtleParameters.push(distance17);
 				} else {
-					var nx33 = this.x + distance19 * Math.cos(this.rotation);
-					var ny33 = this.y + distance19 * Math.sin(this.rotation);
+					var nx30 = this.x + distance17 * Math.cos(this.rotation);
+					var ny30 = this.y + distance17 * Math.sin(this.rotation);
 					if(this.penIsDown) {
-						this.lastDistance = distance19;
-						this.lineTo(nx33,ny33);
+						this.lastDistance = distance17;
+						this.lineTo(nx30,ny30);
 					} else {
 						if(this.endLine == 2 || this.endLine == 3) {
 							this.contour.end(this.width);
 						}
-						this.x = nx33;
-						this.y = ny33;
-						var l67 = this.points.length;
-						this.points[l67] = [];
-						this.points[l67][0] = nx33;
-						this.points[l67][1] = ny33;
+						this.x = nx30;
+						this.y = ny30;
+						var l58 = this.points.length;
+						this.points[l58] = [];
+						this.points[l58][0] = nx30;
+						this.points[l58][1] = ny30;
 						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d47 = this.dim[this.dim.length - 1];
-						if(nx33 < d47.minX) {
-							d47.minX = nx33;
+						var d40 = this.dim[this.dim.length - 1];
+						if(nx30 < d40.minX) {
+							d40.minX = nx30;
 						}
-						if(nx33 > d47.maxX) {
-							d47.maxX = nx33;
+						if(nx30 > d40.maxX) {
+							d40.maxX = nx30;
 						}
-						if(ny33 < d47.minY) {
-							d47.minY = ny33;
+						if(ny30 < d40.minY) {
+							d40.minY = ny30;
 						}
-						if(ny33 > d47.maxY) {
-							d47.maxY = ny33;
+						if(ny30 > d40.maxY) {
+							d40.maxY = ny30;
 						}
 						this.contour.reset();
 					}
@@ -5966,368 +5631,42 @@ cornerContour_Sketcher.prototype = {
 					this.turtleCommands.push("FORWARD_CHANGE");
 					this.turtleParameters.push(deltaDistance2);
 				} else {
-					var distance20 = this.lastDistance + deltaDistance2;
-					var nx34 = this.x + distance20 * Math.cos(this.rotation);
-					var ny34 = this.y + distance20 * Math.sin(this.rotation);
+					var distance18 = this.lastDistance + deltaDistance2;
+					var nx31 = this.x + distance18 * Math.cos(this.rotation);
+					var ny31 = this.y + distance18 * Math.sin(this.rotation);
 					if(this.penIsDown) {
-						this.lastDistance = distance20 + deltaDistance2;
-						this.lineTo(nx34,ny34);
+						this.lastDistance = distance18 + deltaDistance2;
+						this.lineTo(nx31,ny31);
 					} else {
 						if(this.endLine == 2 || this.endLine == 3) {
 							this.contour.end(this.width);
 						}
-						this.x = nx34;
-						this.y = ny34;
-						var l68 = this.points.length;
-						this.points[l68] = [];
-						this.points[l68][0] = nx34;
-						this.points[l68][1] = ny34;
+						this.x = nx31;
+						this.y = ny31;
+						var l59 = this.points.length;
+						this.points[l59] = [];
+						this.points[l59][0] = nx31;
+						this.points[l59][1] = ny31;
 						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d48 = this.dim[this.dim.length - 1];
-						if(nx34 < d48.minX) {
-							d48.minX = nx34;
+						var d41 = this.dim[this.dim.length - 1];
+						if(nx31 < d41.minX) {
+							d41.minX = nx31;
 						}
-						if(nx34 > d48.maxX) {
-							d48.maxX = nx34;
+						if(nx31 > d41.maxX) {
+							d41.maxX = nx31;
 						}
-						if(ny34 < d48.minY) {
-							d48.minY = ny34;
+						if(ny31 < d41.minY) {
+							d41.minY = ny31;
 						}
-						if(ny34 > d48.maxY) {
-							d48.maxY = ny34;
+						if(ny31 > d41.maxY) {
+							d41.maxY = ny31;
 						}
 						this.contour.reset();
 					}
 				}
 				++j;
-				break;
-			case "FORWARD_CURVE_LEFT":
-				var distance29 = v[j];
-				var distance210 = v[j + 1];
-				var radius20 = v[j + 2];
-				if(this.turtleHistoryOn) {
-					this.historyAdd("FORWARD_CURVE_LEFT");
-					this.historyParameters.push(distance29);
-					this.historyParameters.push(distance210);
-					this.historyParameters.push(radius20);
-				}
-				if(this.repeatCommands) {
-					this.turtleCommands.push("FORWARD_CURVE_LEFT");
-					this.turtleParameters.push(distance29);
-					this.turtleParameters.push(distance210);
-					this.turtleParameters.push(radius20);
-				} else {
-					var nx35 = this.x + distance29 * Math.cos(this.rotation);
-					var ny35 = this.y + distance29 * Math.sin(this.rotation);
-					if(this.penIsDown) {
-						var thruX8 = this.x + distance210 * Math.cos(this.rotation) + radius20 * Math.cos(this.rotation + Math.PI / 2);
-						var thruY8 = this.y + distance210 * Math.sin(this.rotation) + radius20 * Math.sin(this.rotation + Math.PI / 2);
-						var newx4 = 2 * thruX8 - 0.5 * (this.x + nx35);
-						var newy4 = 2 * thruY8 - 0.5 * (this.y + ny35);
-						this.tempArr = [];
-						var p4 = this.tempArr;
-						var ax4 = this.x;
-						var ay4 = this.y;
-						var x10 = ax4 - newx4;
-						var y10 = ay4 - newy4;
-						var x11 = newx4 - nx35;
-						var y11 = newy4 - ny35;
-						var approxDistance4 = Math.sqrt(x10 * x10 + y10 * y10) + Math.sqrt(x11 * x11 + y11 * y11);
-						if(approxDistance4 == 0) {
-							approxDistance4 = 0.000001;
-						}
-						var step4 = Math.min(1 / (approxDistance4 * 0.707),cornerContour_CurveMath_quadStep);
-						var l69 = p4.length;
-						p4[l69++] = ax4;
-						p4[l69++] = ay4;
-						var t4 = step4;
-						while(t4 < 1.) {
-							var u8 = 1 - t4;
-							p4[l69++] = Math.pow(u8,2) * ax4 + 2 * u8 * t4 * newx4 + Math.pow(t4,2) * nx35;
-							var u9 = 1 - t4;
-							p4[l69++] = Math.pow(u9,2) * ay4 + 2 * u9 * t4 * newy4 + Math.pow(t4,2) * ny35;
-							t4 += step4;
-						}
-						p4[l69++] = nx35;
-						p4[l69++] = ny35;
-						var arr16 = this.tempArr;
-						var withMove4 = false;
-						if(withMove4 == null) {
-							withMove4 = true;
-						}
-						var l70 = arr16.length;
-						var i31 = 2;
-						if(withMove4) {
-							var x_4 = arr16[0];
-							var y_4 = arr16[1];
-							if(this.endLine == 2 || this.endLine == 3) {
-								this.contour.end(this.width);
-							}
-							this.x = x_4;
-							this.y = y_4;
-							var l71 = this.points.length;
-							this.points[l71] = [];
-							this.points[l71][0] = x_4;
-							this.points[l71][1] = y_4;
-							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d49 = this.dim[this.dim.length - 1];
-							if(x_4 < d49.minX) {
-								d49.minX = x_4;
-							}
-							if(x_4 > d49.maxX) {
-								d49.maxX = x_4;
-							}
-							if(y_4 < d49.minY) {
-								d49.minY = y_4;
-							}
-							if(y_4 > d49.maxY) {
-								d49.maxY = y_4;
-							}
-							this.contour.reset();
-						} else {
-							this.lineTo(arr16[0],arr16[1]);
-						}
-						var cx16 = (arr16[0] + arr16[l70 - 2]) / 2;
-						var cy16 = (arr16[1] + arr16[l70 - 1]) / 2;
-						var ox16 = this.x;
-						var oy16 = this.y;
-						while(i31 < l70) {
-							if(this.fill && this.penIsDown) {
-								if(i31 > 0 && i31 < l70 - 2) {
-									this.pen.triangle2DFill(arr16[i31 - 2],arr16[i31 - 1],arr16[i31],arr16[i31 + 1],cx16,cy16);
-								}
-							}
-							this.lineTo(arr16[i31],arr16[i31 + 1]);
-							i31 += 2;
-						}
-						if(this.fill && this.penIsDown) {
-							if(this.endLine == 2 || this.endLine == 3) {
-								this.contour.end(this.width);
-							}
-							this.x = ox16;
-							this.y = oy16;
-							var l72 = this.points.length;
-							this.points[l72] = [];
-							this.points[l72][0] = ox16;
-							this.points[l72][1] = oy16;
-							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d50 = this.dim[this.dim.length - 1];
-							if(ox16 < d50.minX) {
-								d50.minX = ox16;
-							}
-							if(ox16 > d50.maxX) {
-								d50.maxX = ox16;
-							}
-							if(oy16 < d50.minY) {
-								d50.minY = oy16;
-							}
-							if(oy16 > d50.maxY) {
-								d50.maxY = oy16;
-							}
-							this.contour.reset();
-							this.lineTo(arr16[l70 - 2],arr16[l70 - 1]);
-						}
-						this.x = nx35;
-						this.y = ny35;
-					} else {
-						if(this.endLine == 2 || this.endLine == 3) {
-							this.contour.end(this.width);
-						}
-						this.x = nx35;
-						this.y = ny35;
-						var l73 = this.points.length;
-						this.points[l73] = [];
-						this.points[l73][0] = nx35;
-						this.points[l73][1] = ny35;
-						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d51 = this.dim[this.dim.length - 1];
-						if(nx35 < d51.minX) {
-							d51.minX = nx35;
-						}
-						if(nx35 > d51.maxX) {
-							d51.maxX = nx35;
-						}
-						if(ny35 < d51.minY) {
-							d51.minY = ny35;
-						}
-						if(ny35 > d51.maxY) {
-							d51.maxY = ny35;
-						}
-						this.contour.reset();
-					}
-				}
-				j += 3;
-				break;
-			case "FORWARD_CURVE_RIGHT":
-				var distance30 = v[j];
-				var distance211 = v[j + 1];
-				var radius21 = v[j + 2];
-				if(this.turtleHistoryOn) {
-					this.historyAdd("FORWARD_CURVE_RIGHT");
-					this.historyParameters.push(distance30);
-					this.historyParameters.push(distance211);
-					this.historyParameters.push(radius21);
-				}
-				if(this.repeatCommands) {
-					this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-					this.turtleParameters.push(distance30);
-					this.turtleParameters.push(distance211);
-					this.turtleParameters.push(radius21);
-				} else {
-					var nx36 = this.x + distance30 * Math.cos(this.rotation);
-					var ny36 = this.y + distance30 * Math.sin(this.rotation);
-					if(this.penIsDown) {
-						var thruX9 = this.x + distance211 * Math.cos(this.rotation) - radius21 * Math.cos(this.rotation + Math.PI / 2);
-						var thruY9 = this.y + distance211 * Math.sin(this.rotation) - radius21 * Math.sin(this.rotation + Math.PI / 2);
-						var newx5 = 2 * thruX9 - 0.5 * (this.x + nx36);
-						var newy5 = 2 * thruY9 - 0.5 * (this.y + ny36);
-						this.tempArr = [];
-						var p5 = this.tempArr;
-						var ax5 = this.x;
-						var ay5 = this.y;
-						var x12 = ax5 - newx5;
-						var y12 = ay5 - newy5;
-						var x13 = newx5 - nx36;
-						var y13 = newy5 - ny36;
-						var approxDistance5 = Math.sqrt(x12 * x12 + y12 * y12) + Math.sqrt(x13 * x13 + y13 * y13);
-						if(approxDistance5 == 0) {
-							approxDistance5 = 0.000001;
-						}
-						var step5 = Math.min(1 / (approxDistance5 * 0.707),cornerContour_CurveMath_quadStep);
-						var l74 = p5.length;
-						p5[l74++] = ax5;
-						p5[l74++] = ay5;
-						var t5 = step5;
-						while(t5 < 1.) {
-							var u10 = 1 - t5;
-							p5[l74++] = Math.pow(u10,2) * ax5 + 2 * u10 * t5 * newx5 + Math.pow(t5,2) * nx36;
-							var u11 = 1 - t5;
-							p5[l74++] = Math.pow(u11,2) * ay5 + 2 * u11 * t5 * newy5 + Math.pow(t5,2) * ny36;
-							t5 += step5;
-						}
-						p5[l74++] = nx36;
-						p5[l74++] = ny36;
-						var arr17 = this.tempArr;
-						var withMove5 = false;
-						if(withMove5 == null) {
-							withMove5 = true;
-						}
-						var l75 = arr17.length;
-						var i32 = 2;
-						if(withMove5) {
-							var x_5 = arr17[0];
-							var y_5 = arr17[1];
-							if(this.endLine == 2 || this.endLine == 3) {
-								this.contour.end(this.width);
-							}
-							this.x = x_5;
-							this.y = y_5;
-							var l76 = this.points.length;
-							this.points[l76] = [];
-							this.points[l76][0] = x_5;
-							this.points[l76][1] = y_5;
-							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d52 = this.dim[this.dim.length - 1];
-							if(x_5 < d52.minX) {
-								d52.minX = x_5;
-							}
-							if(x_5 > d52.maxX) {
-								d52.maxX = x_5;
-							}
-							if(y_5 < d52.minY) {
-								d52.minY = y_5;
-							}
-							if(y_5 > d52.maxY) {
-								d52.maxY = y_5;
-							}
-							this.contour.reset();
-						} else {
-							this.lineTo(arr17[0],arr17[1]);
-						}
-						var cx17 = (arr17[0] + arr17[l75 - 2]) / 2;
-						var cy17 = (arr17[1] + arr17[l75 - 1]) / 2;
-						var ox17 = this.x;
-						var oy17 = this.y;
-						while(i32 < l75) {
-							if(this.fill && this.penIsDown) {
-								if(i32 > 0 && i32 < l75 - 2) {
-									this.pen.triangle2DFill(arr17[i32 - 2],arr17[i32 - 1],arr17[i32],arr17[i32 + 1],cx17,cy17);
-								}
-							}
-							this.lineTo(arr17[i32],arr17[i32 + 1]);
-							i32 += 2;
-						}
-						if(this.fill && this.penIsDown) {
-							if(this.endLine == 2 || this.endLine == 3) {
-								this.contour.end(this.width);
-							}
-							this.x = ox17;
-							this.y = oy17;
-							var l77 = this.points.length;
-							this.points[l77] = [];
-							this.points[l77][0] = ox17;
-							this.points[l77][1] = oy17;
-							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d53 = this.dim[this.dim.length - 1];
-							if(ox17 < d53.minX) {
-								d53.minX = ox17;
-							}
-							if(ox17 > d53.maxX) {
-								d53.maxX = ox17;
-							}
-							if(oy17 < d53.minY) {
-								d53.minY = oy17;
-							}
-							if(oy17 > d53.maxY) {
-								d53.maxY = oy17;
-							}
-							this.contour.reset();
-							this.lineTo(arr17[l75 - 2],arr17[l75 - 1]);
-						}
-						this.x = nx36;
-						this.y = ny36;
-					} else {
-						if(this.endLine == 2 || this.endLine == 3) {
-							this.contour.end(this.width);
-						}
-						this.x = nx36;
-						this.y = ny36;
-						var l78 = this.points.length;
-						this.points[l78] = [];
-						this.points[l78][0] = nx36;
-						this.points[l78][1] = ny36;
-						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d54 = this.dim[this.dim.length - 1];
-						if(nx36 < d54.minX) {
-							d54.minX = nx36;
-						}
-						if(nx36 > d54.maxX) {
-							d54.maxX = nx36;
-						}
-						if(ny36 < d54.minY) {
-							d54.minY = ny36;
-						}
-						if(ny36 > d54.maxY) {
-							d54.maxY = ny36;
-						}
-						this.contour.reset();
-					}
-				}
-				j += 3;
 				break;
 			case "FORWARD_FACTOR":
 				var factor4 = v[j];
@@ -6339,214 +5678,42 @@ cornerContour_Sketcher.prototype = {
 					this.turtleCommands.push("FORWARD_FACTOR");
 					this.turtleParameters.push(factor4);
 				} else {
-					var distance31 = this.lastDistance * factor4;
-					var nx37 = this.x + distance31 * Math.cos(this.rotation);
-					var ny37 = this.y + distance31 * Math.sin(this.rotation);
+					var distance19 = this.lastDistance * factor4;
+					var nx32 = this.x + distance19 * Math.cos(this.rotation);
+					var ny32 = this.y + distance19 * Math.sin(this.rotation);
 					if(this.penIsDown) {
-						this.lastDistance = distance31;
-						this.lineTo(nx37,ny37);
+						this.lastDistance = distance19;
+						this.lineTo(nx32,ny32);
 					} else {
 						if(this.endLine == 2 || this.endLine == 3) {
 							this.contour.end(this.width);
 						}
-						this.x = nx37;
-						this.y = ny37;
-						var l79 = this.points.length;
-						this.points[l79] = [];
-						this.points[l79][0] = nx37;
-						this.points[l79][1] = ny37;
+						this.x = nx32;
+						this.y = ny32;
+						var l60 = this.points.length;
+						this.points[l60] = [];
+						this.points[l60][0] = nx32;
+						this.points[l60][1] = ny32;
 						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d55 = this.dim[this.dim.length - 1];
-						if(nx37 < d55.minX) {
-							d55.minX = nx37;
+						var d42 = this.dim[this.dim.length - 1];
+						if(nx32 < d42.minX) {
+							d42.minX = nx32;
 						}
-						if(nx37 > d55.maxX) {
-							d55.maxX = nx37;
+						if(nx32 > d42.maxX) {
+							d42.maxX = nx32;
 						}
-						if(ny37 < d55.minY) {
-							d55.minY = ny37;
+						if(ny32 < d42.minY) {
+							d42.minY = ny32;
 						}
-						if(ny37 > d55.maxY) {
-							d55.maxY = ny37;
+						if(ny32 > d42.maxY) {
+							d42.maxY = ny32;
 						}
 						this.contour.reset();
 					}
 				}
 				++j;
-				break;
-			case "FORWARD_TRIANGLE_LEFT":
-				var distance32 = v[j];
-				var distance212 = v[j + 1];
-				var radius22 = v[j + 2];
-				if(this.turtleHistoryOn) {
-					this.historyAdd("FORWARD_TRIANGLE_LEFT");
-					this.historyParameters.push(distance32);
-					this.historyParameters.push(distance212);
-					this.historyParameters.push(radius22);
-				}
-				if(this.repeatCommands) {
-					this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-					this.turtleParameters.push(distance32);
-					this.turtleParameters.push(distance212);
-					this.turtleParameters.push(radius22);
-				} else {
-					var nx38 = this.x + distance32 * Math.cos(this.rotation);
-					var ny38 = this.y + distance32 * Math.sin(this.rotation);
-					if(this.penIsDown) {
-						var thruX10 = this.x + distance212 * Math.cos(this.rotation) + radius22 * Math.cos(this.rotation + Math.PI / 2);
-						var thruY10 = this.y + distance212 * Math.sin(this.rotation) + radius22 * Math.sin(this.rotation + Math.PI / 2);
-						if(this.fill) {
-							this.pen.triangle2DFill(this.x,this.y,thruX10,thruY10,nx38,ny38);
-						}
-						this.lineTo(thruX10,thruY10);
-						this.lineTo(nx38,ny38);
-						if(this.fill) {
-							this.lineTo(this.x,this.y);
-						}
-						if(this.endLine == 2 || this.endLine == 3) {
-							this.contour.end(this.width);
-						}
-						this.x = nx38;
-						this.y = ny38;
-						var l80 = this.points.length;
-						this.points[l80] = [];
-						this.points[l80][0] = nx38;
-						this.points[l80][1] = ny38;
-						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d56 = this.dim[this.dim.length - 1];
-						if(nx38 < d56.minX) {
-							d56.minX = nx38;
-						}
-						if(nx38 > d56.maxX) {
-							d56.maxX = nx38;
-						}
-						if(ny38 < d56.minY) {
-							d56.minY = ny38;
-						}
-						if(ny38 > d56.maxY) {
-							d56.maxY = ny38;
-						}
-						this.contour.reset();
-					} else {
-						if(this.endLine == 2 || this.endLine == 3) {
-							this.contour.end(this.width);
-						}
-						this.x = nx38;
-						this.y = ny38;
-						var l81 = this.points.length;
-						this.points[l81] = [];
-						this.points[l81][0] = nx38;
-						this.points[l81][1] = ny38;
-						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d57 = this.dim[this.dim.length - 1];
-						if(nx38 < d57.minX) {
-							d57.minX = nx38;
-						}
-						if(nx38 > d57.maxX) {
-							d57.maxX = nx38;
-						}
-						if(ny38 < d57.minY) {
-							d57.minY = ny38;
-						}
-						if(ny38 > d57.maxY) {
-							d57.maxY = ny38;
-						}
-						this.contour.reset();
-					}
-				}
-				j += 3;
-				break;
-			case "FORWARD_TRIANGLE_RIGHT":
-				var distance33 = v[j];
-				var distance213 = v[j + 1];
-				var radius23 = v[j + 2];
-				if(this.turtleHistoryOn) {
-					this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-					this.historyParameters.push(distance33);
-					this.historyParameters.push(distance213);
-					this.historyParameters.push(radius23);
-				}
-				if(this.repeatCommands) {
-					this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-					this.turtleParameters.push(distance33);
-					this.turtleParameters.push(distance213);
-					this.turtleParameters.push(radius23);
-				} else {
-					var nx39 = this.x + distance33 * Math.cos(this.rotation);
-					var ny39 = this.y + distance33 * Math.sin(this.rotation);
-					if(this.penIsDown) {
-						var thruX11 = this.x + distance213 * Math.cos(this.rotation) - radius23 * Math.cos(this.rotation + Math.PI / 2);
-						var thruY11 = this.y + distance213 * Math.sin(this.rotation) - radius23 * Math.sin(this.rotation + Math.PI / 2);
-						if(this.fill) {
-							this.pen.triangle2DFill(this.x,this.y,thruX11,thruY11,nx39,ny39);
-						}
-						this.lineTo(thruX11,thruY11);
-						this.lineTo(nx39,ny39);
-						if(this.fill) {
-							this.lineTo(this.x,this.y);
-						}
-						if(this.endLine == 2 || this.endLine == 3) {
-							this.contour.end(this.width);
-						}
-						this.x = nx39;
-						this.y = ny39;
-						var l82 = this.points.length;
-						this.points[l82] = [];
-						this.points[l82][0] = nx39;
-						this.points[l82][1] = ny39;
-						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d58 = this.dim[this.dim.length - 1];
-						if(nx39 < d58.minX) {
-							d58.minX = nx39;
-						}
-						if(nx39 > d58.maxX) {
-							d58.maxX = nx39;
-						}
-						if(ny39 < d58.minY) {
-							d58.minY = ny39;
-						}
-						if(ny39 > d58.maxY) {
-							d58.maxY = ny39;
-						}
-						this.contour.reset();
-					} else {
-						if(this.endLine == 2 || this.endLine == 3) {
-							this.contour.end(this.width);
-						}
-						this.x = nx39;
-						this.y = ny39;
-						var l83 = this.points.length;
-						this.points[l83] = [];
-						this.points[l83][0] = nx39;
-						this.points[l83][1] = ny39;
-						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
-						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
-						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d59 = this.dim[this.dim.length - 1];
-						if(nx39 < d59.minX) {
-							d59.minX = nx39;
-						}
-						if(nx39 > d59.maxX) {
-							d59.maxX = nx39;
-						}
-						if(ny39 < d59.minY) {
-							d59.minY = ny39;
-						}
-						if(ny39 > d59.maxY) {
-							d59.maxY = ny39;
-						}
-						this.contour.reset();
-					}
-				}
-				j += 3;
 				break;
 			case "GREEN":
 				if(this.turtleHistoryOn) {
@@ -6603,10 +5770,10 @@ cornerContour_Sketcher.prototype = {
 				}
 				break;
 			case "MOVE_PEN":
-				var distance34 = v[j];
+				var distance20 = v[j];
 				if(this.repeatCommands) {
 					this.turtleCommands.push("MOVE_PEN");
-					this.turtleParameters.push(distance34);
+					this.turtleParameters.push(distance20);
 				} else if(this.penIsDown) {
 					if(this.turtleHistoryOn) {
 						this.historyAdd("PEN_UP");
@@ -6618,42 +5785,42 @@ cornerContour_Sketcher.prototype = {
 					}
 					if(this.turtleHistoryOn) {
 						this.historyAdd("FORWARD");
-						this.historyParameters.push(distance34);
+						this.historyParameters.push(distance20);
 					}
 					if(this.repeatCommands) {
 						this.turtleCommands.push("FORWARD");
-						this.turtleParameters.push(distance34);
+						this.turtleParameters.push(distance20);
 					} else {
-						var nx40 = this.x + distance34 * Math.cos(this.rotation);
-						var ny40 = this.y + distance34 * Math.sin(this.rotation);
+						var nx33 = this.x + distance20 * Math.cos(this.rotation);
+						var ny33 = this.y + distance20 * Math.sin(this.rotation);
 						if(this.penIsDown) {
-							this.lastDistance = distance34;
-							this.lineTo(nx40,ny40);
+							this.lastDistance = distance20;
+							this.lineTo(nx33,ny33);
 						} else {
 							if(this.endLine == 2 || this.endLine == 3) {
 								this.contour.end(this.width);
 							}
-							this.x = nx40;
-							this.y = ny40;
-							var l84 = this.points.length;
-							this.points[l84] = [];
-							this.points[l84][0] = nx40;
-							this.points[l84][1] = ny40;
+							this.x = nx33;
+							this.y = ny33;
+							var l61 = this.points.length;
+							this.points[l61] = [];
+							this.points[l61][0] = nx33;
+							this.points[l61][1] = ny33;
 							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d60 = this.dim[this.dim.length - 1];
-							if(nx40 < d60.minX) {
-								d60.minX = nx40;
+							var d43 = this.dim[this.dim.length - 1];
+							if(nx33 < d43.minX) {
+								d43.minX = nx33;
 							}
-							if(nx40 > d60.maxX) {
-								d60.maxX = nx40;
+							if(nx33 > d43.maxX) {
+								d43.maxX = nx33;
 							}
-							if(ny40 < d60.minY) {
-								d60.minY = ny40;
+							if(ny33 < d43.minY) {
+								d43.minY = ny33;
 							}
-							if(ny40 > d60.maxY) {
-								d60.maxY = ny40;
+							if(ny33 > d43.maxY) {
+								d43.maxY = ny33;
 							}
 							this.contour.reset();
 						}
@@ -6669,42 +5836,42 @@ cornerContour_Sketcher.prototype = {
 				} else {
 					if(this.turtleHistoryOn) {
 						this.historyAdd("FORWARD");
-						this.historyParameters.push(distance34);
+						this.historyParameters.push(distance20);
 					}
 					if(this.repeatCommands) {
 						this.turtleCommands.push("FORWARD");
-						this.turtleParameters.push(distance34);
+						this.turtleParameters.push(distance20);
 					} else {
-						var nx41 = this.x + distance34 * Math.cos(this.rotation);
-						var ny41 = this.y + distance34 * Math.sin(this.rotation);
+						var nx34 = this.x + distance20 * Math.cos(this.rotation);
+						var ny34 = this.y + distance20 * Math.sin(this.rotation);
 						if(this.penIsDown) {
-							this.lastDistance = distance34;
-							this.lineTo(nx41,ny41);
+							this.lastDistance = distance20;
+							this.lineTo(nx34,ny34);
 						} else {
 							if(this.endLine == 2 || this.endLine == 3) {
 								this.contour.end(this.width);
 							}
-							this.x = nx41;
-							this.y = ny41;
-							var l85 = this.points.length;
-							this.points[l85] = [];
-							this.points[l85][0] = nx41;
-							this.points[l85][1] = ny41;
+							this.x = nx34;
+							this.y = ny34;
+							var l62 = this.points.length;
+							this.points[l62] = [];
+							this.points[l62][0] = nx34;
+							this.points[l62][1] = ny34;
 							this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 							this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 							this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d61 = this.dim[this.dim.length - 1];
-							if(nx41 < d61.minX) {
-								d61.minX = nx41;
+							var d44 = this.dim[this.dim.length - 1];
+							if(nx34 < d44.minX) {
+								d44.minX = nx34;
 							}
-							if(nx41 > d61.maxX) {
-								d61.maxX = nx41;
+							if(nx34 > d44.maxX) {
+								d44.maxX = nx34;
 							}
-							if(ny41 < d61.minY) {
-								d61.minY = ny41;
+							if(ny34 < d44.minY) {
+								d44.minY = ny34;
 							}
-							if(ny41 > d61.maxY) {
-								d61.maxY = ny41;
+							if(ny34 > d44.maxY) {
+								d44.maxY = ny34;
 							}
 							this.contour.reset();
 						}
@@ -6976,42 +6143,42 @@ cornerContour_Sketcher.prototype = {
 				++j;
 				break;
 			case "SET_POSITION":
-				var x14 = v[j];
-				var y14 = v[j + 1];
+				var x8 = v[j];
+				var y8 = v[j + 1];
 				if(this.turtleHistoryOn) {
 					this.historyAdd("SET_POSITION");
-					this.historyParameters.push(x14);
-					this.historyParameters.push(y14);
+					this.historyParameters.push(x8);
+					this.historyParameters.push(y8);
 				}
 				if(this.repeatCommands) {
 					this.turtleCommands.push("SET_POSITION");
-					this.turtleParameters.push(x14);
-					this.turtleParameters.push(y14);
+					this.turtleParameters.push(x8);
+					this.turtleParameters.push(y8);
 				} else {
 					if(this.endLine == 2 || this.endLine == 3) {
 						this.contour.end(this.width);
 					}
-					this.x = x14;
-					this.y = y14;
-					var l86 = this.points.length;
-					this.points[l86] = [];
-					this.points[l86][0] = x14;
-					this.points[l86][1] = y14;
+					this.x = x8;
+					this.y = y8;
+					var l63 = this.points.length;
+					this.points[l63] = [];
+					this.points[l63][0] = x8;
+					this.points[l63][1] = y8;
 					this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
 					this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
 					this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-					var d62 = this.dim[this.dim.length - 1];
-					if(x14 < d62.minX) {
-						d62.minX = x14;
+					var d45 = this.dim[this.dim.length - 1];
+					if(x8 < d45.minX) {
+						d45.minX = x8;
 					}
-					if(x14 > d62.maxX) {
-						d62.maxX = x14;
+					if(x8 > d45.maxX) {
+						d45.maxX = x8;
 					}
-					if(y14 < d62.minY) {
-						d62.minY = y14;
+					if(y8 < d45.minY) {
+						d45.minY = y8;
 					}
-					if(y14 > d62.maxY) {
-						d62.maxY = y14;
+					if(y8 > d45.maxY) {
+						d45.maxY = y8;
 					}
 					this.contour.reset();
 				}
@@ -7036,6 +6203,92 @@ cornerContour_Sketcher.prototype = {
 				} else {
 					this.pen.currentColor = -27273;
 				}
+				break;
+			case "TRIANGLE_ARCH":
+				var distance25 = v[j];
+				var distance26 = v[j + 1];
+				var radius17 = v[j + 2];
+				if(this.turtleHistoryOn) {
+					this.historyAdd("TRIANGLE_ARCH");
+					this.historyParameters.push(distance25);
+					this.historyParameters.push(distance26);
+					this.historyParameters.push(radius17);
+				}
+				if(this.repeatCommands) {
+					this.turtleCommands.push("TRIANGLE_ARCH");
+					this.turtleParameters.push(distance25);
+					this.turtleParameters.push(distance26);
+					this.turtleParameters.push(radius17);
+				} else {
+					var nx35 = this.x + distance25 * Math.cos(this.rotation);
+					var ny35 = this.y + distance25 * Math.sin(this.rotation);
+					if(this.penIsDown) {
+						var thruX5 = this.x + distance26 * Math.cos(this.rotation) - radius17 * Math.cos(this.rotation + Math.PI / 2);
+						var thruY5 = this.y + distance26 * Math.sin(this.rotation) - radius17 * Math.sin(this.rotation + Math.PI / 2);
+						if(this.fill) {
+							this.pen.triangle2DFill(this.x,this.y,thruX5,thruY5,nx35,ny35);
+						}
+						this.lineTo(thruX5,thruY5);
+						this.lineTo(nx35,ny35);
+						if(this.fill) {
+							this.lineTo(this.x,this.y);
+						}
+						if(this.endLine == 2 || this.endLine == 3) {
+							this.contour.end(this.width);
+						}
+						this.x = nx35;
+						this.y = ny35;
+						var l64 = this.points.length;
+						this.points[l64] = [];
+						this.points[l64][0] = nx35;
+						this.points[l64][1] = ny35;
+						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d46 = this.dim[this.dim.length - 1];
+						if(nx35 < d46.minX) {
+							d46.minX = nx35;
+						}
+						if(nx35 > d46.maxX) {
+							d46.maxX = nx35;
+						}
+						if(ny35 < d46.minY) {
+							d46.minY = ny35;
+						}
+						if(ny35 > d46.maxY) {
+							d46.maxY = ny35;
+						}
+						this.contour.reset();
+					} else {
+						if(this.endLine == 2 || this.endLine == 3) {
+							this.contour.end(this.width);
+						}
+						this.x = nx35;
+						this.y = ny35;
+						var l65 = this.points.length;
+						this.points[l65] = [];
+						this.points[l65][0] = nx35;
+						this.points[l65][1] = ny35;
+						this.pointsClock[this.pointsClock.length] = this.contour.pointsClock.slice();
+						this.pointsAnti[this.pointsAnti.length] = this.contour.pointsAnti.slice();
+						this.dim[this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+						var d47 = this.dim[this.dim.length - 1];
+						if(nx35 < d47.minX) {
+							d47.minX = nx35;
+						}
+						if(nx35 > d47.maxX) {
+							d47.maxX = nx35;
+						}
+						if(ny35 < d47.minY) {
+							d47.minY = ny35;
+						}
+						if(ny35 > d47.maxY) {
+							d47.maxY = ny35;
+						}
+						this.contour.reset();
+					}
+				}
+				j += 3;
 				break;
 			case "WEST":
 				if(this.turtleHistoryOn) {
@@ -7696,8 +6949,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						j += 2;
 						break;
+					case "ARCH_BEZIER":
+						var distance = v[j];
+						var distance2 = v[j + 1];
+						var radius1 = v[j + 2];
+						if(_this1.turtleHistoryOn) {
+							_this1.historyAdd("ARCH_BEZIER");
+							_this1.historyParameters.push(distance);
+							_this1.historyParameters.push(distance2);
+							_this1.historyParameters.push(radius1);
+						}
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("ARCH_BEZIER");
+							_this1.turtleParameters.push(distance);
+							_this1.turtleParameters.push(distance2);
+							_this1.turtleParameters.push(radius1);
+						} else {
+							var nx1 = _this1.x + distance * Math.cos(_this1.rotation);
+							var ny1 = _this1.y + distance * Math.sin(_this1.rotation);
+							if(_this1.penIsDown) {
+								var thruX = _this1.x + distance2 * Math.cos(_this1.rotation) - radius1 * Math.cos(_this1.rotation + Math.PI / 2);
+								var thruY = _this1.y + distance2 * Math.sin(_this1.rotation) - radius1 * Math.sin(_this1.rotation + Math.PI / 2);
+								var newx = 2 * thruX - 0.5 * (_this1.x + nx1);
+								var newy = 2 * thruY - 0.5 * (_this1.y + ny1);
+								_this1.tempArr = [];
+								var p = _this1.tempArr;
+								var ax = _this1.x;
+								var ay = _this1.y;
+								var x = ax - newx;
+								var y = ay - newy;
+								var x1 = newx - nx1;
+								var y1 = newy - ny1;
+								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+								if(approxDistance == 0) {
+									approxDistance = 0.000001;
+								}
+								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+								var l2 = p.length;
+								p[l2++] = ax;
+								p[l2++] = ay;
+								var t = step;
+								while(t < 1.) {
+									var u = 1 - t;
+									p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+									var u1 = 1 - t;
+									p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+									t += step;
+								}
+								p[l2++] = nx1;
+								p[l2++] = ny1;
+								var arr1 = _this1.tempArr;
+								var withMove = false;
+								if(withMove == null) {
+									withMove = true;
+								}
+								var l3 = arr1.length;
+								var i3 = 2;
+								if(withMove) {
+									var x_ = arr1[0];
+									var y_ = arr1[1];
+									if(_this1.endLine == 2 || _this1.endLine == 3) {
+										_this1.contour.end(_this1.width);
+									}
+									_this1.x = x_;
+									_this1.y = y_;
+									var l4 = _this1.points.length;
+									_this1.points[l4] = [];
+									_this1.points[l4][0] = x_;
+									_this1.points[l4][1] = y_;
+									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d1 = _this1.dim[_this1.dim.length - 1];
+									if(x_ < d1.minX) {
+										d1.minX = x_;
+									}
+									if(x_ > d1.maxX) {
+										d1.maxX = x_;
+									}
+									if(y_ < d1.minY) {
+										d1.minY = y_;
+									}
+									if(y_ > d1.maxY) {
+										d1.maxY = y_;
+									}
+									_this1.contour.reset();
+								} else {
+									_this1.lineTo(arr1[0],arr1[1]);
+								}
+								var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+								var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+								var ox1 = _this1.x;
+								var oy1 = _this1.y;
+								while(i3 < l3) {
+									if(_this1.fill && _this1.penIsDown) {
+										if(i3 > 0 && i3 < l3 - 2) {
+											_this1.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+										}
+									}
+									_this1.lineTo(arr1[i3],arr1[i3 + 1]);
+									i3 += 2;
+								}
+								if(_this1.fill && _this1.penIsDown) {
+									if(_this1.endLine == 2 || _this1.endLine == 3) {
+										_this1.contour.end(_this1.width);
+									}
+									_this1.x = ox1;
+									_this1.y = oy1;
+									var l5 = _this1.points.length;
+									_this1.points[l5] = [];
+									_this1.points[l5][0] = ox1;
+									_this1.points[l5][1] = oy1;
+									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d2 = _this1.dim[_this1.dim.length - 1];
+									if(ox1 < d2.minX) {
+										d2.minX = ox1;
+									}
+									if(ox1 > d2.maxX) {
+										d2.maxX = ox1;
+									}
+									if(oy1 < d2.minY) {
+										d2.minY = oy1;
+									}
+									if(oy1 > d2.maxY) {
+										d2.maxY = oy1;
+									}
+									_this1.contour.reset();
+									_this1.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+								}
+								_this1.x = nx1;
+								_this1.y = ny1;
+							} else {
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx1;
+								_this1.y = ny1;
+								var l6 = _this1.points.length;
+								_this1.points[l6] = [];
+								_this1.points[l6][0] = nx1;
+								_this1.points[l6][1] = ny1;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d3 = _this1.dim[_this1.dim.length - 1];
+								if(nx1 < d3.minX) {
+									d3.minX = nx1;
+								}
+								if(nx1 > d3.maxX) {
+									d3.maxX = nx1;
+								}
+								if(ny1 < d3.minY) {
+									d3.minY = ny1;
+								}
+								if(ny1 > d3.maxY) {
+									d3.maxY = ny1;
+								}
+								_this1.contour.reset();
+							}
+						}
+						j += 3;
+						break;
 					case "ARC_SIDES":
-						var radius1 = v[j];
+						var radius2 = v[j];
 						var degrees1 = v[j + 1];
 						var sides = v[j + 2];
 						if(sides == null) {
@@ -7706,24 +7122,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this1.turtleHistoryOn) {
 							if(sides == 24) {
 								_this1.historyAdd("ARC");
-								_this1.historyParameters.push(radius1);
+								_this1.historyParameters.push(radius2);
 								_this1.historyParameters.push(degrees1);
 							} else {
 								_this1.historyAdd("ARC_SIDES");
-								_this1.historyParameters.push(radius1);
+								_this1.historyParameters.push(radius2);
 								_this1.historyParameters.push(degrees1);
 								_this1.historyParameters.push(sides);
 							}
 						}
-						if(radius1 != 0) {
+						if(radius2 != 0) {
 							if(_this1.repeatCommands) {
 								if(sides == 24) {
 									_this1.turtleCommands.push("ARC");
-									_this1.turtleParameters.push(radius1);
+									_this1.turtleParameters.push(radius2);
 									_this1.turtleParameters.push(degrees1);
 								} else {
 									_this1.turtleCommands.push("ARC_SIDES");
-									_this1.turtleParameters.push(radius1);
+									_this1.turtleParameters.push(radius2);
 									_this1.turtleParameters.push(degrees1);
 									_this1.turtleParameters.push(sides);
 								}
@@ -7731,15 +7147,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								var beta1 = degrees1 * Math.PI / 180 / sides;
 								var alpha1 = (Math.PI - beta1) / 2;
 								var rotate1 = -(Math.PI / 2 - alpha1);
-								var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-								var ox1 = _this1.x;
-								var oy1 = _this1.y;
-								var arr1 = [];
-								arr1.push(_this1.x);
-								arr1.push(_this1.y);
+								var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+								var ox2 = _this1.x;
+								var oy2 = _this1.y;
+								var arr2 = [];
+								arr2.push(_this1.x);
+								arr2.push(_this1.y);
 								var _g5 = 0;
 								while(_g5 < 48) {
-									var i3 = _g5++;
+									var i4 = _g5++;
 									_this1.rotation += rotate1;
 									var wasHistoryOn2 = _this1.turtleHistoryOn;
 									_this1.turtleHistoryOn = false;
@@ -7751,107 +7167,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this1.turtleCommands.push("FORWARD");
 										_this1.turtleParameters.push(baseLength1);
 									} else {
-										var nx1 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
-										var ny1 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
+										var nx2 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
+										var ny2 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
 										if(_this1.penIsDown) {
 											_this1.lastDistance = baseLength1;
-											_this1.lineTo(nx1,ny1);
+											_this1.lineTo(nx2,ny2);
 										} else {
 											if(_this1.endLine == 2 || _this1.endLine == 3) {
 												_this1.contour.end(_this1.width);
 											}
-											_this1.x = nx1;
-											_this1.y = ny1;
-											var l2 = _this1.points.length;
-											_this1.points[l2] = [];
-											_this1.points[l2][0] = nx1;
-											_this1.points[l2][1] = ny1;
+											_this1.x = nx2;
+											_this1.y = ny2;
+											var l7 = _this1.points.length;
+											_this1.points[l7] = [];
+											_this1.points[l7][0] = nx2;
+											_this1.points[l7][1] = ny2;
 											_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 											_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 											_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d1 = _this1.dim[_this1.dim.length - 1];
-											if(nx1 < d1.minX) {
-												d1.minX = nx1;
+											var d4 = _this1.dim[_this1.dim.length - 1];
+											if(nx2 < d4.minX) {
+												d4.minX = nx2;
 											}
-											if(nx1 > d1.maxX) {
-												d1.maxX = nx1;
+											if(nx2 > d4.maxX) {
+												d4.maxX = nx2;
 											}
-											if(ny1 < d1.minY) {
-												d1.minY = ny1;
+											if(ny2 < d4.minY) {
+												d4.minY = ny2;
 											}
-											if(ny1 > d1.maxY) {
-												d1.maxY = ny1;
+											if(ny2 > d4.maxY) {
+												d4.maxY = ny2;
 											}
 											_this1.contour.reset();
 										}
 									}
 									_this1.turtleHistoryOn = wasHistoryOn2;
 									if(_this1.fill) {
-										arr1.push(_this1.x);
-										arr1.push(_this1.y);
+										arr2.push(_this1.x);
+										arr2.push(_this1.y);
 									}
 								}
 								if(_this1.fill) {
-									var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-									var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-									var l3 = arr1.length;
-									var i4 = 2;
+									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+									var l8 = arr2.length;
+									var i5 = 2;
 									var lx1 = 0.;
 									var ly1 = 0.;
-									_this1.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-									while(i4 < l3) {
-										if(i4 > 2) {
-											_this1.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+									_this1.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+									while(i5 < l8) {
+										if(i5 > 2) {
+											_this1.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 										}
-										lx1 = arr1[i4];
-										ly1 = arr1[i4 + 1];
-										i4 += 2;
+										lx1 = arr2[i5];
+										ly1 = arr2[i5 + 1];
+										i5 += 2;
 									}
 								}
-								arr1.length = 0;
+								arr2.length = 0;
 							}
 						}
 						j += 3;
 						break;
 					case "BACKWARD":
-						var distance = v[j];
+						var distance1 = v[j];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("BACKWARD");
-							_this1.historyParameters.push(distance);
+							_this1.historyParameters.push(distance1);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("BACKWARD");
-							_this1.turtleParameters.push(distance);
+							_this1.turtleParameters.push(distance1);
 						} else {
-							var nx2 = _this1.x + distance * Math.cos(_this1.rotation + Math.PI);
-							var ny2 = _this1.y + distance * Math.sin(_this1.rotation + Math.PI);
+							var nx3 = _this1.x + distance1 * Math.cos(_this1.rotation + Math.PI);
+							var ny3 = _this1.y + distance1 * Math.sin(_this1.rotation + Math.PI);
 							if(_this1.penIsDown) {
-								_this1.lineTo(nx2,ny2);
+								_this1.lineTo(nx3,ny3);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx2;
-								_this1.y = ny2;
-								var l4 = _this1.points.length;
-								_this1.points[l4] = [];
-								_this1.points[l4][0] = nx2;
-								_this1.points[l4][1] = ny2;
+								_this1.x = nx3;
+								_this1.y = ny3;
+								var l9 = _this1.points.length;
+								_this1.points[l9] = [];
+								_this1.points[l9][0] = nx3;
+								_this1.points[l9][1] = ny3;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d2 = _this1.dim[_this1.dim.length - 1];
-								if(nx2 < d2.minX) {
-									d2.minX = nx2;
+								var d5 = _this1.dim[_this1.dim.length - 1];
+								if(nx3 < d5.minX) {
+									d5.minX = nx3;
 								}
-								if(nx2 > d2.maxX) {
-									d2.maxX = nx2;
+								if(nx3 > d5.maxX) {
+									d5.maxX = nx3;
 								}
-								if(ny2 < d2.minY) {
-									d2.minY = ny2;
+								if(ny3 < d5.minY) {
+									d5.minY = ny3;
 								}
-								if(ny2 > d2.maxY) {
-									d2.maxY = ny2;
+								if(ny3 > d5.maxY) {
+									d5.maxY = ny3;
 								}
 								_this1.contour.reset();
 							}
@@ -7891,26 +7307,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "CIRCLE":
-						var radius2 = v[j];
+						var radius3 = v[j];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("CIRCLE");
-							_this1.historyParameters.push(radius2);
+							_this1.historyParameters.push(radius3);
 						}
-						if(radius2 != 0) {
+						if(radius3 != 0) {
 							if(_this1.repeatCommands) {
 								_this1.turtleCommands.push("CIRCLE");
-								_this1.turtleParameters.push(radius2);
+								_this1.turtleParameters.push(radius3);
 							} else {
 								var beta2 = 2 * Math.PI / 24;
 								var alpha2 = (Math.PI - beta2) / 2;
 								var rotate2 = -(Math.PI / 2 - alpha2);
-								var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-								var ox2 = _this1.x;
-								var oy2 = _this1.y;
-								var arr2 = [];
+								var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+								var ox3 = _this1.x;
+								var oy3 = _this1.y;
+								var arr3 = [];
 								var _g6 = 0;
 								while(_g6 < 48) {
-									var i5 = _g6++;
+									var i6 = _g6++;
 									_this1.rotation += rotate2;
 									var wasHistoryOn3 = _this1.turtleHistoryOn;
 									_this1.turtleHistoryOn = false;
@@ -7922,69 +7338,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this1.turtleCommands.push("FORWARD");
 										_this1.turtleParameters.push(baseLength2);
 									} else {
-										var nx3 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
-										var ny3 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
+										var nx4 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
+										var ny4 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
 										if(_this1.penIsDown) {
 											_this1.lastDistance = baseLength2;
-											_this1.lineTo(nx3,ny3);
+											_this1.lineTo(nx4,ny4);
 										} else {
 											if(_this1.endLine == 2 || _this1.endLine == 3) {
 												_this1.contour.end(_this1.width);
 											}
-											_this1.x = nx3;
-											_this1.y = ny3;
-											var l5 = _this1.points.length;
-											_this1.points[l5] = [];
-											_this1.points[l5][0] = nx3;
-											_this1.points[l5][1] = ny3;
+											_this1.x = nx4;
+											_this1.y = ny4;
+											var l10 = _this1.points.length;
+											_this1.points[l10] = [];
+											_this1.points[l10][0] = nx4;
+											_this1.points[l10][1] = ny4;
 											_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 											_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 											_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d3 = _this1.dim[_this1.dim.length - 1];
-											if(nx3 < d3.minX) {
-												d3.minX = nx3;
+											var d6 = _this1.dim[_this1.dim.length - 1];
+											if(nx4 < d6.minX) {
+												d6.minX = nx4;
 											}
-											if(nx3 > d3.maxX) {
-												d3.maxX = nx3;
+											if(nx4 > d6.maxX) {
+												d6.maxX = nx4;
 											}
-											if(ny3 < d3.minY) {
-												d3.minY = ny3;
+											if(ny4 < d6.minY) {
+												d6.minY = ny4;
 											}
-											if(ny3 > d3.maxY) {
-												d3.maxY = ny3;
+											if(ny4 > d6.maxY) {
+												d6.maxY = ny4;
 											}
 											_this1.contour.reset();
 										}
 									}
 									_this1.turtleHistoryOn = wasHistoryOn3;
 									if(_this1.fill) {
-										arr2.push(_this1.x);
-										arr2.push(_this1.y);
+										arr3.push(_this1.x);
+										arr3.push(_this1.y);
 									}
 								}
 								if(_this1.fill) {
-									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-									var l6 = arr2.length;
-									var i6 = 2;
+									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+									var l11 = arr3.length;
+									var i7 = 2;
 									var lx2 = 0.;
 									var ly2 = 0.;
-									while(i6 < l6) {
-										if(i6 > 2) {
-											_this1.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+									while(i7 < l11) {
+										if(i7 > 2) {
+											_this1.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 										}
-										lx2 = arr2[i6];
-										ly2 = arr2[i6 + 1];
-										i6 += 2;
+										lx2 = arr3[i7];
+										ly2 = arr3[i7 + 1];
+										i7 += 2;
 									}
 								}
-								arr2.length = 0;
+								arr3.length = 0;
 							}
 						}
 						++j;
 						break;
 					case "CIRCLE_SIDES":
-						var radius3 = v[j];
+						var radius4 = v[j];
 						var sides1 = v[j + 1];
 						if(sides1 == null) {
 							sides1 = 24;
@@ -7992,34 +7408,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this1.turtleHistoryOn) {
 							if(sides1 == 24) {
 								_this1.historyAdd("CIRCLE");
-								_this1.historyParameters.push(radius3);
+								_this1.historyParameters.push(radius4);
 							} else {
 								_this1.historyAdd("CIRCLE_SIDES");
-								_this1.historyParameters.push(radius3);
+								_this1.historyParameters.push(radius4);
 								_this1.historyParameters.push(sides1);
 							}
 						}
-						if(radius3 != 0) {
+						if(radius4 != 0) {
 							if(_this1.repeatCommands) {
 								if(sides1 == 24) {
 									_this1.turtleCommands.push("CIRCLE");
-									_this1.turtleParameters.push(radius3);
+									_this1.turtleParameters.push(radius4);
 								} else {
 									_this1.turtleCommands.push("CIRCLE_SIDES");
-									_this1.turtleParameters.push(radius3);
+									_this1.turtleParameters.push(radius4);
 									_this1.turtleParameters.push(sides1);
 								}
 							} else {
 								var beta3 = 2 * Math.PI / sides1;
 								var alpha3 = (Math.PI - beta3) / 2;
 								var rotate3 = -(Math.PI / 2 - alpha3);
-								var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-								var ox3 = _this1.x;
-								var oy3 = _this1.y;
-								var arr3 = [];
+								var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+								var ox4 = _this1.x;
+								var oy4 = _this1.y;
+								var arr4 = [];
 								var _g7 = 0;
 								while(_g7 < 48) {
-									var i7 = _g7++;
+									var i8 = _g7++;
 									_this1.rotation += rotate3;
 									var wasHistoryOn4 = _this1.turtleHistoryOn;
 									_this1.turtleHistoryOn = false;
@@ -8031,63 +7447,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this1.turtleCommands.push("FORWARD");
 										_this1.turtleParameters.push(baseLength3);
 									} else {
-										var nx4 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
-										var ny4 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
+										var nx5 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
+										var ny5 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
 										if(_this1.penIsDown) {
 											_this1.lastDistance = baseLength3;
-											_this1.lineTo(nx4,ny4);
+											_this1.lineTo(nx5,ny5);
 										} else {
 											if(_this1.endLine == 2 || _this1.endLine == 3) {
 												_this1.contour.end(_this1.width);
 											}
-											_this1.x = nx4;
-											_this1.y = ny4;
-											var l7 = _this1.points.length;
-											_this1.points[l7] = [];
-											_this1.points[l7][0] = nx4;
-											_this1.points[l7][1] = ny4;
+											_this1.x = nx5;
+											_this1.y = ny5;
+											var l12 = _this1.points.length;
+											_this1.points[l12] = [];
+											_this1.points[l12][0] = nx5;
+											_this1.points[l12][1] = ny5;
 											_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 											_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 											_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d4 = _this1.dim[_this1.dim.length - 1];
-											if(nx4 < d4.minX) {
-												d4.minX = nx4;
+											var d7 = _this1.dim[_this1.dim.length - 1];
+											if(nx5 < d7.minX) {
+												d7.minX = nx5;
 											}
-											if(nx4 > d4.maxX) {
-												d4.maxX = nx4;
+											if(nx5 > d7.maxX) {
+												d7.maxX = nx5;
 											}
-											if(ny4 < d4.minY) {
-												d4.minY = ny4;
+											if(ny5 < d7.minY) {
+												d7.minY = ny5;
 											}
-											if(ny4 > d4.maxY) {
-												d4.maxY = ny4;
+											if(ny5 > d7.maxY) {
+												d7.maxY = ny5;
 											}
 											_this1.contour.reset();
 										}
 									}
 									_this1.turtleHistoryOn = wasHistoryOn4;
 									if(_this1.fill) {
-										arr3.push(_this1.x);
-										arr3.push(_this1.y);
+										arr4.push(_this1.x);
+										arr4.push(_this1.y);
 									}
 								}
 								if(_this1.fill) {
-									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-									var l8 = arr3.length;
-									var i8 = 2;
+									var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+									var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+									var l13 = arr4.length;
+									var i9 = 2;
 									var lx3 = 0.;
 									var ly3 = 0.;
-									while(i8 < l8) {
-										if(i8 > 2) {
-											_this1.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+									while(i9 < l13) {
+										if(i9 > 2) {
+											_this1.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 										}
-										lx3 = arr3[i8];
-										ly3 = arr3[i8 + 1];
-										i8 += 2;
+										lx3 = arr4[i9];
+										ly3 = arr4[i9 + 1];
+										i9 += 2;
 									}
 								}
-								arr3.length = 0;
+								arr4.length = 0;
 							}
 						}
 						j += 2;
@@ -8155,45 +7571,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "FORWARD":
-						var distance1 = v[j];
+						var distance3 = v[j];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("FORWARD");
-							_this1.historyParameters.push(distance1);
+							_this1.historyParameters.push(distance3);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("FORWARD");
-							_this1.turtleParameters.push(distance1);
+							_this1.turtleParameters.push(distance3);
 						} else {
-							var nx5 = _this1.x + distance1 * Math.cos(_this1.rotation);
-							var ny5 = _this1.y + distance1 * Math.sin(_this1.rotation);
+							var nx6 = _this1.x + distance3 * Math.cos(_this1.rotation);
+							var ny6 = _this1.y + distance3 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
-								_this1.lastDistance = distance1;
-								_this1.lineTo(nx5,ny5);
+								_this1.lastDistance = distance3;
+								_this1.lineTo(nx6,ny6);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx5;
-								_this1.y = ny5;
-								var l9 = _this1.points.length;
-								_this1.points[l9] = [];
-								_this1.points[l9][0] = nx5;
-								_this1.points[l9][1] = ny5;
+								_this1.x = nx6;
+								_this1.y = ny6;
+								var l14 = _this1.points.length;
+								_this1.points[l14] = [];
+								_this1.points[l14][0] = nx6;
+								_this1.points[l14][1] = ny6;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d5 = _this1.dim[_this1.dim.length - 1];
-								if(nx5 < d5.minX) {
-									d5.minX = nx5;
+								var d8 = _this1.dim[_this1.dim.length - 1];
+								if(nx6 < d8.minX) {
+									d8.minX = nx6;
 								}
-								if(nx5 > d5.maxX) {
-									d5.maxX = nx5;
+								if(nx6 > d8.maxX) {
+									d8.maxX = nx6;
 								}
-								if(ny5 < d5.minY) {
-									d5.minY = ny5;
+								if(ny6 < d8.minY) {
+									d8.minY = ny6;
 								}
-								if(ny5 > d5.maxY) {
-									d5.maxY = ny5;
+								if(ny6 > d8.maxY) {
+									d8.maxY = ny6;
 								}
 								_this1.contour.reset();
 							}
@@ -8210,175 +7626,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this1.turtleCommands.push("FORWARD_CHANGE");
 							_this1.turtleParameters.push(deltaDistance);
 						} else {
-							var distance2 = _this1.lastDistance + deltaDistance;
-							var nx6 = _this1.x + distance2 * Math.cos(_this1.rotation);
-							var ny6 = _this1.y + distance2 * Math.sin(_this1.rotation);
+							var distance4 = _this1.lastDistance + deltaDistance;
+							var nx7 = _this1.x + distance4 * Math.cos(_this1.rotation);
+							var ny7 = _this1.y + distance4 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
-								_this1.lastDistance = distance2 + deltaDistance;
-								_this1.lineTo(nx6,ny6);
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx6;
-								_this1.y = ny6;
-								var l10 = _this1.points.length;
-								_this1.points[l10] = [];
-								_this1.points[l10][0] = nx6;
-								_this1.points[l10][1] = ny6;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d6 = _this1.dim[_this1.dim.length - 1];
-								if(nx6 < d6.minX) {
-									d6.minX = nx6;
-								}
-								if(nx6 > d6.maxX) {
-									d6.maxX = nx6;
-								}
-								if(ny6 < d6.minY) {
-									d6.minY = ny6;
-								}
-								if(ny6 > d6.maxY) {
-									d6.maxY = ny6;
-								}
-								_this1.contour.reset();
-							}
-						}
-						++j;
-						break;
-					case "FORWARD_CURVE_LEFT":
-						var distance3 = v[j];
-						var distance21 = v[j + 1];
-						var radius4 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_CURVE_LEFT");
-							_this1.historyParameters.push(distance3);
-							_this1.historyParameters.push(distance21);
-							_this1.historyParameters.push(radius4);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_CURVE_LEFT");
-							_this1.turtleParameters.push(distance3);
-							_this1.turtleParameters.push(distance21);
-							_this1.turtleParameters.push(radius4);
-						} else {
-							var nx7 = _this1.x + distance3 * Math.cos(_this1.rotation);
-							var ny7 = _this1.y + distance3 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX = _this1.x + distance21 * Math.cos(_this1.rotation) + radius4 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY = _this1.y + distance21 * Math.sin(_this1.rotation) + radius4 * Math.sin(_this1.rotation + Math.PI / 2);
-								var newx = 2 * thruX - 0.5 * (_this1.x + nx7);
-								var newy = 2 * thruY - 0.5 * (_this1.y + ny7);
-								_this1.tempArr = [];
-								var p = _this1.tempArr;
-								var ax = _this1.x;
-								var ay = _this1.y;
-								var x = ax - newx;
-								var y = ay - newy;
-								var x1 = newx - nx7;
-								var y1 = newy - ny7;
-								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-								if(approxDistance == 0) {
-									approxDistance = 0.000001;
-								}
-								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-								var l11 = p.length;
-								p[l11++] = ax;
-								p[l11++] = ay;
-								var t = step;
-								while(t < 1.) {
-									var u = 1 - t;
-									p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-									var u1 = 1 - t;
-									p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-									t += step;
-								}
-								p[l11++] = nx7;
-								p[l11++] = ny7;
-								var arr4 = _this1.tempArr;
-								var withMove = false;
-								if(withMove == null) {
-									withMove = true;
-								}
-								var l12 = arr4.length;
-								var i9 = 2;
-								if(withMove) {
-									var x_ = arr4[0];
-									var y_ = arr4[1];
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = x_;
-									_this1.y = y_;
-									var l13 = _this1.points.length;
-									_this1.points[l13] = [];
-									_this1.points[l13][0] = x_;
-									_this1.points[l13][1] = y_;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d7 = _this1.dim[_this1.dim.length - 1];
-									if(x_ < d7.minX) {
-										d7.minX = x_;
-									}
-									if(x_ > d7.maxX) {
-										d7.maxX = x_;
-									}
-									if(y_ < d7.minY) {
-										d7.minY = y_;
-									}
-									if(y_ > d7.maxY) {
-										d7.maxY = y_;
-									}
-									_this1.contour.reset();
-								} else {
-									_this1.lineTo(arr4[0],arr4[1]);
-								}
-								var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-								var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-								var ox4 = _this1.x;
-								var oy4 = _this1.y;
-								while(i9 < l12) {
-									if(_this1.fill && _this1.penIsDown) {
-										if(i9 > 0 && i9 < l12 - 2) {
-											_this1.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-										}
-									}
-									_this1.lineTo(arr4[i9],arr4[i9 + 1]);
-									i9 += 2;
-								}
-								if(_this1.fill && _this1.penIsDown) {
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = ox4;
-									_this1.y = oy4;
-									var l14 = _this1.points.length;
-									_this1.points[l14] = [];
-									_this1.points[l14][0] = ox4;
-									_this1.points[l14][1] = oy4;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d8 = _this1.dim[_this1.dim.length - 1];
-									if(ox4 < d8.minX) {
-										d8.minX = ox4;
-									}
-									if(ox4 > d8.maxX) {
-										d8.maxX = ox4;
-									}
-									if(oy4 < d8.minY) {
-										d8.minY = oy4;
-									}
-									if(oy4 > d8.maxY) {
-										d8.maxY = oy4;
-									}
-									_this1.contour.reset();
-									_this1.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-								}
-								_this1.x = nx7;
-								_this1.y = ny7;
+								_this1.lastDistance = distance4 + deltaDistance;
+								_this1.lineTo(nx7,ny7);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
@@ -8408,170 +7661,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								_this1.contour.reset();
 							}
 						}
-						j += 3;
-						break;
-					case "FORWARD_CURVE_RIGHT":
-						var distance4 = v[j];
-						var distance22 = v[j + 1];
-						var radius5 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_CURVE_RIGHT");
-							_this1.historyParameters.push(distance4);
-							_this1.historyParameters.push(distance22);
-							_this1.historyParameters.push(radius5);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_CURVE_RIGHT");
-							_this1.turtleParameters.push(distance4);
-							_this1.turtleParameters.push(distance22);
-							_this1.turtleParameters.push(radius5);
-						} else {
-							var nx8 = _this1.x + distance4 * Math.cos(_this1.rotation);
-							var ny8 = _this1.y + distance4 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX1 = _this1.x + distance22 * Math.cos(_this1.rotation) - radius5 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY1 = _this1.y + distance22 * Math.sin(_this1.rotation) - radius5 * Math.sin(_this1.rotation + Math.PI / 2);
-								var newx1 = 2 * thruX1 - 0.5 * (_this1.x + nx8);
-								var newy1 = 2 * thruY1 - 0.5 * (_this1.y + ny8);
-								_this1.tempArr = [];
-								var p1 = _this1.tempArr;
-								var ax1 = _this1.x;
-								var ay1 = _this1.y;
-								var x2 = ax1 - newx1;
-								var y2 = ay1 - newy1;
-								var x3 = newx1 - nx8;
-								var y3 = newy1 - ny8;
-								var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-								if(approxDistance1 == 0) {
-									approxDistance1 = 0.000001;
-								}
-								var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-								var l16 = p1.length;
-								p1[l16++] = ax1;
-								p1[l16++] = ay1;
-								var t1 = step1;
-								while(t1 < 1.) {
-									var u2 = 1 - t1;
-									p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-									var u3 = 1 - t1;
-									p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-									t1 += step1;
-								}
-								p1[l16++] = nx8;
-								p1[l16++] = ny8;
-								var arr5 = _this1.tempArr;
-								var withMove1 = false;
-								if(withMove1 == null) {
-									withMove1 = true;
-								}
-								var l17 = arr5.length;
-								var i10 = 2;
-								if(withMove1) {
-									var x_1 = arr5[0];
-									var y_1 = arr5[1];
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = x_1;
-									_this1.y = y_1;
-									var l18 = _this1.points.length;
-									_this1.points[l18] = [];
-									_this1.points[l18][0] = x_1;
-									_this1.points[l18][1] = y_1;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d10 = _this1.dim[_this1.dim.length - 1];
-									if(x_1 < d10.minX) {
-										d10.minX = x_1;
-									}
-									if(x_1 > d10.maxX) {
-										d10.maxX = x_1;
-									}
-									if(y_1 < d10.minY) {
-										d10.minY = y_1;
-									}
-									if(y_1 > d10.maxY) {
-										d10.maxY = y_1;
-									}
-									_this1.contour.reset();
-								} else {
-									_this1.lineTo(arr5[0],arr5[1]);
-								}
-								var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-								var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-								var ox5 = _this1.x;
-								var oy5 = _this1.y;
-								while(i10 < l17) {
-									if(_this1.fill && _this1.penIsDown) {
-										if(i10 > 0 && i10 < l17 - 2) {
-											_this1.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-										}
-									}
-									_this1.lineTo(arr5[i10],arr5[i10 + 1]);
-									i10 += 2;
-								}
-								if(_this1.fill && _this1.penIsDown) {
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = ox5;
-									_this1.y = oy5;
-									var l19 = _this1.points.length;
-									_this1.points[l19] = [];
-									_this1.points[l19][0] = ox5;
-									_this1.points[l19][1] = oy5;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d11 = _this1.dim[_this1.dim.length - 1];
-									if(ox5 < d11.minX) {
-										d11.minX = ox5;
-									}
-									if(ox5 > d11.maxX) {
-										d11.maxX = ox5;
-									}
-									if(oy5 < d11.minY) {
-										d11.minY = oy5;
-									}
-									if(oy5 > d11.maxY) {
-										d11.maxY = oy5;
-									}
-									_this1.contour.reset();
-									_this1.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-								}
-								_this1.x = nx8;
-								_this1.y = ny8;
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx8;
-								_this1.y = ny8;
-								var l20 = _this1.points.length;
-								_this1.points[l20] = [];
-								_this1.points[l20][0] = nx8;
-								_this1.points[l20][1] = ny8;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d12 = _this1.dim[_this1.dim.length - 1];
-								if(nx8 < d12.minX) {
-									d12.minX = nx8;
-								}
-								if(nx8 > d12.maxX) {
-									d12.maxX = nx8;
-								}
-								if(ny8 < d12.minY) {
-									d12.minY = ny8;
-								}
-								if(ny8 > d12.maxY) {
-									d12.maxY = ny8;
-								}
-								_this1.contour.reset();
-							}
-						}
-						j += 3;
+						++j;
 						break;
 					case "FORWARD_FACTOR":
 						var factor = v[j];
@@ -8584,213 +7674,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this1.turtleParameters.push(factor);
 						} else {
 							var distance5 = _this1.lastDistance * factor;
-							var nx9 = _this1.x + distance5 * Math.cos(_this1.rotation);
-							var ny9 = _this1.y + distance5 * Math.sin(_this1.rotation);
+							var nx8 = _this1.x + distance5 * Math.cos(_this1.rotation);
+							var ny8 = _this1.y + distance5 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
 								_this1.lastDistance = distance5;
-								_this1.lineTo(nx9,ny9);
+								_this1.lineTo(nx8,ny8);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx9;
-								_this1.y = ny9;
-								var l21 = _this1.points.length;
-								_this1.points[l21] = [];
-								_this1.points[l21][0] = nx9;
-								_this1.points[l21][1] = ny9;
+								_this1.x = nx8;
+								_this1.y = ny8;
+								var l16 = _this1.points.length;
+								_this1.points[l16] = [];
+								_this1.points[l16][0] = nx8;
+								_this1.points[l16][1] = ny8;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d13 = _this1.dim[_this1.dim.length - 1];
-								if(nx9 < d13.minX) {
-									d13.minX = nx9;
+								var d10 = _this1.dim[_this1.dim.length - 1];
+								if(nx8 < d10.minX) {
+									d10.minX = nx8;
 								}
-								if(nx9 > d13.maxX) {
-									d13.maxX = nx9;
+								if(nx8 > d10.maxX) {
+									d10.maxX = nx8;
 								}
-								if(ny9 < d13.minY) {
-									d13.minY = ny9;
+								if(ny8 < d10.minY) {
+									d10.minY = ny8;
 								}
-								if(ny9 > d13.maxY) {
-									d13.maxY = ny9;
+								if(ny8 > d10.maxY) {
+									d10.maxY = ny8;
 								}
 								_this1.contour.reset();
 							}
 						}
 						++j;
-						break;
-					case "FORWARD_TRIANGLE_LEFT":
-						var distance6 = v[j];
-						var distance23 = v[j + 1];
-						var radius6 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_TRIANGLE_LEFT");
-							_this1.historyParameters.push(distance6);
-							_this1.historyParameters.push(distance23);
-							_this1.historyParameters.push(radius6);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-							_this1.turtleParameters.push(distance6);
-							_this1.turtleParameters.push(distance23);
-							_this1.turtleParameters.push(radius6);
-						} else {
-							var nx10 = _this1.x + distance6 * Math.cos(_this1.rotation);
-							var ny10 = _this1.y + distance6 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX2 = _this1.x + distance23 * Math.cos(_this1.rotation) + radius6 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY2 = _this1.y + distance23 * Math.sin(_this1.rotation) + radius6 * Math.sin(_this1.rotation + Math.PI / 2);
-								if(_this1.fill) {
-									_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX2,thruY2,nx10,ny10);
-								}
-								_this1.lineTo(thruX2,thruY2);
-								_this1.lineTo(nx10,ny10);
-								if(_this1.fill) {
-									_this1.lineTo(_this1.x,_this1.y);
-								}
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx10;
-								_this1.y = ny10;
-								var l22 = _this1.points.length;
-								_this1.points[l22] = [];
-								_this1.points[l22][0] = nx10;
-								_this1.points[l22][1] = ny10;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d14 = _this1.dim[_this1.dim.length - 1];
-								if(nx10 < d14.minX) {
-									d14.minX = nx10;
-								}
-								if(nx10 > d14.maxX) {
-									d14.maxX = nx10;
-								}
-								if(ny10 < d14.minY) {
-									d14.minY = ny10;
-								}
-								if(ny10 > d14.maxY) {
-									d14.maxY = ny10;
-								}
-								_this1.contour.reset();
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx10;
-								_this1.y = ny10;
-								var l23 = _this1.points.length;
-								_this1.points[l23] = [];
-								_this1.points[l23][0] = nx10;
-								_this1.points[l23][1] = ny10;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d15 = _this1.dim[_this1.dim.length - 1];
-								if(nx10 < d15.minX) {
-									d15.minX = nx10;
-								}
-								if(nx10 > d15.maxX) {
-									d15.maxX = nx10;
-								}
-								if(ny10 < d15.minY) {
-									d15.minY = ny10;
-								}
-								if(ny10 > d15.maxY) {
-									d15.maxY = ny10;
-								}
-								_this1.contour.reset();
-							}
-						}
-						j += 3;
-						break;
-					case "FORWARD_TRIANGLE_RIGHT":
-						var distance7 = v[j];
-						var distance24 = v[j + 1];
-						var radius7 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_TRIANGLE_RIGHT");
-							_this1.historyParameters.push(distance7);
-							_this1.historyParameters.push(distance24);
-							_this1.historyParameters.push(radius7);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-							_this1.turtleParameters.push(distance7);
-							_this1.turtleParameters.push(distance24);
-							_this1.turtleParameters.push(radius7);
-						} else {
-							var nx11 = _this1.x + distance7 * Math.cos(_this1.rotation);
-							var ny11 = _this1.y + distance7 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX3 = _this1.x + distance24 * Math.cos(_this1.rotation) - radius7 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY3 = _this1.y + distance24 * Math.sin(_this1.rotation) - radius7 * Math.sin(_this1.rotation + Math.PI / 2);
-								if(_this1.fill) {
-									_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX3,thruY3,nx11,ny11);
-								}
-								_this1.lineTo(thruX3,thruY3);
-								_this1.lineTo(nx11,ny11);
-								if(_this1.fill) {
-									_this1.lineTo(_this1.x,_this1.y);
-								}
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx11;
-								_this1.y = ny11;
-								var l24 = _this1.points.length;
-								_this1.points[l24] = [];
-								_this1.points[l24][0] = nx11;
-								_this1.points[l24][1] = ny11;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d16 = _this1.dim[_this1.dim.length - 1];
-								if(nx11 < d16.minX) {
-									d16.minX = nx11;
-								}
-								if(nx11 > d16.maxX) {
-									d16.maxX = nx11;
-								}
-								if(ny11 < d16.minY) {
-									d16.minY = ny11;
-								}
-								if(ny11 > d16.maxY) {
-									d16.maxY = ny11;
-								}
-								_this1.contour.reset();
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx11;
-								_this1.y = ny11;
-								var l25 = _this1.points.length;
-								_this1.points[l25] = [];
-								_this1.points[l25][0] = nx11;
-								_this1.points[l25][1] = ny11;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d17 = _this1.dim[_this1.dim.length - 1];
-								if(nx11 < d17.minX) {
-									d17.minX = nx11;
-								}
-								if(nx11 > d17.maxX) {
-									d17.maxX = nx11;
-								}
-								if(ny11 < d17.minY) {
-									d17.minY = ny11;
-								}
-								if(ny11 > d17.maxY) {
-									d17.maxY = ny11;
-								}
-								_this1.contour.reset();
-							}
-						}
-						j += 3;
 						break;
 					case "GREEN":
 						if(_this1.turtleHistoryOn) {
@@ -8847,10 +7765,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "MOVE_PEN":
-						var distance8 = v[j];
+						var distance6 = v[j];
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("MOVE_PEN");
-							_this1.turtleParameters.push(distance8);
+							_this1.turtleParameters.push(distance6);
 						} else if(_this1.penIsDown) {
 							if(_this1.turtleHistoryOn) {
 								_this1.historyAdd("PEN_UP");
@@ -8862,42 +7780,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							}
 							if(_this1.turtleHistoryOn) {
 								_this1.historyAdd("FORWARD");
-								_this1.historyParameters.push(distance8);
+								_this1.historyParameters.push(distance6);
 							}
 							if(_this1.repeatCommands) {
 								_this1.turtleCommands.push("FORWARD");
-								_this1.turtleParameters.push(distance8);
+								_this1.turtleParameters.push(distance6);
 							} else {
-								var nx12 = _this1.x + distance8 * Math.cos(_this1.rotation);
-								var ny12 = _this1.y + distance8 * Math.sin(_this1.rotation);
+								var nx9 = _this1.x + distance6 * Math.cos(_this1.rotation);
+								var ny9 = _this1.y + distance6 * Math.sin(_this1.rotation);
 								if(_this1.penIsDown) {
-									_this1.lastDistance = distance8;
-									_this1.lineTo(nx12,ny12);
+									_this1.lastDistance = distance6;
+									_this1.lineTo(nx9,ny9);
 								} else {
 									if(_this1.endLine == 2 || _this1.endLine == 3) {
 										_this1.contour.end(_this1.width);
 									}
-									_this1.x = nx12;
-									_this1.y = ny12;
-									var l26 = _this1.points.length;
-									_this1.points[l26] = [];
-									_this1.points[l26][0] = nx12;
-									_this1.points[l26][1] = ny12;
+									_this1.x = nx9;
+									_this1.y = ny9;
+									var l17 = _this1.points.length;
+									_this1.points[l17] = [];
+									_this1.points[l17][0] = nx9;
+									_this1.points[l17][1] = ny9;
 									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d18 = _this1.dim[_this1.dim.length - 1];
-									if(nx12 < d18.minX) {
-										d18.minX = nx12;
+									var d11 = _this1.dim[_this1.dim.length - 1];
+									if(nx9 < d11.minX) {
+										d11.minX = nx9;
 									}
-									if(nx12 > d18.maxX) {
-										d18.maxX = nx12;
+									if(nx9 > d11.maxX) {
+										d11.maxX = nx9;
 									}
-									if(ny12 < d18.minY) {
-										d18.minY = ny12;
+									if(ny9 < d11.minY) {
+										d11.minY = ny9;
 									}
-									if(ny12 > d18.maxY) {
-										d18.maxY = ny12;
+									if(ny9 > d11.maxY) {
+										d11.maxY = ny9;
 									}
 									_this1.contour.reset();
 								}
@@ -8913,42 +7831,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							if(_this1.turtleHistoryOn) {
 								_this1.historyAdd("FORWARD");
-								_this1.historyParameters.push(distance8);
+								_this1.historyParameters.push(distance6);
 							}
 							if(_this1.repeatCommands) {
 								_this1.turtleCommands.push("FORWARD");
-								_this1.turtleParameters.push(distance8);
+								_this1.turtleParameters.push(distance6);
 							} else {
-								var nx13 = _this1.x + distance8 * Math.cos(_this1.rotation);
-								var ny13 = _this1.y + distance8 * Math.sin(_this1.rotation);
+								var nx10 = _this1.x + distance6 * Math.cos(_this1.rotation);
+								var ny10 = _this1.y + distance6 * Math.sin(_this1.rotation);
 								if(_this1.penIsDown) {
-									_this1.lastDistance = distance8;
-									_this1.lineTo(nx13,ny13);
+									_this1.lastDistance = distance6;
+									_this1.lineTo(nx10,ny10);
 								} else {
 									if(_this1.endLine == 2 || _this1.endLine == 3) {
 										_this1.contour.end(_this1.width);
 									}
-									_this1.x = nx13;
-									_this1.y = ny13;
-									var l27 = _this1.points.length;
-									_this1.points[l27] = [];
-									_this1.points[l27][0] = nx13;
-									_this1.points[l27][1] = ny13;
+									_this1.x = nx10;
+									_this1.y = ny10;
+									var l18 = _this1.points.length;
+									_this1.points[l18] = [];
+									_this1.points[l18][0] = nx10;
+									_this1.points[l18][1] = ny10;
 									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d19 = _this1.dim[_this1.dim.length - 1];
-									if(nx13 < d19.minX) {
-										d19.minX = nx13;
+									var d12 = _this1.dim[_this1.dim.length - 1];
+									if(nx10 < d12.minX) {
+										d12.minX = nx10;
 									}
-									if(nx13 > d19.maxX) {
-										d19.maxX = nx13;
+									if(nx10 > d12.maxX) {
+										d12.maxX = nx10;
 									}
-									if(ny13 < d19.minY) {
-										d19.minY = ny13;
+									if(ny10 < d12.minY) {
+										d12.minY = ny10;
 									}
-									if(ny13 > d19.maxY) {
-										d19.maxY = ny13;
+									if(ny10 > d12.maxY) {
+										d12.maxY = ny10;
 									}
 									_this1.contour.reset();
 								}
@@ -9220,42 +8138,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						++j;
 						break;
 					case "SET_POSITION":
-						var x4 = v[j];
-						var y4 = v[j + 1];
+						var x2 = v[j];
+						var y2 = v[j + 1];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("SET_POSITION");
-							_this1.historyParameters.push(x4);
-							_this1.historyParameters.push(y4);
+							_this1.historyParameters.push(x2);
+							_this1.historyParameters.push(y2);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("SET_POSITION");
-							_this1.turtleParameters.push(x4);
-							_this1.turtleParameters.push(y4);
+							_this1.turtleParameters.push(x2);
+							_this1.turtleParameters.push(y2);
 						} else {
 							if(_this1.endLine == 2 || _this1.endLine == 3) {
 								_this1.contour.end(_this1.width);
 							}
-							_this1.x = x4;
-							_this1.y = y4;
-							var l28 = _this1.points.length;
-							_this1.points[l28] = [];
-							_this1.points[l28][0] = x4;
-							_this1.points[l28][1] = y4;
+							_this1.x = x2;
+							_this1.y = y2;
+							var l19 = _this1.points.length;
+							_this1.points[l19] = [];
+							_this1.points[l19][0] = x2;
+							_this1.points[l19][1] = y2;
 							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d20 = _this1.dim[_this1.dim.length - 1];
-							if(x4 < d20.minX) {
-								d20.minX = x4;
+							var d13 = _this1.dim[_this1.dim.length - 1];
+							if(x2 < d13.minX) {
+								d13.minX = x2;
 							}
-							if(x4 > d20.maxX) {
-								d20.maxX = x4;
+							if(x2 > d13.maxX) {
+								d13.maxX = x2;
 							}
-							if(y4 < d20.minY) {
-								d20.minY = y4;
+							if(y2 < d13.minY) {
+								d13.minY = y2;
 							}
-							if(y4 > d20.maxY) {
-								d20.maxY = y4;
+							if(y2 > d13.maxY) {
+								d13.maxY = y2;
 							}
 							_this1.contour.reset();
 						}
@@ -9280,6 +8198,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							_this1.pen.currentColor = -27273;
 						}
+						break;
+					case "TRIANGLE_ARCH":
+						var distance7 = v[j];
+						var distance21 = v[j + 1];
+						var radius5 = v[j + 2];
+						if(_this1.turtleHistoryOn) {
+							_this1.historyAdd("TRIANGLE_ARCH");
+							_this1.historyParameters.push(distance7);
+							_this1.historyParameters.push(distance21);
+							_this1.historyParameters.push(radius5);
+						}
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("TRIANGLE_ARCH");
+							_this1.turtleParameters.push(distance7);
+							_this1.turtleParameters.push(distance21);
+							_this1.turtleParameters.push(radius5);
+						} else {
+							var nx11 = _this1.x + distance7 * Math.cos(_this1.rotation);
+							var ny11 = _this1.y + distance7 * Math.sin(_this1.rotation);
+							if(_this1.penIsDown) {
+								var thruX1 = _this1.x + distance21 * Math.cos(_this1.rotation) - radius5 * Math.cos(_this1.rotation + Math.PI / 2);
+								var thruY1 = _this1.y + distance21 * Math.sin(_this1.rotation) - radius5 * Math.sin(_this1.rotation + Math.PI / 2);
+								if(_this1.fill) {
+									_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX1,thruY1,nx11,ny11);
+								}
+								_this1.lineTo(thruX1,thruY1);
+								_this1.lineTo(nx11,ny11);
+								if(_this1.fill) {
+									_this1.lineTo(_this1.x,_this1.y);
+								}
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx11;
+								_this1.y = ny11;
+								var l20 = _this1.points.length;
+								_this1.points[l20] = [];
+								_this1.points[l20][0] = nx11;
+								_this1.points[l20][1] = ny11;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d14 = _this1.dim[_this1.dim.length - 1];
+								if(nx11 < d14.minX) {
+									d14.minX = nx11;
+								}
+								if(nx11 > d14.maxX) {
+									d14.maxX = nx11;
+								}
+								if(ny11 < d14.minY) {
+									d14.minY = ny11;
+								}
+								if(ny11 > d14.maxY) {
+									d14.maxY = ny11;
+								}
+								_this1.contour.reset();
+							} else {
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx11;
+								_this1.y = ny11;
+								var l21 = _this1.points.length;
+								_this1.points[l21] = [];
+								_this1.points[l21][0] = nx11;
+								_this1.points[l21][1] = ny11;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d15 = _this1.dim[_this1.dim.length - 1];
+								if(nx11 < d15.minX) {
+									d15.minX = nx11;
+								}
+								if(nx11 > d15.maxX) {
+									d15.maxX = nx11;
+								}
+								if(ny11 < d15.minY) {
+									d15.minY = ny11;
+								}
+								if(ny11 > d15.maxY) {
+									d15.maxY = ny11;
+								}
+								_this1.contour.reset();
+							}
+						}
+						j += 3;
 						break;
 					case "WEST":
 						if(_this1.turtleHistoryOn) {
@@ -9706,8 +8710,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					j += 2;
 					break;
+				case "ARCH_BEZIER":
+					var distance = v[j];
+					var distance2 = v[j + 1];
+					var radius1 = v[j + 2];
+					if(_this.turtleHistoryOn) {
+						_this.historyAdd("ARCH_BEZIER");
+						_this.historyParameters.push(distance);
+						_this.historyParameters.push(distance2);
+						_this.historyParameters.push(radius1);
+					}
+					if(_this.repeatCommands) {
+						_this.turtleCommands.push("ARCH_BEZIER");
+						_this.turtleParameters.push(distance);
+						_this.turtleParameters.push(distance2);
+						_this.turtleParameters.push(radius1);
+					} else {
+						var nx1 = _this.x + distance * Math.cos(_this.rotation);
+						var ny1 = _this.y + distance * Math.sin(_this.rotation);
+						if(_this.penIsDown) {
+							var thruX = _this.x + distance2 * Math.cos(_this.rotation) - radius1 * Math.cos(_this.rotation + Math.PI / 2);
+							var thruY = _this.y + distance2 * Math.sin(_this.rotation) - radius1 * Math.sin(_this.rotation + Math.PI / 2);
+							var newx = 2 * thruX - 0.5 * (_this.x + nx1);
+							var newy = 2 * thruY - 0.5 * (_this.y + ny1);
+							_this.tempArr = [];
+							var p = _this.tempArr;
+							var ax = _this.x;
+							var ay = _this.y;
+							var x = ax - newx;
+							var y = ay - newy;
+							var x1 = newx - nx1;
+							var y1 = newy - ny1;
+							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+							if(approxDistance == 0) {
+								approxDistance = 0.000001;
+							}
+							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+							var l2 = p.length;
+							p[l2++] = ax;
+							p[l2++] = ay;
+							var t = step;
+							while(t < 1.) {
+								var u = 1 - t;
+								p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+								var u1 = 1 - t;
+								p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+								t += step;
+							}
+							p[l2++] = nx1;
+							p[l2++] = ny1;
+							var arr1 = _this.tempArr;
+							var withMove = false;
+							if(withMove == null) {
+								withMove = true;
+							}
+							var l3 = arr1.length;
+							var i3 = 2;
+							if(withMove) {
+								var x_ = arr1[0];
+								var y_ = arr1[1];
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = x_;
+								_this.y = y_;
+								var l4 = _this.points.length;
+								_this.points[l4] = [];
+								_this.points[l4][0] = x_;
+								_this.points[l4][1] = y_;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d1 = _this.dim[_this.dim.length - 1];
+								if(x_ < d1.minX) {
+									d1.minX = x_;
+								}
+								if(x_ > d1.maxX) {
+									d1.maxX = x_;
+								}
+								if(y_ < d1.minY) {
+									d1.minY = y_;
+								}
+								if(y_ > d1.maxY) {
+									d1.maxY = y_;
+								}
+								_this.contour.reset();
+							} else {
+								_this.lineTo(arr1[0],arr1[1]);
+							}
+							var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+							var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+							var ox1 = _this.x;
+							var oy1 = _this.y;
+							while(i3 < l3) {
+								if(_this.fill && _this.penIsDown) {
+									if(i3 > 0 && i3 < l3 - 2) {
+										_this.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+									}
+								}
+								_this.lineTo(arr1[i3],arr1[i3 + 1]);
+								i3 += 2;
+							}
+							if(_this.fill && _this.penIsDown) {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = ox1;
+								_this.y = oy1;
+								var l5 = _this.points.length;
+								_this.points[l5] = [];
+								_this.points[l5][0] = ox1;
+								_this.points[l5][1] = oy1;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d2 = _this.dim[_this.dim.length - 1];
+								if(ox1 < d2.minX) {
+									d2.minX = ox1;
+								}
+								if(ox1 > d2.maxX) {
+									d2.maxX = ox1;
+								}
+								if(oy1 < d2.minY) {
+									d2.minY = oy1;
+								}
+								if(oy1 > d2.maxY) {
+									d2.maxY = oy1;
+								}
+								_this.contour.reset();
+								_this.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+							}
+							_this.x = nx1;
+							_this.y = ny1;
+						} else {
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx1;
+							_this.y = ny1;
+							var l6 = _this.points.length;
+							_this.points[l6] = [];
+							_this.points[l6][0] = nx1;
+							_this.points[l6][1] = ny1;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d3 = _this.dim[_this.dim.length - 1];
+							if(nx1 < d3.minX) {
+								d3.minX = nx1;
+							}
+							if(nx1 > d3.maxX) {
+								d3.maxX = nx1;
+							}
+							if(ny1 < d3.minY) {
+								d3.minY = ny1;
+							}
+							if(ny1 > d3.maxY) {
+								d3.maxY = ny1;
+							}
+							_this.contour.reset();
+						}
+					}
+					j += 3;
+					break;
 				case "ARC_SIDES":
-					var radius1 = v[j];
+					var radius2 = v[j];
 					var degrees1 = v[j + 1];
 					var sides = v[j + 2];
 					if(sides == null) {
@@ -9716,24 +8883,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this.turtleHistoryOn) {
 						if(sides == 24) {
 							_this.historyAdd("ARC");
-							_this.historyParameters.push(radius1);
+							_this.historyParameters.push(radius2);
 							_this.historyParameters.push(degrees1);
 						} else {
 							_this.historyAdd("ARC_SIDES");
-							_this.historyParameters.push(radius1);
+							_this.historyParameters.push(radius2);
 							_this.historyParameters.push(degrees1);
 							_this.historyParameters.push(sides);
 						}
 					}
-					if(radius1 != 0) {
+					if(radius2 != 0) {
 						if(_this.repeatCommands) {
 							if(sides == 24) {
 								_this.turtleCommands.push("ARC");
-								_this.turtleParameters.push(radius1);
+								_this.turtleParameters.push(radius2);
 								_this.turtleParameters.push(degrees1);
 							} else {
 								_this.turtleCommands.push("ARC_SIDES");
-								_this.turtleParameters.push(radius1);
+								_this.turtleParameters.push(radius2);
 								_this.turtleParameters.push(degrees1);
 								_this.turtleParameters.push(sides);
 							}
@@ -9741,15 +8908,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							var beta1 = degrees1 * Math.PI / 180 / sides;
 							var alpha1 = (Math.PI - beta1) / 2;
 							var rotate1 = -(Math.PI / 2 - alpha1);
-							var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-							var ox1 = _this.x;
-							var oy1 = _this.y;
-							var arr1 = [];
-							arr1.push(_this.x);
-							arr1.push(_this.y);
+							var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+							var ox2 = _this.x;
+							var oy2 = _this.y;
+							var arr2 = [];
+							arr2.push(_this.x);
+							arr2.push(_this.y);
 							var _g5 = 0;
 							while(_g5 < 48) {
-								var i3 = _g5++;
+								var i4 = _g5++;
 								_this.rotation += rotate1;
 								var wasHistoryOn2 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -9761,107 +8928,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength1);
 								} else {
-									var nx1 = _this.x + baseLength1 * Math.cos(_this.rotation);
-									var ny1 = _this.y + baseLength1 * Math.sin(_this.rotation);
+									var nx2 = _this.x + baseLength1 * Math.cos(_this.rotation);
+									var ny2 = _this.y + baseLength1 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength1;
-										_this.lineTo(nx1,ny1);
+										_this.lineTo(nx2,ny2);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx1;
-										_this.y = ny1;
-										var l2 = _this.points.length;
-										_this.points[l2] = [];
-										_this.points[l2][0] = nx1;
-										_this.points[l2][1] = ny1;
+										_this.x = nx2;
+										_this.y = ny2;
+										var l7 = _this.points.length;
+										_this.points[l7] = [];
+										_this.points[l7][0] = nx2;
+										_this.points[l7][1] = ny2;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d1 = _this.dim[_this.dim.length - 1];
-										if(nx1 < d1.minX) {
-											d1.minX = nx1;
+										var d4 = _this.dim[_this.dim.length - 1];
+										if(nx2 < d4.minX) {
+											d4.minX = nx2;
 										}
-										if(nx1 > d1.maxX) {
-											d1.maxX = nx1;
+										if(nx2 > d4.maxX) {
+											d4.maxX = nx2;
 										}
-										if(ny1 < d1.minY) {
-											d1.minY = ny1;
+										if(ny2 < d4.minY) {
+											d4.minY = ny2;
 										}
-										if(ny1 > d1.maxY) {
-											d1.maxY = ny1;
+										if(ny2 > d4.maxY) {
+											d4.maxY = ny2;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn2;
 								if(_this.fill) {
-									arr1.push(_this.x);
-									arr1.push(_this.y);
+									arr2.push(_this.x);
+									arr2.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-								var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-								var l3 = arr1.length;
-								var i4 = 2;
+								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+								var l8 = arr2.length;
+								var i5 = 2;
 								var lx1 = 0.;
 								var ly1 = 0.;
-								_this.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-								while(i4 < l3) {
-									if(i4 > 2) {
-										_this.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+								_this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+								while(i5 < l8) {
+									if(i5 > 2) {
+										_this.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 									}
-									lx1 = arr1[i4];
-									ly1 = arr1[i4 + 1];
-									i4 += 2;
+									lx1 = arr2[i5];
+									ly1 = arr2[i5 + 1];
+									i5 += 2;
 								}
 							}
-							arr1.length = 0;
+							arr2.length = 0;
 						}
 					}
 					j += 3;
 					break;
 				case "BACKWARD":
-					var distance = v[j];
+					var distance1 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("BACKWARD");
-						_this.historyParameters.push(distance);
+						_this.historyParameters.push(distance1);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("BACKWARD");
-						_this.turtleParameters.push(distance);
+						_this.turtleParameters.push(distance1);
 					} else {
-						var nx2 = _this.x + distance * Math.cos(_this.rotation + Math.PI);
-						var ny2 = _this.y + distance * Math.sin(_this.rotation + Math.PI);
+						var nx3 = _this.x + distance1 * Math.cos(_this.rotation + Math.PI);
+						var ny3 = _this.y + distance1 * Math.sin(_this.rotation + Math.PI);
 						if(_this.penIsDown) {
-							_this.lineTo(nx2,ny2);
+							_this.lineTo(nx3,ny3);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx2;
-							_this.y = ny2;
-							var l4 = _this.points.length;
-							_this.points[l4] = [];
-							_this.points[l4][0] = nx2;
-							_this.points[l4][1] = ny2;
+							_this.x = nx3;
+							_this.y = ny3;
+							var l9 = _this.points.length;
+							_this.points[l9] = [];
+							_this.points[l9][0] = nx3;
+							_this.points[l9][1] = ny3;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d2 = _this.dim[_this.dim.length - 1];
-							if(nx2 < d2.minX) {
-								d2.minX = nx2;
+							var d5 = _this.dim[_this.dim.length - 1];
+							if(nx3 < d5.minX) {
+								d5.minX = nx3;
 							}
-							if(nx2 > d2.maxX) {
-								d2.maxX = nx2;
+							if(nx3 > d5.maxX) {
+								d5.maxX = nx3;
 							}
-							if(ny2 < d2.minY) {
-								d2.minY = ny2;
+							if(ny3 < d5.minY) {
+								d5.minY = ny3;
 							}
-							if(ny2 > d2.maxY) {
-								d2.maxY = ny2;
+							if(ny3 > d5.maxY) {
+								d5.maxY = ny3;
 							}
 							_this.contour.reset();
 						}
@@ -9901,26 +9068,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "CIRCLE":
-					var radius2 = v[j];
+					var radius3 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("CIRCLE");
-						_this.historyParameters.push(radius2);
+						_this.historyParameters.push(radius3);
 					}
-					if(radius2 != 0) {
+					if(radius3 != 0) {
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("CIRCLE");
-							_this.turtleParameters.push(radius2);
+							_this.turtleParameters.push(radius3);
 						} else {
 							var beta2 = 2 * Math.PI / 24;
 							var alpha2 = (Math.PI - beta2) / 2;
 							var rotate2 = -(Math.PI / 2 - alpha2);
-							var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-							var ox2 = _this.x;
-							var oy2 = _this.y;
-							var arr2 = [];
+							var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+							var ox3 = _this.x;
+							var oy3 = _this.y;
+							var arr3 = [];
 							var _g6 = 0;
 							while(_g6 < 48) {
-								var i5 = _g6++;
+								var i6 = _g6++;
 								_this.rotation += rotate2;
 								var wasHistoryOn3 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -9932,69 +9099,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength2);
 								} else {
-									var nx3 = _this.x + baseLength2 * Math.cos(_this.rotation);
-									var ny3 = _this.y + baseLength2 * Math.sin(_this.rotation);
+									var nx4 = _this.x + baseLength2 * Math.cos(_this.rotation);
+									var ny4 = _this.y + baseLength2 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength2;
-										_this.lineTo(nx3,ny3);
+										_this.lineTo(nx4,ny4);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx3;
-										_this.y = ny3;
-										var l5 = _this.points.length;
-										_this.points[l5] = [];
-										_this.points[l5][0] = nx3;
-										_this.points[l5][1] = ny3;
+										_this.x = nx4;
+										_this.y = ny4;
+										var l10 = _this.points.length;
+										_this.points[l10] = [];
+										_this.points[l10][0] = nx4;
+										_this.points[l10][1] = ny4;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d3 = _this.dim[_this.dim.length - 1];
-										if(nx3 < d3.minX) {
-											d3.minX = nx3;
+										var d6 = _this.dim[_this.dim.length - 1];
+										if(nx4 < d6.minX) {
+											d6.minX = nx4;
 										}
-										if(nx3 > d3.maxX) {
-											d3.maxX = nx3;
+										if(nx4 > d6.maxX) {
+											d6.maxX = nx4;
 										}
-										if(ny3 < d3.minY) {
-											d3.minY = ny3;
+										if(ny4 < d6.minY) {
+											d6.minY = ny4;
 										}
-										if(ny3 > d3.maxY) {
-											d3.maxY = ny3;
+										if(ny4 > d6.maxY) {
+											d6.maxY = ny4;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn3;
 								if(_this.fill) {
-									arr2.push(_this.x);
-									arr2.push(_this.y);
+									arr3.push(_this.x);
+									arr3.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-								var l6 = arr2.length;
-								var i6 = 2;
+								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+								var l11 = arr3.length;
+								var i7 = 2;
 								var lx2 = 0.;
 								var ly2 = 0.;
-								while(i6 < l6) {
-									if(i6 > 2) {
-										_this.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+								while(i7 < l11) {
+									if(i7 > 2) {
+										_this.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 									}
-									lx2 = arr2[i6];
-									ly2 = arr2[i6 + 1];
-									i6 += 2;
+									lx2 = arr3[i7];
+									ly2 = arr3[i7 + 1];
+									i7 += 2;
 								}
 							}
-							arr2.length = 0;
+							arr3.length = 0;
 						}
 					}
 					++j;
 					break;
 				case "CIRCLE_SIDES":
-					var radius3 = v[j];
+					var radius4 = v[j];
 					var sides1 = v[j + 1];
 					if(sides1 == null) {
 						sides1 = 24;
@@ -10002,34 +9169,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this.turtleHistoryOn) {
 						if(sides1 == 24) {
 							_this.historyAdd("CIRCLE");
-							_this.historyParameters.push(radius3);
+							_this.historyParameters.push(radius4);
 						} else {
 							_this.historyAdd("CIRCLE_SIDES");
-							_this.historyParameters.push(radius3);
+							_this.historyParameters.push(radius4);
 							_this.historyParameters.push(sides1);
 						}
 					}
-					if(radius3 != 0) {
+					if(radius4 != 0) {
 						if(_this.repeatCommands) {
 							if(sides1 == 24) {
 								_this.turtleCommands.push("CIRCLE");
-								_this.turtleParameters.push(radius3);
+								_this.turtleParameters.push(radius4);
 							} else {
 								_this.turtleCommands.push("CIRCLE_SIDES");
-								_this.turtleParameters.push(radius3);
+								_this.turtleParameters.push(radius4);
 								_this.turtleParameters.push(sides1);
 							}
 						} else {
 							var beta3 = 2 * Math.PI / sides1;
 							var alpha3 = (Math.PI - beta3) / 2;
 							var rotate3 = -(Math.PI / 2 - alpha3);
-							var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-							var ox3 = _this.x;
-							var oy3 = _this.y;
-							var arr3 = [];
+							var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+							var ox4 = _this.x;
+							var oy4 = _this.y;
+							var arr4 = [];
 							var _g7 = 0;
 							while(_g7 < 48) {
-								var i7 = _g7++;
+								var i8 = _g7++;
 								_this.rotation += rotate3;
 								var wasHistoryOn4 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -10041,63 +9208,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength3);
 								} else {
-									var nx4 = _this.x + baseLength3 * Math.cos(_this.rotation);
-									var ny4 = _this.y + baseLength3 * Math.sin(_this.rotation);
+									var nx5 = _this.x + baseLength3 * Math.cos(_this.rotation);
+									var ny5 = _this.y + baseLength3 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength3;
-										_this.lineTo(nx4,ny4);
+										_this.lineTo(nx5,ny5);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx4;
-										_this.y = ny4;
-										var l7 = _this.points.length;
-										_this.points[l7] = [];
-										_this.points[l7][0] = nx4;
-										_this.points[l7][1] = ny4;
+										_this.x = nx5;
+										_this.y = ny5;
+										var l12 = _this.points.length;
+										_this.points[l12] = [];
+										_this.points[l12][0] = nx5;
+										_this.points[l12][1] = ny5;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d4 = _this.dim[_this.dim.length - 1];
-										if(nx4 < d4.minX) {
-											d4.minX = nx4;
+										var d7 = _this.dim[_this.dim.length - 1];
+										if(nx5 < d7.minX) {
+											d7.minX = nx5;
 										}
-										if(nx4 > d4.maxX) {
-											d4.maxX = nx4;
+										if(nx5 > d7.maxX) {
+											d7.maxX = nx5;
 										}
-										if(ny4 < d4.minY) {
-											d4.minY = ny4;
+										if(ny5 < d7.minY) {
+											d7.minY = ny5;
 										}
-										if(ny4 > d4.maxY) {
-											d4.maxY = ny4;
+										if(ny5 > d7.maxY) {
+											d7.maxY = ny5;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn4;
 								if(_this.fill) {
-									arr3.push(_this.x);
-									arr3.push(_this.y);
+									arr4.push(_this.x);
+									arr4.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-								var l8 = arr3.length;
-								var i8 = 2;
+								var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+								var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+								var l13 = arr4.length;
+								var i9 = 2;
 								var lx3 = 0.;
 								var ly3 = 0.;
-								while(i8 < l8) {
-									if(i8 > 2) {
-										_this.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+								while(i9 < l13) {
+									if(i9 > 2) {
+										_this.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 									}
-									lx3 = arr3[i8];
-									ly3 = arr3[i8 + 1];
-									i8 += 2;
+									lx3 = arr4[i9];
+									ly3 = arr4[i9 + 1];
+									i9 += 2;
 								}
 							}
-							arr3.length = 0;
+							arr4.length = 0;
 						}
 					}
 					j += 2;
@@ -10165,45 +9332,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "FORWARD":
-					var distance1 = v[j];
+					var distance3 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("FORWARD");
-						_this.historyParameters.push(distance1);
+						_this.historyParameters.push(distance3);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("FORWARD");
-						_this.turtleParameters.push(distance1);
+						_this.turtleParameters.push(distance3);
 					} else {
-						var nx5 = _this.x + distance1 * Math.cos(_this.rotation);
-						var ny5 = _this.y + distance1 * Math.sin(_this.rotation);
+						var nx6 = _this.x + distance3 * Math.cos(_this.rotation);
+						var ny6 = _this.y + distance3 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
-							_this.lastDistance = distance1;
-							_this.lineTo(nx5,ny5);
+							_this.lastDistance = distance3;
+							_this.lineTo(nx6,ny6);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx5;
-							_this.y = ny5;
-							var l9 = _this.points.length;
-							_this.points[l9] = [];
-							_this.points[l9][0] = nx5;
-							_this.points[l9][1] = ny5;
+							_this.x = nx6;
+							_this.y = ny6;
+							var l14 = _this.points.length;
+							_this.points[l14] = [];
+							_this.points[l14][0] = nx6;
+							_this.points[l14][1] = ny6;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d5 = _this.dim[_this.dim.length - 1];
-							if(nx5 < d5.minX) {
-								d5.minX = nx5;
+							var d8 = _this.dim[_this.dim.length - 1];
+							if(nx6 < d8.minX) {
+								d8.minX = nx6;
 							}
-							if(nx5 > d5.maxX) {
-								d5.maxX = nx5;
+							if(nx6 > d8.maxX) {
+								d8.maxX = nx6;
 							}
-							if(ny5 < d5.minY) {
-								d5.minY = ny5;
+							if(ny6 < d8.minY) {
+								d8.minY = ny6;
 							}
-							if(ny5 > d5.maxY) {
-								d5.maxY = ny5;
+							if(ny6 > d8.maxY) {
+								d8.maxY = ny6;
 							}
 							_this.contour.reset();
 						}
@@ -10220,175 +9387,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this.turtleCommands.push("FORWARD_CHANGE");
 						_this.turtleParameters.push(deltaDistance);
 					} else {
-						var distance2 = _this.lastDistance + deltaDistance;
-						var nx6 = _this.x + distance2 * Math.cos(_this.rotation);
-						var ny6 = _this.y + distance2 * Math.sin(_this.rotation);
+						var distance4 = _this.lastDistance + deltaDistance;
+						var nx7 = _this.x + distance4 * Math.cos(_this.rotation);
+						var ny7 = _this.y + distance4 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
-							_this.lastDistance = distance2 + deltaDistance;
-							_this.lineTo(nx6,ny6);
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx6;
-							_this.y = ny6;
-							var l10 = _this.points.length;
-							_this.points[l10] = [];
-							_this.points[l10][0] = nx6;
-							_this.points[l10][1] = ny6;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d6 = _this.dim[_this.dim.length - 1];
-							if(nx6 < d6.minX) {
-								d6.minX = nx6;
-							}
-							if(nx6 > d6.maxX) {
-								d6.maxX = nx6;
-							}
-							if(ny6 < d6.minY) {
-								d6.minY = ny6;
-							}
-							if(ny6 > d6.maxY) {
-								d6.maxY = ny6;
-							}
-							_this.contour.reset();
-						}
-					}
-					++j;
-					break;
-				case "FORWARD_CURVE_LEFT":
-					var distance3 = v[j];
-					var distance21 = v[j + 1];
-					var radius4 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_CURVE_LEFT");
-						_this.historyParameters.push(distance3);
-						_this.historyParameters.push(distance21);
-						_this.historyParameters.push(radius4);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_CURVE_LEFT");
-						_this.turtleParameters.push(distance3);
-						_this.turtleParameters.push(distance21);
-						_this.turtleParameters.push(radius4);
-					} else {
-						var nx7 = _this.x + distance3 * Math.cos(_this.rotation);
-						var ny7 = _this.y + distance3 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX = _this.x + distance21 * Math.cos(_this.rotation) + radius4 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY = _this.y + distance21 * Math.sin(_this.rotation) + radius4 * Math.sin(_this.rotation + Math.PI / 2);
-							var newx = 2 * thruX - 0.5 * (_this.x + nx7);
-							var newy = 2 * thruY - 0.5 * (_this.y + ny7);
-							_this.tempArr = [];
-							var p = _this.tempArr;
-							var ax = _this.x;
-							var ay = _this.y;
-							var x = ax - newx;
-							var y = ay - newy;
-							var x1 = newx - nx7;
-							var y1 = newy - ny7;
-							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-							if(approxDistance == 0) {
-								approxDistance = 0.000001;
-							}
-							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-							var l11 = p.length;
-							p[l11++] = ax;
-							p[l11++] = ay;
-							var t = step;
-							while(t < 1.) {
-								var u = 1 - t;
-								p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-								var u1 = 1 - t;
-								p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-								t += step;
-							}
-							p[l11++] = nx7;
-							p[l11++] = ny7;
-							var arr4 = _this.tempArr;
-							var withMove = false;
-							if(withMove == null) {
-								withMove = true;
-							}
-							var l12 = arr4.length;
-							var i9 = 2;
-							if(withMove) {
-								var x_ = arr4[0];
-								var y_ = arr4[1];
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = x_;
-								_this.y = y_;
-								var l13 = _this.points.length;
-								_this.points[l13] = [];
-								_this.points[l13][0] = x_;
-								_this.points[l13][1] = y_;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d7 = _this.dim[_this.dim.length - 1];
-								if(x_ < d7.minX) {
-									d7.minX = x_;
-								}
-								if(x_ > d7.maxX) {
-									d7.maxX = x_;
-								}
-								if(y_ < d7.minY) {
-									d7.minY = y_;
-								}
-								if(y_ > d7.maxY) {
-									d7.maxY = y_;
-								}
-								_this.contour.reset();
-							} else {
-								_this.lineTo(arr4[0],arr4[1]);
-							}
-							var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-							var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-							var ox4 = _this.x;
-							var oy4 = _this.y;
-							while(i9 < l12) {
-								if(_this.fill && _this.penIsDown) {
-									if(i9 > 0 && i9 < l12 - 2) {
-										_this.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-									}
-								}
-								_this.lineTo(arr4[i9],arr4[i9 + 1]);
-								i9 += 2;
-							}
-							if(_this.fill && _this.penIsDown) {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = ox4;
-								_this.y = oy4;
-								var l14 = _this.points.length;
-								_this.points[l14] = [];
-								_this.points[l14][0] = ox4;
-								_this.points[l14][1] = oy4;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d8 = _this.dim[_this.dim.length - 1];
-								if(ox4 < d8.minX) {
-									d8.minX = ox4;
-								}
-								if(ox4 > d8.maxX) {
-									d8.maxX = ox4;
-								}
-								if(oy4 < d8.minY) {
-									d8.minY = oy4;
-								}
-								if(oy4 > d8.maxY) {
-									d8.maxY = oy4;
-								}
-								_this.contour.reset();
-								_this.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-							}
-							_this.x = nx7;
-							_this.y = ny7;
+							_this.lastDistance = distance4 + deltaDistance;
+							_this.lineTo(nx7,ny7);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
@@ -10418,170 +9422,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.contour.reset();
 						}
 					}
-					j += 3;
-					break;
-				case "FORWARD_CURVE_RIGHT":
-					var distance4 = v[j];
-					var distance22 = v[j + 1];
-					var radius5 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_CURVE_RIGHT");
-						_this.historyParameters.push(distance4);
-						_this.historyParameters.push(distance22);
-						_this.historyParameters.push(radius5);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-						_this.turtleParameters.push(distance4);
-						_this.turtleParameters.push(distance22);
-						_this.turtleParameters.push(radius5);
-					} else {
-						var nx8 = _this.x + distance4 * Math.cos(_this.rotation);
-						var ny8 = _this.y + distance4 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX1 = _this.x + distance22 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY1 = _this.y + distance22 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
-							var newx1 = 2 * thruX1 - 0.5 * (_this.x + nx8);
-							var newy1 = 2 * thruY1 - 0.5 * (_this.y + ny8);
-							_this.tempArr = [];
-							var p1 = _this.tempArr;
-							var ax1 = _this.x;
-							var ay1 = _this.y;
-							var x2 = ax1 - newx1;
-							var y2 = ay1 - newy1;
-							var x3 = newx1 - nx8;
-							var y3 = newy1 - ny8;
-							var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-							if(approxDistance1 == 0) {
-								approxDistance1 = 0.000001;
-							}
-							var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-							var l16 = p1.length;
-							p1[l16++] = ax1;
-							p1[l16++] = ay1;
-							var t1 = step1;
-							while(t1 < 1.) {
-								var u2 = 1 - t1;
-								p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-								var u3 = 1 - t1;
-								p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-								t1 += step1;
-							}
-							p1[l16++] = nx8;
-							p1[l16++] = ny8;
-							var arr5 = _this.tempArr;
-							var withMove1 = false;
-							if(withMove1 == null) {
-								withMove1 = true;
-							}
-							var l17 = arr5.length;
-							var i10 = 2;
-							if(withMove1) {
-								var x_1 = arr5[0];
-								var y_1 = arr5[1];
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = x_1;
-								_this.y = y_1;
-								var l18 = _this.points.length;
-								_this.points[l18] = [];
-								_this.points[l18][0] = x_1;
-								_this.points[l18][1] = y_1;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d10 = _this.dim[_this.dim.length - 1];
-								if(x_1 < d10.minX) {
-									d10.minX = x_1;
-								}
-								if(x_1 > d10.maxX) {
-									d10.maxX = x_1;
-								}
-								if(y_1 < d10.minY) {
-									d10.minY = y_1;
-								}
-								if(y_1 > d10.maxY) {
-									d10.maxY = y_1;
-								}
-								_this.contour.reset();
-							} else {
-								_this.lineTo(arr5[0],arr5[1]);
-							}
-							var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-							var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-							var ox5 = _this.x;
-							var oy5 = _this.y;
-							while(i10 < l17) {
-								if(_this.fill && _this.penIsDown) {
-									if(i10 > 0 && i10 < l17 - 2) {
-										_this.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-									}
-								}
-								_this.lineTo(arr5[i10],arr5[i10 + 1]);
-								i10 += 2;
-							}
-							if(_this.fill && _this.penIsDown) {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = ox5;
-								_this.y = oy5;
-								var l19 = _this.points.length;
-								_this.points[l19] = [];
-								_this.points[l19][0] = ox5;
-								_this.points[l19][1] = oy5;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d11 = _this.dim[_this.dim.length - 1];
-								if(ox5 < d11.minX) {
-									d11.minX = ox5;
-								}
-								if(ox5 > d11.maxX) {
-									d11.maxX = ox5;
-								}
-								if(oy5 < d11.minY) {
-									d11.minY = oy5;
-								}
-								if(oy5 > d11.maxY) {
-									d11.maxY = oy5;
-								}
-								_this.contour.reset();
-								_this.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-							}
-							_this.x = nx8;
-							_this.y = ny8;
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx8;
-							_this.y = ny8;
-							var l20 = _this.points.length;
-							_this.points[l20] = [];
-							_this.points[l20][0] = nx8;
-							_this.points[l20][1] = ny8;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d12 = _this.dim[_this.dim.length - 1];
-							if(nx8 < d12.minX) {
-								d12.minX = nx8;
-							}
-							if(nx8 > d12.maxX) {
-								d12.maxX = nx8;
-							}
-							if(ny8 < d12.minY) {
-								d12.minY = ny8;
-							}
-							if(ny8 > d12.maxY) {
-								d12.maxY = ny8;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
+					++j;
 					break;
 				case "FORWARD_FACTOR":
 					var factor = v[j];
@@ -10594,213 +9435,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this.turtleParameters.push(factor);
 					} else {
 						var distance5 = _this.lastDistance * factor;
-						var nx9 = _this.x + distance5 * Math.cos(_this.rotation);
-						var ny9 = _this.y + distance5 * Math.sin(_this.rotation);
+						var nx8 = _this.x + distance5 * Math.cos(_this.rotation);
+						var ny8 = _this.y + distance5 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
 							_this.lastDistance = distance5;
-							_this.lineTo(nx9,ny9);
+							_this.lineTo(nx8,ny8);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx9;
-							_this.y = ny9;
-							var l21 = _this.points.length;
-							_this.points[l21] = [];
-							_this.points[l21][0] = nx9;
-							_this.points[l21][1] = ny9;
+							_this.x = nx8;
+							_this.y = ny8;
+							var l16 = _this.points.length;
+							_this.points[l16] = [];
+							_this.points[l16][0] = nx8;
+							_this.points[l16][1] = ny8;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d13 = _this.dim[_this.dim.length - 1];
-							if(nx9 < d13.minX) {
-								d13.minX = nx9;
+							var d10 = _this.dim[_this.dim.length - 1];
+							if(nx8 < d10.minX) {
+								d10.minX = nx8;
 							}
-							if(nx9 > d13.maxX) {
-								d13.maxX = nx9;
+							if(nx8 > d10.maxX) {
+								d10.maxX = nx8;
 							}
-							if(ny9 < d13.minY) {
-								d13.minY = ny9;
+							if(ny8 < d10.minY) {
+								d10.minY = ny8;
 							}
-							if(ny9 > d13.maxY) {
-								d13.maxY = ny9;
+							if(ny8 > d10.maxY) {
+								d10.maxY = ny8;
 							}
 							_this.contour.reset();
 						}
 					}
 					++j;
-					break;
-				case "FORWARD_TRIANGLE_LEFT":
-					var distance6 = v[j];
-					var distance23 = v[j + 1];
-					var radius6 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_TRIANGLE_LEFT");
-						_this.historyParameters.push(distance6);
-						_this.historyParameters.push(distance23);
-						_this.historyParameters.push(radius6);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-						_this.turtleParameters.push(distance6);
-						_this.turtleParameters.push(distance23);
-						_this.turtleParameters.push(radius6);
-					} else {
-						var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
-						var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX2 = _this.x + distance23 * Math.cos(_this.rotation) + radius6 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY2 = _this.y + distance23 * Math.sin(_this.rotation) + radius6 * Math.sin(_this.rotation + Math.PI / 2);
-							if(_this.fill) {
-								_this.pen.triangle2DFill(_this.x,_this.y,thruX2,thruY2,nx10,ny10);
-							}
-							_this.lineTo(thruX2,thruY2);
-							_this.lineTo(nx10,ny10);
-							if(_this.fill) {
-								_this.lineTo(_this.x,_this.y);
-							}
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx10;
-							_this.y = ny10;
-							var l22 = _this.points.length;
-							_this.points[l22] = [];
-							_this.points[l22][0] = nx10;
-							_this.points[l22][1] = ny10;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d14 = _this.dim[_this.dim.length - 1];
-							if(nx10 < d14.minX) {
-								d14.minX = nx10;
-							}
-							if(nx10 > d14.maxX) {
-								d14.maxX = nx10;
-							}
-							if(ny10 < d14.minY) {
-								d14.minY = ny10;
-							}
-							if(ny10 > d14.maxY) {
-								d14.maxY = ny10;
-							}
-							_this.contour.reset();
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx10;
-							_this.y = ny10;
-							var l23 = _this.points.length;
-							_this.points[l23] = [];
-							_this.points[l23][0] = nx10;
-							_this.points[l23][1] = ny10;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d15 = _this.dim[_this.dim.length - 1];
-							if(nx10 < d15.minX) {
-								d15.minX = nx10;
-							}
-							if(nx10 > d15.maxX) {
-								d15.maxX = nx10;
-							}
-							if(ny10 < d15.minY) {
-								d15.minY = ny10;
-							}
-							if(ny10 > d15.maxY) {
-								d15.maxY = ny10;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
-					break;
-				case "FORWARD_TRIANGLE_RIGHT":
-					var distance7 = v[j];
-					var distance24 = v[j + 1];
-					var radius7 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-						_this.historyParameters.push(distance7);
-						_this.historyParameters.push(distance24);
-						_this.historyParameters.push(radius7);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-						_this.turtleParameters.push(distance7);
-						_this.turtleParameters.push(distance24);
-						_this.turtleParameters.push(radius7);
-					} else {
-						var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
-						var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX3 = _this.x + distance24 * Math.cos(_this.rotation) - radius7 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY3 = _this.y + distance24 * Math.sin(_this.rotation) - radius7 * Math.sin(_this.rotation + Math.PI / 2);
-							if(_this.fill) {
-								_this.pen.triangle2DFill(_this.x,_this.y,thruX3,thruY3,nx11,ny11);
-							}
-							_this.lineTo(thruX3,thruY3);
-							_this.lineTo(nx11,ny11);
-							if(_this.fill) {
-								_this.lineTo(_this.x,_this.y);
-							}
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx11;
-							_this.y = ny11;
-							var l24 = _this.points.length;
-							_this.points[l24] = [];
-							_this.points[l24][0] = nx11;
-							_this.points[l24][1] = ny11;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d16 = _this.dim[_this.dim.length - 1];
-							if(nx11 < d16.minX) {
-								d16.minX = nx11;
-							}
-							if(nx11 > d16.maxX) {
-								d16.maxX = nx11;
-							}
-							if(ny11 < d16.minY) {
-								d16.minY = ny11;
-							}
-							if(ny11 > d16.maxY) {
-								d16.maxY = ny11;
-							}
-							_this.contour.reset();
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx11;
-							_this.y = ny11;
-							var l25 = _this.points.length;
-							_this.points[l25] = [];
-							_this.points[l25][0] = nx11;
-							_this.points[l25][1] = ny11;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d17 = _this.dim[_this.dim.length - 1];
-							if(nx11 < d17.minX) {
-								d17.minX = nx11;
-							}
-							if(nx11 > d17.maxX) {
-								d17.maxX = nx11;
-							}
-							if(ny11 < d17.minY) {
-								d17.minY = ny11;
-							}
-							if(ny11 > d17.maxY) {
-								d17.maxY = ny11;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
 					break;
 				case "GREEN":
 					if(_this.turtleHistoryOn) {
@@ -10857,10 +9526,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "MOVE_PEN":
-					var distance8 = v[j];
+					var distance6 = v[j];
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("MOVE_PEN");
-						_this.turtleParameters.push(distance8);
+						_this.turtleParameters.push(distance6);
 					} else if(_this.penIsDown) {
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("PEN_UP");
@@ -10872,42 +9541,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance8);
+							_this.historyParameters.push(distance6);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else {
-							var nx12 = _this.x + distance8 * Math.cos(_this.rotation);
-							var ny12 = _this.y + distance8 * Math.sin(_this.rotation);
+							var nx9 = _this.x + distance6 * Math.cos(_this.rotation);
+							var ny9 = _this.y + distance6 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance8;
-								_this.lineTo(nx12,ny12);
+								_this.lastDistance = distance6;
+								_this.lineTo(nx9,ny9);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx12;
-								_this.y = ny12;
-								var l26 = _this.points.length;
-								_this.points[l26] = [];
-								_this.points[l26][0] = nx12;
-								_this.points[l26][1] = ny12;
+								_this.x = nx9;
+								_this.y = ny9;
+								var l17 = _this.points.length;
+								_this.points[l17] = [];
+								_this.points[l17][0] = nx9;
+								_this.points[l17][1] = ny9;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d18 = _this.dim[_this.dim.length - 1];
-								if(nx12 < d18.minX) {
-									d18.minX = nx12;
+								var d11 = _this.dim[_this.dim.length - 1];
+								if(nx9 < d11.minX) {
+									d11.minX = nx9;
 								}
-								if(nx12 > d18.maxX) {
-									d18.maxX = nx12;
+								if(nx9 > d11.maxX) {
+									d11.maxX = nx9;
 								}
-								if(ny12 < d18.minY) {
-									d18.minY = ny12;
+								if(ny9 < d11.minY) {
+									d11.minY = ny9;
 								}
-								if(ny12 > d18.maxY) {
-									d18.maxY = ny12;
+								if(ny9 > d11.maxY) {
+									d11.maxY = ny9;
 								}
 								_this.contour.reset();
 							}
@@ -10923,42 +9592,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance8);
+							_this.historyParameters.push(distance6);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else {
-							var nx13 = _this.x + distance8 * Math.cos(_this.rotation);
-							var ny13 = _this.y + distance8 * Math.sin(_this.rotation);
+							var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
+							var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance8;
-								_this.lineTo(nx13,ny13);
+								_this.lastDistance = distance6;
+								_this.lineTo(nx10,ny10);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx13;
-								_this.y = ny13;
-								var l27 = _this.points.length;
-								_this.points[l27] = [];
-								_this.points[l27][0] = nx13;
-								_this.points[l27][1] = ny13;
+								_this.x = nx10;
+								_this.y = ny10;
+								var l18 = _this.points.length;
+								_this.points[l18] = [];
+								_this.points[l18][0] = nx10;
+								_this.points[l18][1] = ny10;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d19 = _this.dim[_this.dim.length - 1];
-								if(nx13 < d19.minX) {
-									d19.minX = nx13;
+								var d12 = _this.dim[_this.dim.length - 1];
+								if(nx10 < d12.minX) {
+									d12.minX = nx10;
 								}
-								if(nx13 > d19.maxX) {
-									d19.maxX = nx13;
+								if(nx10 > d12.maxX) {
+									d12.maxX = nx10;
 								}
-								if(ny13 < d19.minY) {
-									d19.minY = ny13;
+								if(ny10 < d12.minY) {
+									d12.minY = ny10;
 								}
-								if(ny13 > d19.maxY) {
-									d19.maxY = ny13;
+								if(ny10 > d12.maxY) {
+									d12.maxY = ny10;
 								}
 								_this.contour.reset();
 							}
@@ -11230,42 +9899,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					++j;
 					break;
 				case "SET_POSITION":
-					var x4 = v[j];
-					var y4 = v[j + 1];
+					var x2 = v[j];
+					var y2 = v[j + 1];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("SET_POSITION");
-						_this.historyParameters.push(x4);
-						_this.historyParameters.push(y4);
+						_this.historyParameters.push(x2);
+						_this.historyParameters.push(y2);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("SET_POSITION");
-						_this.turtleParameters.push(x4);
-						_this.turtleParameters.push(y4);
+						_this.turtleParameters.push(x2);
+						_this.turtleParameters.push(y2);
 					} else {
 						if(_this.endLine == 2 || _this.endLine == 3) {
 							_this.contour.end(_this.width);
 						}
-						_this.x = x4;
-						_this.y = y4;
-						var l28 = _this.points.length;
-						_this.points[l28] = [];
-						_this.points[l28][0] = x4;
-						_this.points[l28][1] = y4;
+						_this.x = x2;
+						_this.y = y2;
+						var l19 = _this.points.length;
+						_this.points[l19] = [];
+						_this.points[l19][0] = x2;
+						_this.points[l19][1] = y2;
 						_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 						_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 						_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d20 = _this.dim[_this.dim.length - 1];
-						if(x4 < d20.minX) {
-							d20.minX = x4;
+						var d13 = _this.dim[_this.dim.length - 1];
+						if(x2 < d13.minX) {
+							d13.minX = x2;
 						}
-						if(x4 > d20.maxX) {
-							d20.maxX = x4;
+						if(x2 > d13.maxX) {
+							d13.maxX = x2;
 						}
-						if(y4 < d20.minY) {
-							d20.minY = y4;
+						if(y2 < d13.minY) {
+							d13.minY = y2;
 						}
-						if(y4 > d20.maxY) {
-							d20.maxY = y4;
+						if(y2 > d13.maxY) {
+							d13.maxY = y2;
 						}
 						_this.contour.reset();
 					}
@@ -11290,6 +9959,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						_this.pen.currentColor = -27273;
 					}
+					break;
+				case "TRIANGLE_ARCH":
+					var distance7 = v[j];
+					var distance21 = v[j + 1];
+					var radius5 = v[j + 2];
+					if(_this.turtleHistoryOn) {
+						_this.historyAdd("TRIANGLE_ARCH");
+						_this.historyParameters.push(distance7);
+						_this.historyParameters.push(distance21);
+						_this.historyParameters.push(radius5);
+					}
+					if(_this.repeatCommands) {
+						_this.turtleCommands.push("TRIANGLE_ARCH");
+						_this.turtleParameters.push(distance7);
+						_this.turtleParameters.push(distance21);
+						_this.turtleParameters.push(radius5);
+					} else {
+						var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
+						var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
+						if(_this.penIsDown) {
+							var thruX1 = _this.x + distance21 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
+							var thruY1 = _this.y + distance21 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
+							if(_this.fill) {
+								_this.pen.triangle2DFill(_this.x,_this.y,thruX1,thruY1,nx11,ny11);
+							}
+							_this.lineTo(thruX1,thruY1);
+							_this.lineTo(nx11,ny11);
+							if(_this.fill) {
+								_this.lineTo(_this.x,_this.y);
+							}
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx11;
+							_this.y = ny11;
+							var l20 = _this.points.length;
+							_this.points[l20] = [];
+							_this.points[l20][0] = nx11;
+							_this.points[l20][1] = ny11;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d14 = _this.dim[_this.dim.length - 1];
+							if(nx11 < d14.minX) {
+								d14.minX = nx11;
+							}
+							if(nx11 > d14.maxX) {
+								d14.maxX = nx11;
+							}
+							if(ny11 < d14.minY) {
+								d14.minY = ny11;
+							}
+							if(ny11 > d14.maxY) {
+								d14.maxY = ny11;
+							}
+							_this.contour.reset();
+						} else {
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx11;
+							_this.y = ny11;
+							var l21 = _this.points.length;
+							_this.points[l21] = [];
+							_this.points[l21][0] = nx11;
+							_this.points[l21][1] = ny11;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d15 = _this.dim[_this.dim.length - 1];
+							if(nx11 < d15.minX) {
+								d15.minX = nx11;
+							}
+							if(nx11 > d15.maxX) {
+								d15.maxX = nx11;
+							}
+							if(ny11 < d15.minY) {
+								d15.minY = ny11;
+							}
+							if(ny11 > d15.maxY) {
+								d15.maxY = ny11;
+							}
+							_this.contour.reset();
+						}
+					}
+					j += 3;
 					break;
 				case "WEST":
 					if(_this.turtleHistoryOn) {
@@ -11608,8 +10363,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						j += 2;
 						break;
+					case "ARCH_BEZIER":
+						var distance = v[j];
+						var distance2 = v[j + 1];
+						var radius1 = v[j + 2];
+						if(_this1.turtleHistoryOn) {
+							_this1.historyAdd("ARCH_BEZIER");
+							_this1.historyParameters.push(distance);
+							_this1.historyParameters.push(distance2);
+							_this1.historyParameters.push(radius1);
+						}
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("ARCH_BEZIER");
+							_this1.turtleParameters.push(distance);
+							_this1.turtleParameters.push(distance2);
+							_this1.turtleParameters.push(radius1);
+						} else {
+							var nx1 = _this1.x + distance * Math.cos(_this1.rotation);
+							var ny1 = _this1.y + distance * Math.sin(_this1.rotation);
+							if(_this1.penIsDown) {
+								var thruX = _this1.x + distance2 * Math.cos(_this1.rotation) - radius1 * Math.cos(_this1.rotation + Math.PI / 2);
+								var thruY = _this1.y + distance2 * Math.sin(_this1.rotation) - radius1 * Math.sin(_this1.rotation + Math.PI / 2);
+								var newx = 2 * thruX - 0.5 * (_this1.x + nx1);
+								var newy = 2 * thruY - 0.5 * (_this1.y + ny1);
+								_this1.tempArr = [];
+								var p = _this1.tempArr;
+								var ax = _this1.x;
+								var ay = _this1.y;
+								var x = ax - newx;
+								var y = ay - newy;
+								var x1 = newx - nx1;
+								var y1 = newy - ny1;
+								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+								if(approxDistance == 0) {
+									approxDistance = 0.000001;
+								}
+								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+								var l2 = p.length;
+								p[l2++] = ax;
+								p[l2++] = ay;
+								var t = step;
+								while(t < 1.) {
+									var u = 1 - t;
+									p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+									var u1 = 1 - t;
+									p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+									t += step;
+								}
+								p[l2++] = nx1;
+								p[l2++] = ny1;
+								var arr1 = _this1.tempArr;
+								var withMove = false;
+								if(withMove == null) {
+									withMove = true;
+								}
+								var l3 = arr1.length;
+								var i3 = 2;
+								if(withMove) {
+									var x_ = arr1[0];
+									var y_ = arr1[1];
+									if(_this1.endLine == 2 || _this1.endLine == 3) {
+										_this1.contour.end(_this1.width);
+									}
+									_this1.x = x_;
+									_this1.y = y_;
+									var l4 = _this1.points.length;
+									_this1.points[l4] = [];
+									_this1.points[l4][0] = x_;
+									_this1.points[l4][1] = y_;
+									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d1 = _this1.dim[_this1.dim.length - 1];
+									if(x_ < d1.minX) {
+										d1.minX = x_;
+									}
+									if(x_ > d1.maxX) {
+										d1.maxX = x_;
+									}
+									if(y_ < d1.minY) {
+										d1.minY = y_;
+									}
+									if(y_ > d1.maxY) {
+										d1.maxY = y_;
+									}
+									_this1.contour.reset();
+								} else {
+									_this1.lineTo(arr1[0],arr1[1]);
+								}
+								var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+								var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+								var ox1 = _this1.x;
+								var oy1 = _this1.y;
+								while(i3 < l3) {
+									if(_this1.fill && _this1.penIsDown) {
+										if(i3 > 0 && i3 < l3 - 2) {
+											_this1.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+										}
+									}
+									_this1.lineTo(arr1[i3],arr1[i3 + 1]);
+									i3 += 2;
+								}
+								if(_this1.fill && _this1.penIsDown) {
+									if(_this1.endLine == 2 || _this1.endLine == 3) {
+										_this1.contour.end(_this1.width);
+									}
+									_this1.x = ox1;
+									_this1.y = oy1;
+									var l5 = _this1.points.length;
+									_this1.points[l5] = [];
+									_this1.points[l5][0] = ox1;
+									_this1.points[l5][1] = oy1;
+									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d2 = _this1.dim[_this1.dim.length - 1];
+									if(ox1 < d2.minX) {
+										d2.minX = ox1;
+									}
+									if(ox1 > d2.maxX) {
+										d2.maxX = ox1;
+									}
+									if(oy1 < d2.minY) {
+										d2.minY = oy1;
+									}
+									if(oy1 > d2.maxY) {
+										d2.maxY = oy1;
+									}
+									_this1.contour.reset();
+									_this1.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+								}
+								_this1.x = nx1;
+								_this1.y = ny1;
+							} else {
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx1;
+								_this1.y = ny1;
+								var l6 = _this1.points.length;
+								_this1.points[l6] = [];
+								_this1.points[l6][0] = nx1;
+								_this1.points[l6][1] = ny1;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d3 = _this1.dim[_this1.dim.length - 1];
+								if(nx1 < d3.minX) {
+									d3.minX = nx1;
+								}
+								if(nx1 > d3.maxX) {
+									d3.maxX = nx1;
+								}
+								if(ny1 < d3.minY) {
+									d3.minY = ny1;
+								}
+								if(ny1 > d3.maxY) {
+									d3.maxY = ny1;
+								}
+								_this1.contour.reset();
+							}
+						}
+						j += 3;
+						break;
 					case "ARC_SIDES":
-						var radius1 = v[j];
+						var radius2 = v[j];
 						var degrees1 = v[j + 1];
 						var sides = v[j + 2];
 						if(sides == null) {
@@ -11618,24 +10536,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this1.turtleHistoryOn) {
 							if(sides == 24) {
 								_this1.historyAdd("ARC");
-								_this1.historyParameters.push(radius1);
+								_this1.historyParameters.push(radius2);
 								_this1.historyParameters.push(degrees1);
 							} else {
 								_this1.historyAdd("ARC_SIDES");
-								_this1.historyParameters.push(radius1);
+								_this1.historyParameters.push(radius2);
 								_this1.historyParameters.push(degrees1);
 								_this1.historyParameters.push(sides);
 							}
 						}
-						if(radius1 != 0) {
+						if(radius2 != 0) {
 							if(_this1.repeatCommands) {
 								if(sides == 24) {
 									_this1.turtleCommands.push("ARC");
-									_this1.turtleParameters.push(radius1);
+									_this1.turtleParameters.push(radius2);
 									_this1.turtleParameters.push(degrees1);
 								} else {
 									_this1.turtleCommands.push("ARC_SIDES");
-									_this1.turtleParameters.push(radius1);
+									_this1.turtleParameters.push(radius2);
 									_this1.turtleParameters.push(degrees1);
 									_this1.turtleParameters.push(sides);
 								}
@@ -11643,15 +10561,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								var beta1 = degrees1 * Math.PI / 180 / sides;
 								var alpha1 = (Math.PI - beta1) / 2;
 								var rotate1 = -(Math.PI / 2 - alpha1);
-								var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-								var ox1 = _this1.x;
-								var oy1 = _this1.y;
-								var arr1 = [];
-								arr1.push(_this1.x);
-								arr1.push(_this1.y);
+								var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+								var ox2 = _this1.x;
+								var oy2 = _this1.y;
+								var arr2 = [];
+								arr2.push(_this1.x);
+								arr2.push(_this1.y);
 								var _g5 = 0;
 								while(_g5 < 48) {
-									var i3 = _g5++;
+									var i4 = _g5++;
 									_this1.rotation += rotate1;
 									var wasHistoryOn2 = _this1.turtleHistoryOn;
 									_this1.turtleHistoryOn = false;
@@ -11663,107 +10581,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this1.turtleCommands.push("FORWARD");
 										_this1.turtleParameters.push(baseLength1);
 									} else {
-										var nx1 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
-										var ny1 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
+										var nx2 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
+										var ny2 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
 										if(_this1.penIsDown) {
 											_this1.lastDistance = baseLength1;
-											_this1.lineTo(nx1,ny1);
+											_this1.lineTo(nx2,ny2);
 										} else {
 											if(_this1.endLine == 2 || _this1.endLine == 3) {
 												_this1.contour.end(_this1.width);
 											}
-											_this1.x = nx1;
-											_this1.y = ny1;
-											var l2 = _this1.points.length;
-											_this1.points[l2] = [];
-											_this1.points[l2][0] = nx1;
-											_this1.points[l2][1] = ny1;
+											_this1.x = nx2;
+											_this1.y = ny2;
+											var l7 = _this1.points.length;
+											_this1.points[l7] = [];
+											_this1.points[l7][0] = nx2;
+											_this1.points[l7][1] = ny2;
 											_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 											_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 											_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d1 = _this1.dim[_this1.dim.length - 1];
-											if(nx1 < d1.minX) {
-												d1.minX = nx1;
+											var d4 = _this1.dim[_this1.dim.length - 1];
+											if(nx2 < d4.minX) {
+												d4.minX = nx2;
 											}
-											if(nx1 > d1.maxX) {
-												d1.maxX = nx1;
+											if(nx2 > d4.maxX) {
+												d4.maxX = nx2;
 											}
-											if(ny1 < d1.minY) {
-												d1.minY = ny1;
+											if(ny2 < d4.minY) {
+												d4.minY = ny2;
 											}
-											if(ny1 > d1.maxY) {
-												d1.maxY = ny1;
+											if(ny2 > d4.maxY) {
+												d4.maxY = ny2;
 											}
 											_this1.contour.reset();
 										}
 									}
 									_this1.turtleHistoryOn = wasHistoryOn2;
 									if(_this1.fill) {
-										arr1.push(_this1.x);
-										arr1.push(_this1.y);
+										arr2.push(_this1.x);
+										arr2.push(_this1.y);
 									}
 								}
 								if(_this1.fill) {
-									var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-									var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-									var l3 = arr1.length;
-									var i4 = 2;
+									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+									var l8 = arr2.length;
+									var i5 = 2;
 									var lx1 = 0.;
 									var ly1 = 0.;
-									_this1.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-									while(i4 < l3) {
-										if(i4 > 2) {
-											_this1.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+									_this1.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+									while(i5 < l8) {
+										if(i5 > 2) {
+											_this1.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 										}
-										lx1 = arr1[i4];
-										ly1 = arr1[i4 + 1];
-										i4 += 2;
+										lx1 = arr2[i5];
+										ly1 = arr2[i5 + 1];
+										i5 += 2;
 									}
 								}
-								arr1.length = 0;
+								arr2.length = 0;
 							}
 						}
 						j += 3;
 						break;
 					case "BACKWARD":
-						var distance = v[j];
+						var distance1 = v[j];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("BACKWARD");
-							_this1.historyParameters.push(distance);
+							_this1.historyParameters.push(distance1);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("BACKWARD");
-							_this1.turtleParameters.push(distance);
+							_this1.turtleParameters.push(distance1);
 						} else {
-							var nx2 = _this1.x + distance * Math.cos(_this1.rotation + Math.PI);
-							var ny2 = _this1.y + distance * Math.sin(_this1.rotation + Math.PI);
+							var nx3 = _this1.x + distance1 * Math.cos(_this1.rotation + Math.PI);
+							var ny3 = _this1.y + distance1 * Math.sin(_this1.rotation + Math.PI);
 							if(_this1.penIsDown) {
-								_this1.lineTo(nx2,ny2);
+								_this1.lineTo(nx3,ny3);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx2;
-								_this1.y = ny2;
-								var l4 = _this1.points.length;
-								_this1.points[l4] = [];
-								_this1.points[l4][0] = nx2;
-								_this1.points[l4][1] = ny2;
+								_this1.x = nx3;
+								_this1.y = ny3;
+								var l9 = _this1.points.length;
+								_this1.points[l9] = [];
+								_this1.points[l9][0] = nx3;
+								_this1.points[l9][1] = ny3;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d2 = _this1.dim[_this1.dim.length - 1];
-								if(nx2 < d2.minX) {
-									d2.minX = nx2;
+								var d5 = _this1.dim[_this1.dim.length - 1];
+								if(nx3 < d5.minX) {
+									d5.minX = nx3;
 								}
-								if(nx2 > d2.maxX) {
-									d2.maxX = nx2;
+								if(nx3 > d5.maxX) {
+									d5.maxX = nx3;
 								}
-								if(ny2 < d2.minY) {
-									d2.minY = ny2;
+								if(ny3 < d5.minY) {
+									d5.minY = ny3;
 								}
-								if(ny2 > d2.maxY) {
-									d2.maxY = ny2;
+								if(ny3 > d5.maxY) {
+									d5.maxY = ny3;
 								}
 								_this1.contour.reset();
 							}
@@ -11803,26 +10721,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "CIRCLE":
-						var radius2 = v[j];
+						var radius3 = v[j];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("CIRCLE");
-							_this1.historyParameters.push(radius2);
+							_this1.historyParameters.push(radius3);
 						}
-						if(radius2 != 0) {
+						if(radius3 != 0) {
 							if(_this1.repeatCommands) {
 								_this1.turtleCommands.push("CIRCLE");
-								_this1.turtleParameters.push(radius2);
+								_this1.turtleParameters.push(radius3);
 							} else {
 								var beta2 = 2 * Math.PI / 24;
 								var alpha2 = (Math.PI - beta2) / 2;
 								var rotate2 = -(Math.PI / 2 - alpha2);
-								var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-								var ox2 = _this1.x;
-								var oy2 = _this1.y;
-								var arr2 = [];
+								var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+								var ox3 = _this1.x;
+								var oy3 = _this1.y;
+								var arr3 = [];
 								var _g6 = 0;
 								while(_g6 < 48) {
-									var i5 = _g6++;
+									var i6 = _g6++;
 									_this1.rotation += rotate2;
 									var wasHistoryOn3 = _this1.turtleHistoryOn;
 									_this1.turtleHistoryOn = false;
@@ -11834,69 +10752,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this1.turtleCommands.push("FORWARD");
 										_this1.turtleParameters.push(baseLength2);
 									} else {
-										var nx3 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
-										var ny3 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
+										var nx4 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
+										var ny4 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
 										if(_this1.penIsDown) {
 											_this1.lastDistance = baseLength2;
-											_this1.lineTo(nx3,ny3);
+											_this1.lineTo(nx4,ny4);
 										} else {
 											if(_this1.endLine == 2 || _this1.endLine == 3) {
 												_this1.contour.end(_this1.width);
 											}
-											_this1.x = nx3;
-											_this1.y = ny3;
-											var l5 = _this1.points.length;
-											_this1.points[l5] = [];
-											_this1.points[l5][0] = nx3;
-											_this1.points[l5][1] = ny3;
+											_this1.x = nx4;
+											_this1.y = ny4;
+											var l10 = _this1.points.length;
+											_this1.points[l10] = [];
+											_this1.points[l10][0] = nx4;
+											_this1.points[l10][1] = ny4;
 											_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 											_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 											_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d3 = _this1.dim[_this1.dim.length - 1];
-											if(nx3 < d3.minX) {
-												d3.minX = nx3;
+											var d6 = _this1.dim[_this1.dim.length - 1];
+											if(nx4 < d6.minX) {
+												d6.minX = nx4;
 											}
-											if(nx3 > d3.maxX) {
-												d3.maxX = nx3;
+											if(nx4 > d6.maxX) {
+												d6.maxX = nx4;
 											}
-											if(ny3 < d3.minY) {
-												d3.minY = ny3;
+											if(ny4 < d6.minY) {
+												d6.minY = ny4;
 											}
-											if(ny3 > d3.maxY) {
-												d3.maxY = ny3;
+											if(ny4 > d6.maxY) {
+												d6.maxY = ny4;
 											}
 											_this1.contour.reset();
 										}
 									}
 									_this1.turtleHistoryOn = wasHistoryOn3;
 									if(_this1.fill) {
-										arr2.push(_this1.x);
-										arr2.push(_this1.y);
+										arr3.push(_this1.x);
+										arr3.push(_this1.y);
 									}
 								}
 								if(_this1.fill) {
-									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-									var l6 = arr2.length;
-									var i6 = 2;
+									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+									var l11 = arr3.length;
+									var i7 = 2;
 									var lx2 = 0.;
 									var ly2 = 0.;
-									while(i6 < l6) {
-										if(i6 > 2) {
-											_this1.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+									while(i7 < l11) {
+										if(i7 > 2) {
+											_this1.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 										}
-										lx2 = arr2[i6];
-										ly2 = arr2[i6 + 1];
-										i6 += 2;
+										lx2 = arr3[i7];
+										ly2 = arr3[i7 + 1];
+										i7 += 2;
 									}
 								}
-								arr2.length = 0;
+								arr3.length = 0;
 							}
 						}
 						++j;
 						break;
 					case "CIRCLE_SIDES":
-						var radius3 = v[j];
+						var radius4 = v[j];
 						var sides1 = v[j + 1];
 						if(sides1 == null) {
 							sides1 = 24;
@@ -11904,34 +10822,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this1.turtleHistoryOn) {
 							if(sides1 == 24) {
 								_this1.historyAdd("CIRCLE");
-								_this1.historyParameters.push(radius3);
+								_this1.historyParameters.push(radius4);
 							} else {
 								_this1.historyAdd("CIRCLE_SIDES");
-								_this1.historyParameters.push(radius3);
+								_this1.historyParameters.push(radius4);
 								_this1.historyParameters.push(sides1);
 							}
 						}
-						if(radius3 != 0) {
+						if(radius4 != 0) {
 							if(_this1.repeatCommands) {
 								if(sides1 == 24) {
 									_this1.turtleCommands.push("CIRCLE");
-									_this1.turtleParameters.push(radius3);
+									_this1.turtleParameters.push(radius4);
 								} else {
 									_this1.turtleCommands.push("CIRCLE_SIDES");
-									_this1.turtleParameters.push(radius3);
+									_this1.turtleParameters.push(radius4);
 									_this1.turtleParameters.push(sides1);
 								}
 							} else {
 								var beta3 = 2 * Math.PI / sides1;
 								var alpha3 = (Math.PI - beta3) / 2;
 								var rotate3 = -(Math.PI / 2 - alpha3);
-								var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-								var ox3 = _this1.x;
-								var oy3 = _this1.y;
-								var arr3 = [];
+								var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+								var ox4 = _this1.x;
+								var oy4 = _this1.y;
+								var arr4 = [];
 								var _g7 = 0;
 								while(_g7 < 48) {
-									var i7 = _g7++;
+									var i8 = _g7++;
 									_this1.rotation += rotate3;
 									var wasHistoryOn4 = _this1.turtleHistoryOn;
 									_this1.turtleHistoryOn = false;
@@ -11943,63 +10861,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this1.turtleCommands.push("FORWARD");
 										_this1.turtleParameters.push(baseLength3);
 									} else {
-										var nx4 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
-										var ny4 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
+										var nx5 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
+										var ny5 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
 										if(_this1.penIsDown) {
 											_this1.lastDistance = baseLength3;
-											_this1.lineTo(nx4,ny4);
+											_this1.lineTo(nx5,ny5);
 										} else {
 											if(_this1.endLine == 2 || _this1.endLine == 3) {
 												_this1.contour.end(_this1.width);
 											}
-											_this1.x = nx4;
-											_this1.y = ny4;
-											var l7 = _this1.points.length;
-											_this1.points[l7] = [];
-											_this1.points[l7][0] = nx4;
-											_this1.points[l7][1] = ny4;
+											_this1.x = nx5;
+											_this1.y = ny5;
+											var l12 = _this1.points.length;
+											_this1.points[l12] = [];
+											_this1.points[l12][0] = nx5;
+											_this1.points[l12][1] = ny5;
 											_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 											_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 											_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d4 = _this1.dim[_this1.dim.length - 1];
-											if(nx4 < d4.minX) {
-												d4.minX = nx4;
+											var d7 = _this1.dim[_this1.dim.length - 1];
+											if(nx5 < d7.minX) {
+												d7.minX = nx5;
 											}
-											if(nx4 > d4.maxX) {
-												d4.maxX = nx4;
+											if(nx5 > d7.maxX) {
+												d7.maxX = nx5;
 											}
-											if(ny4 < d4.minY) {
-												d4.minY = ny4;
+											if(ny5 < d7.minY) {
+												d7.minY = ny5;
 											}
-											if(ny4 > d4.maxY) {
-												d4.maxY = ny4;
+											if(ny5 > d7.maxY) {
+												d7.maxY = ny5;
 											}
 											_this1.contour.reset();
 										}
 									}
 									_this1.turtleHistoryOn = wasHistoryOn4;
 									if(_this1.fill) {
-										arr3.push(_this1.x);
-										arr3.push(_this1.y);
+										arr4.push(_this1.x);
+										arr4.push(_this1.y);
 									}
 								}
 								if(_this1.fill) {
-									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-									var l8 = arr3.length;
-									var i8 = 2;
+									var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+									var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+									var l13 = arr4.length;
+									var i9 = 2;
 									var lx3 = 0.;
 									var ly3 = 0.;
-									while(i8 < l8) {
-										if(i8 > 2) {
-											_this1.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+									while(i9 < l13) {
+										if(i9 > 2) {
+											_this1.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 										}
-										lx3 = arr3[i8];
-										ly3 = arr3[i8 + 1];
-										i8 += 2;
+										lx3 = arr4[i9];
+										ly3 = arr4[i9 + 1];
+										i9 += 2;
 									}
 								}
-								arr3.length = 0;
+								arr4.length = 0;
 							}
 						}
 						j += 2;
@@ -12067,45 +10985,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "FORWARD":
-						var distance1 = v[j];
+						var distance3 = v[j];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("FORWARD");
-							_this1.historyParameters.push(distance1);
+							_this1.historyParameters.push(distance3);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("FORWARD");
-							_this1.turtleParameters.push(distance1);
+							_this1.turtleParameters.push(distance3);
 						} else {
-							var nx5 = _this1.x + distance1 * Math.cos(_this1.rotation);
-							var ny5 = _this1.y + distance1 * Math.sin(_this1.rotation);
+							var nx6 = _this1.x + distance3 * Math.cos(_this1.rotation);
+							var ny6 = _this1.y + distance3 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
-								_this1.lastDistance = distance1;
-								_this1.lineTo(nx5,ny5);
+								_this1.lastDistance = distance3;
+								_this1.lineTo(nx6,ny6);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx5;
-								_this1.y = ny5;
-								var l9 = _this1.points.length;
-								_this1.points[l9] = [];
-								_this1.points[l9][0] = nx5;
-								_this1.points[l9][1] = ny5;
+								_this1.x = nx6;
+								_this1.y = ny6;
+								var l14 = _this1.points.length;
+								_this1.points[l14] = [];
+								_this1.points[l14][0] = nx6;
+								_this1.points[l14][1] = ny6;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d5 = _this1.dim[_this1.dim.length - 1];
-								if(nx5 < d5.minX) {
-									d5.minX = nx5;
+								var d8 = _this1.dim[_this1.dim.length - 1];
+								if(nx6 < d8.minX) {
+									d8.minX = nx6;
 								}
-								if(nx5 > d5.maxX) {
-									d5.maxX = nx5;
+								if(nx6 > d8.maxX) {
+									d8.maxX = nx6;
 								}
-								if(ny5 < d5.minY) {
-									d5.minY = ny5;
+								if(ny6 < d8.minY) {
+									d8.minY = ny6;
 								}
-								if(ny5 > d5.maxY) {
-									d5.maxY = ny5;
+								if(ny6 > d8.maxY) {
+									d8.maxY = ny6;
 								}
 								_this1.contour.reset();
 							}
@@ -12122,175 +11040,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this1.turtleCommands.push("FORWARD_CHANGE");
 							_this1.turtleParameters.push(deltaDistance);
 						} else {
-							var distance2 = _this1.lastDistance + deltaDistance;
-							var nx6 = _this1.x + distance2 * Math.cos(_this1.rotation);
-							var ny6 = _this1.y + distance2 * Math.sin(_this1.rotation);
+							var distance4 = _this1.lastDistance + deltaDistance;
+							var nx7 = _this1.x + distance4 * Math.cos(_this1.rotation);
+							var ny7 = _this1.y + distance4 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
-								_this1.lastDistance = distance2 + deltaDistance;
-								_this1.lineTo(nx6,ny6);
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx6;
-								_this1.y = ny6;
-								var l10 = _this1.points.length;
-								_this1.points[l10] = [];
-								_this1.points[l10][0] = nx6;
-								_this1.points[l10][1] = ny6;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d6 = _this1.dim[_this1.dim.length - 1];
-								if(nx6 < d6.minX) {
-									d6.minX = nx6;
-								}
-								if(nx6 > d6.maxX) {
-									d6.maxX = nx6;
-								}
-								if(ny6 < d6.minY) {
-									d6.minY = ny6;
-								}
-								if(ny6 > d6.maxY) {
-									d6.maxY = ny6;
-								}
-								_this1.contour.reset();
-							}
-						}
-						++j;
-						break;
-					case "FORWARD_CURVE_LEFT":
-						var distance3 = v[j];
-						var distance21 = v[j + 1];
-						var radius4 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_CURVE_LEFT");
-							_this1.historyParameters.push(distance3);
-							_this1.historyParameters.push(distance21);
-							_this1.historyParameters.push(radius4);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_CURVE_LEFT");
-							_this1.turtleParameters.push(distance3);
-							_this1.turtleParameters.push(distance21);
-							_this1.turtleParameters.push(radius4);
-						} else {
-							var nx7 = _this1.x + distance3 * Math.cos(_this1.rotation);
-							var ny7 = _this1.y + distance3 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX = _this1.x + distance21 * Math.cos(_this1.rotation) + radius4 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY = _this1.y + distance21 * Math.sin(_this1.rotation) + radius4 * Math.sin(_this1.rotation + Math.PI / 2);
-								var newx = 2 * thruX - 0.5 * (_this1.x + nx7);
-								var newy = 2 * thruY - 0.5 * (_this1.y + ny7);
-								_this1.tempArr = [];
-								var p = _this1.tempArr;
-								var ax = _this1.x;
-								var ay = _this1.y;
-								var x = ax - newx;
-								var y = ay - newy;
-								var x1 = newx - nx7;
-								var y1 = newy - ny7;
-								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-								if(approxDistance == 0) {
-									approxDistance = 0.000001;
-								}
-								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-								var l11 = p.length;
-								p[l11++] = ax;
-								p[l11++] = ay;
-								var t = step;
-								while(t < 1.) {
-									var u = 1 - t;
-									p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-									var u1 = 1 - t;
-									p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-									t += step;
-								}
-								p[l11++] = nx7;
-								p[l11++] = ny7;
-								var arr4 = _this1.tempArr;
-								var withMove = false;
-								if(withMove == null) {
-									withMove = true;
-								}
-								var l12 = arr4.length;
-								var i9 = 2;
-								if(withMove) {
-									var x_ = arr4[0];
-									var y_ = arr4[1];
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = x_;
-									_this1.y = y_;
-									var l13 = _this1.points.length;
-									_this1.points[l13] = [];
-									_this1.points[l13][0] = x_;
-									_this1.points[l13][1] = y_;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d7 = _this1.dim[_this1.dim.length - 1];
-									if(x_ < d7.minX) {
-										d7.minX = x_;
-									}
-									if(x_ > d7.maxX) {
-										d7.maxX = x_;
-									}
-									if(y_ < d7.minY) {
-										d7.minY = y_;
-									}
-									if(y_ > d7.maxY) {
-										d7.maxY = y_;
-									}
-									_this1.contour.reset();
-								} else {
-									_this1.lineTo(arr4[0],arr4[1]);
-								}
-								var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-								var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-								var ox4 = _this1.x;
-								var oy4 = _this1.y;
-								while(i9 < l12) {
-									if(_this1.fill && _this1.penIsDown) {
-										if(i9 > 0 && i9 < l12 - 2) {
-											_this1.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-										}
-									}
-									_this1.lineTo(arr4[i9],arr4[i9 + 1]);
-									i9 += 2;
-								}
-								if(_this1.fill && _this1.penIsDown) {
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = ox4;
-									_this1.y = oy4;
-									var l14 = _this1.points.length;
-									_this1.points[l14] = [];
-									_this1.points[l14][0] = ox4;
-									_this1.points[l14][1] = oy4;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d8 = _this1.dim[_this1.dim.length - 1];
-									if(ox4 < d8.minX) {
-										d8.minX = ox4;
-									}
-									if(ox4 > d8.maxX) {
-										d8.maxX = ox4;
-									}
-									if(oy4 < d8.minY) {
-										d8.minY = oy4;
-									}
-									if(oy4 > d8.maxY) {
-										d8.maxY = oy4;
-									}
-									_this1.contour.reset();
-									_this1.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-								}
-								_this1.x = nx7;
-								_this1.y = ny7;
+								_this1.lastDistance = distance4 + deltaDistance;
+								_this1.lineTo(nx7,ny7);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
@@ -12320,170 +11075,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								_this1.contour.reset();
 							}
 						}
-						j += 3;
-						break;
-					case "FORWARD_CURVE_RIGHT":
-						var distance4 = v[j];
-						var distance22 = v[j + 1];
-						var radius5 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_CURVE_RIGHT");
-							_this1.historyParameters.push(distance4);
-							_this1.historyParameters.push(distance22);
-							_this1.historyParameters.push(radius5);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_CURVE_RIGHT");
-							_this1.turtleParameters.push(distance4);
-							_this1.turtleParameters.push(distance22);
-							_this1.turtleParameters.push(radius5);
-						} else {
-							var nx8 = _this1.x + distance4 * Math.cos(_this1.rotation);
-							var ny8 = _this1.y + distance4 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX1 = _this1.x + distance22 * Math.cos(_this1.rotation) - radius5 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY1 = _this1.y + distance22 * Math.sin(_this1.rotation) - radius5 * Math.sin(_this1.rotation + Math.PI / 2);
-								var newx1 = 2 * thruX1 - 0.5 * (_this1.x + nx8);
-								var newy1 = 2 * thruY1 - 0.5 * (_this1.y + ny8);
-								_this1.tempArr = [];
-								var p1 = _this1.tempArr;
-								var ax1 = _this1.x;
-								var ay1 = _this1.y;
-								var x2 = ax1 - newx1;
-								var y2 = ay1 - newy1;
-								var x3 = newx1 - nx8;
-								var y3 = newy1 - ny8;
-								var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-								if(approxDistance1 == 0) {
-									approxDistance1 = 0.000001;
-								}
-								var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-								var l16 = p1.length;
-								p1[l16++] = ax1;
-								p1[l16++] = ay1;
-								var t1 = step1;
-								while(t1 < 1.) {
-									var u2 = 1 - t1;
-									p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-									var u3 = 1 - t1;
-									p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-									t1 += step1;
-								}
-								p1[l16++] = nx8;
-								p1[l16++] = ny8;
-								var arr5 = _this1.tempArr;
-								var withMove1 = false;
-								if(withMove1 == null) {
-									withMove1 = true;
-								}
-								var l17 = arr5.length;
-								var i10 = 2;
-								if(withMove1) {
-									var x_1 = arr5[0];
-									var y_1 = arr5[1];
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = x_1;
-									_this1.y = y_1;
-									var l18 = _this1.points.length;
-									_this1.points[l18] = [];
-									_this1.points[l18][0] = x_1;
-									_this1.points[l18][1] = y_1;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d10 = _this1.dim[_this1.dim.length - 1];
-									if(x_1 < d10.minX) {
-										d10.minX = x_1;
-									}
-									if(x_1 > d10.maxX) {
-										d10.maxX = x_1;
-									}
-									if(y_1 < d10.minY) {
-										d10.minY = y_1;
-									}
-									if(y_1 > d10.maxY) {
-										d10.maxY = y_1;
-									}
-									_this1.contour.reset();
-								} else {
-									_this1.lineTo(arr5[0],arr5[1]);
-								}
-								var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-								var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-								var ox5 = _this1.x;
-								var oy5 = _this1.y;
-								while(i10 < l17) {
-									if(_this1.fill && _this1.penIsDown) {
-										if(i10 > 0 && i10 < l17 - 2) {
-											_this1.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-										}
-									}
-									_this1.lineTo(arr5[i10],arr5[i10 + 1]);
-									i10 += 2;
-								}
-								if(_this1.fill && _this1.penIsDown) {
-									if(_this1.endLine == 2 || _this1.endLine == 3) {
-										_this1.contour.end(_this1.width);
-									}
-									_this1.x = ox5;
-									_this1.y = oy5;
-									var l19 = _this1.points.length;
-									_this1.points[l19] = [];
-									_this1.points[l19][0] = ox5;
-									_this1.points[l19][1] = oy5;
-									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d11 = _this1.dim[_this1.dim.length - 1];
-									if(ox5 < d11.minX) {
-										d11.minX = ox5;
-									}
-									if(ox5 > d11.maxX) {
-										d11.maxX = ox5;
-									}
-									if(oy5 < d11.minY) {
-										d11.minY = oy5;
-									}
-									if(oy5 > d11.maxY) {
-										d11.maxY = oy5;
-									}
-									_this1.contour.reset();
-									_this1.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-								}
-								_this1.x = nx8;
-								_this1.y = ny8;
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx8;
-								_this1.y = ny8;
-								var l20 = _this1.points.length;
-								_this1.points[l20] = [];
-								_this1.points[l20][0] = nx8;
-								_this1.points[l20][1] = ny8;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d12 = _this1.dim[_this1.dim.length - 1];
-								if(nx8 < d12.minX) {
-									d12.minX = nx8;
-								}
-								if(nx8 > d12.maxX) {
-									d12.maxX = nx8;
-								}
-								if(ny8 < d12.minY) {
-									d12.minY = ny8;
-								}
-								if(ny8 > d12.maxY) {
-									d12.maxY = ny8;
-								}
-								_this1.contour.reset();
-							}
-						}
-						j += 3;
+						++j;
 						break;
 					case "FORWARD_FACTOR":
 						var factor = v[j];
@@ -12496,213 +11088,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this1.turtleParameters.push(factor);
 						} else {
 							var distance5 = _this1.lastDistance * factor;
-							var nx9 = _this1.x + distance5 * Math.cos(_this1.rotation);
-							var ny9 = _this1.y + distance5 * Math.sin(_this1.rotation);
+							var nx8 = _this1.x + distance5 * Math.cos(_this1.rotation);
+							var ny8 = _this1.y + distance5 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
 								_this1.lastDistance = distance5;
-								_this1.lineTo(nx9,ny9);
+								_this1.lineTo(nx8,ny8);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx9;
-								_this1.y = ny9;
-								var l21 = _this1.points.length;
-								_this1.points[l21] = [];
-								_this1.points[l21][0] = nx9;
-								_this1.points[l21][1] = ny9;
+								_this1.x = nx8;
+								_this1.y = ny8;
+								var l16 = _this1.points.length;
+								_this1.points[l16] = [];
+								_this1.points[l16][0] = nx8;
+								_this1.points[l16][1] = ny8;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d13 = _this1.dim[_this1.dim.length - 1];
-								if(nx9 < d13.minX) {
-									d13.minX = nx9;
+								var d10 = _this1.dim[_this1.dim.length - 1];
+								if(nx8 < d10.minX) {
+									d10.minX = nx8;
 								}
-								if(nx9 > d13.maxX) {
-									d13.maxX = nx9;
+								if(nx8 > d10.maxX) {
+									d10.maxX = nx8;
 								}
-								if(ny9 < d13.minY) {
-									d13.minY = ny9;
+								if(ny8 < d10.minY) {
+									d10.minY = ny8;
 								}
-								if(ny9 > d13.maxY) {
-									d13.maxY = ny9;
+								if(ny8 > d10.maxY) {
+									d10.maxY = ny8;
 								}
 								_this1.contour.reset();
 							}
 						}
 						++j;
-						break;
-					case "FORWARD_TRIANGLE_LEFT":
-						var distance6 = v[j];
-						var distance23 = v[j + 1];
-						var radius6 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_TRIANGLE_LEFT");
-							_this1.historyParameters.push(distance6);
-							_this1.historyParameters.push(distance23);
-							_this1.historyParameters.push(radius6);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-							_this1.turtleParameters.push(distance6);
-							_this1.turtleParameters.push(distance23);
-							_this1.turtleParameters.push(radius6);
-						} else {
-							var nx10 = _this1.x + distance6 * Math.cos(_this1.rotation);
-							var ny10 = _this1.y + distance6 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX2 = _this1.x + distance23 * Math.cos(_this1.rotation) + radius6 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY2 = _this1.y + distance23 * Math.sin(_this1.rotation) + radius6 * Math.sin(_this1.rotation + Math.PI / 2);
-								if(_this1.fill) {
-									_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX2,thruY2,nx10,ny10);
-								}
-								_this1.lineTo(thruX2,thruY2);
-								_this1.lineTo(nx10,ny10);
-								if(_this1.fill) {
-									_this1.lineTo(_this1.x,_this1.y);
-								}
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx10;
-								_this1.y = ny10;
-								var l22 = _this1.points.length;
-								_this1.points[l22] = [];
-								_this1.points[l22][0] = nx10;
-								_this1.points[l22][1] = ny10;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d14 = _this1.dim[_this1.dim.length - 1];
-								if(nx10 < d14.minX) {
-									d14.minX = nx10;
-								}
-								if(nx10 > d14.maxX) {
-									d14.maxX = nx10;
-								}
-								if(ny10 < d14.minY) {
-									d14.minY = ny10;
-								}
-								if(ny10 > d14.maxY) {
-									d14.maxY = ny10;
-								}
-								_this1.contour.reset();
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx10;
-								_this1.y = ny10;
-								var l23 = _this1.points.length;
-								_this1.points[l23] = [];
-								_this1.points[l23][0] = nx10;
-								_this1.points[l23][1] = ny10;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d15 = _this1.dim[_this1.dim.length - 1];
-								if(nx10 < d15.minX) {
-									d15.minX = nx10;
-								}
-								if(nx10 > d15.maxX) {
-									d15.maxX = nx10;
-								}
-								if(ny10 < d15.minY) {
-									d15.minY = ny10;
-								}
-								if(ny10 > d15.maxY) {
-									d15.maxY = ny10;
-								}
-								_this1.contour.reset();
-							}
-						}
-						j += 3;
-						break;
-					case "FORWARD_TRIANGLE_RIGHT":
-						var distance7 = v[j];
-						var distance24 = v[j + 1];
-						var radius7 = v[j + 2];
-						if(_this1.turtleHistoryOn) {
-							_this1.historyAdd("FORWARD_TRIANGLE_RIGHT");
-							_this1.historyParameters.push(distance7);
-							_this1.historyParameters.push(distance24);
-							_this1.historyParameters.push(radius7);
-						}
-						if(_this1.repeatCommands) {
-							_this1.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-							_this1.turtleParameters.push(distance7);
-							_this1.turtleParameters.push(distance24);
-							_this1.turtleParameters.push(radius7);
-						} else {
-							var nx11 = _this1.x + distance7 * Math.cos(_this1.rotation);
-							var ny11 = _this1.y + distance7 * Math.sin(_this1.rotation);
-							if(_this1.penIsDown) {
-								var thruX3 = _this1.x + distance24 * Math.cos(_this1.rotation) - radius7 * Math.cos(_this1.rotation + Math.PI / 2);
-								var thruY3 = _this1.y + distance24 * Math.sin(_this1.rotation) - radius7 * Math.sin(_this1.rotation + Math.PI / 2);
-								if(_this1.fill) {
-									_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX3,thruY3,nx11,ny11);
-								}
-								_this1.lineTo(thruX3,thruY3);
-								_this1.lineTo(nx11,ny11);
-								if(_this1.fill) {
-									_this1.lineTo(_this1.x,_this1.y);
-								}
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx11;
-								_this1.y = ny11;
-								var l24 = _this1.points.length;
-								_this1.points[l24] = [];
-								_this1.points[l24][0] = nx11;
-								_this1.points[l24][1] = ny11;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d16 = _this1.dim[_this1.dim.length - 1];
-								if(nx11 < d16.minX) {
-									d16.minX = nx11;
-								}
-								if(nx11 > d16.maxX) {
-									d16.maxX = nx11;
-								}
-								if(ny11 < d16.minY) {
-									d16.minY = ny11;
-								}
-								if(ny11 > d16.maxY) {
-									d16.maxY = ny11;
-								}
-								_this1.contour.reset();
-							} else {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = nx11;
-								_this1.y = ny11;
-								var l25 = _this1.points.length;
-								_this1.points[l25] = [];
-								_this1.points[l25][0] = nx11;
-								_this1.points[l25][1] = ny11;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d17 = _this1.dim[_this1.dim.length - 1];
-								if(nx11 < d17.minX) {
-									d17.minX = nx11;
-								}
-								if(nx11 > d17.maxX) {
-									d17.maxX = nx11;
-								}
-								if(ny11 < d17.minY) {
-									d17.minY = ny11;
-								}
-								if(ny11 > d17.maxY) {
-									d17.maxY = ny11;
-								}
-								_this1.contour.reset();
-							}
-						}
-						j += 3;
 						break;
 					case "GREEN":
 						if(_this1.turtleHistoryOn) {
@@ -12759,10 +11179,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "MOVE_PEN":
-						var distance8 = v[j];
+						var distance6 = v[j];
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("MOVE_PEN");
-							_this1.turtleParameters.push(distance8);
+							_this1.turtleParameters.push(distance6);
 						} else if(_this1.penIsDown) {
 							if(_this1.turtleHistoryOn) {
 								_this1.historyAdd("PEN_UP");
@@ -12774,42 +11194,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							}
 							if(_this1.turtleHistoryOn) {
 								_this1.historyAdd("FORWARD");
-								_this1.historyParameters.push(distance8);
+								_this1.historyParameters.push(distance6);
 							}
 							if(_this1.repeatCommands) {
 								_this1.turtleCommands.push("FORWARD");
-								_this1.turtleParameters.push(distance8);
+								_this1.turtleParameters.push(distance6);
 							} else {
-								var nx12 = _this1.x + distance8 * Math.cos(_this1.rotation);
-								var ny12 = _this1.y + distance8 * Math.sin(_this1.rotation);
+								var nx9 = _this1.x + distance6 * Math.cos(_this1.rotation);
+								var ny9 = _this1.y + distance6 * Math.sin(_this1.rotation);
 								if(_this1.penIsDown) {
-									_this1.lastDistance = distance8;
-									_this1.lineTo(nx12,ny12);
+									_this1.lastDistance = distance6;
+									_this1.lineTo(nx9,ny9);
 								} else {
 									if(_this1.endLine == 2 || _this1.endLine == 3) {
 										_this1.contour.end(_this1.width);
 									}
-									_this1.x = nx12;
-									_this1.y = ny12;
-									var l26 = _this1.points.length;
-									_this1.points[l26] = [];
-									_this1.points[l26][0] = nx12;
-									_this1.points[l26][1] = ny12;
+									_this1.x = nx9;
+									_this1.y = ny9;
+									var l17 = _this1.points.length;
+									_this1.points[l17] = [];
+									_this1.points[l17][0] = nx9;
+									_this1.points[l17][1] = ny9;
 									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d18 = _this1.dim[_this1.dim.length - 1];
-									if(nx12 < d18.minX) {
-										d18.minX = nx12;
+									var d11 = _this1.dim[_this1.dim.length - 1];
+									if(nx9 < d11.minX) {
+										d11.minX = nx9;
 									}
-									if(nx12 > d18.maxX) {
-										d18.maxX = nx12;
+									if(nx9 > d11.maxX) {
+										d11.maxX = nx9;
 									}
-									if(ny12 < d18.minY) {
-										d18.minY = ny12;
+									if(ny9 < d11.minY) {
+										d11.minY = ny9;
 									}
-									if(ny12 > d18.maxY) {
-										d18.maxY = ny12;
+									if(ny9 > d11.maxY) {
+										d11.maxY = ny9;
 									}
 									_this1.contour.reset();
 								}
@@ -12825,42 +11245,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							if(_this1.turtleHistoryOn) {
 								_this1.historyAdd("FORWARD");
-								_this1.historyParameters.push(distance8);
+								_this1.historyParameters.push(distance6);
 							}
 							if(_this1.repeatCommands) {
 								_this1.turtleCommands.push("FORWARD");
-								_this1.turtleParameters.push(distance8);
+								_this1.turtleParameters.push(distance6);
 							} else {
-								var nx13 = _this1.x + distance8 * Math.cos(_this1.rotation);
-								var ny13 = _this1.y + distance8 * Math.sin(_this1.rotation);
+								var nx10 = _this1.x + distance6 * Math.cos(_this1.rotation);
+								var ny10 = _this1.y + distance6 * Math.sin(_this1.rotation);
 								if(_this1.penIsDown) {
-									_this1.lastDistance = distance8;
-									_this1.lineTo(nx13,ny13);
+									_this1.lastDistance = distance6;
+									_this1.lineTo(nx10,ny10);
 								} else {
 									if(_this1.endLine == 2 || _this1.endLine == 3) {
 										_this1.contour.end(_this1.width);
 									}
-									_this1.x = nx13;
-									_this1.y = ny13;
-									var l27 = _this1.points.length;
-									_this1.points[l27] = [];
-									_this1.points[l27][0] = nx13;
-									_this1.points[l27][1] = ny13;
+									_this1.x = nx10;
+									_this1.y = ny10;
+									var l18 = _this1.points.length;
+									_this1.points[l18] = [];
+									_this1.points[l18][0] = nx10;
+									_this1.points[l18][1] = ny10;
 									_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 									_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 									_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d19 = _this1.dim[_this1.dim.length - 1];
-									if(nx13 < d19.minX) {
-										d19.minX = nx13;
+									var d12 = _this1.dim[_this1.dim.length - 1];
+									if(nx10 < d12.minX) {
+										d12.minX = nx10;
 									}
-									if(nx13 > d19.maxX) {
-										d19.maxX = nx13;
+									if(nx10 > d12.maxX) {
+										d12.maxX = nx10;
 									}
-									if(ny13 < d19.minY) {
-										d19.minY = ny13;
+									if(ny10 < d12.minY) {
+										d12.minY = ny10;
 									}
-									if(ny13 > d19.maxY) {
-										d19.maxY = ny13;
+									if(ny10 > d12.maxY) {
+										d12.maxY = ny10;
 									}
 									_this1.contour.reset();
 								}
@@ -13132,42 +11552,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						++j;
 						break;
 					case "SET_POSITION":
-						var x4 = v[j];
-						var y4 = v[j + 1];
+						var x2 = v[j];
+						var y2 = v[j + 1];
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("SET_POSITION");
-							_this1.historyParameters.push(x4);
-							_this1.historyParameters.push(y4);
+							_this1.historyParameters.push(x2);
+							_this1.historyParameters.push(y2);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("SET_POSITION");
-							_this1.turtleParameters.push(x4);
-							_this1.turtleParameters.push(y4);
+							_this1.turtleParameters.push(x2);
+							_this1.turtleParameters.push(y2);
 						} else {
 							if(_this1.endLine == 2 || _this1.endLine == 3) {
 								_this1.contour.end(_this1.width);
 							}
-							_this1.x = x4;
-							_this1.y = y4;
-							var l28 = _this1.points.length;
-							_this1.points[l28] = [];
-							_this1.points[l28][0] = x4;
-							_this1.points[l28][1] = y4;
+							_this1.x = x2;
+							_this1.y = y2;
+							var l19 = _this1.points.length;
+							_this1.points[l19] = [];
+							_this1.points[l19][0] = x2;
+							_this1.points[l19][1] = y2;
 							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d20 = _this1.dim[_this1.dim.length - 1];
-							if(x4 < d20.minX) {
-								d20.minX = x4;
+							var d13 = _this1.dim[_this1.dim.length - 1];
+							if(x2 < d13.minX) {
+								d13.minX = x2;
 							}
-							if(x4 > d20.maxX) {
-								d20.maxX = x4;
+							if(x2 > d13.maxX) {
+								d13.maxX = x2;
 							}
-							if(y4 < d20.minY) {
-								d20.minY = y4;
+							if(y2 < d13.minY) {
+								d13.minY = y2;
 							}
-							if(y4 > d20.maxY) {
-								d20.maxY = y4;
+							if(y2 > d13.maxY) {
+								d13.maxY = y2;
 							}
 							_this1.contour.reset();
 						}
@@ -13192,6 +11612,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							_this1.pen.currentColor = -27273;
 						}
+						break;
+					case "TRIANGLE_ARCH":
+						var distance7 = v[j];
+						var distance21 = v[j + 1];
+						var radius5 = v[j + 2];
+						if(_this1.turtleHistoryOn) {
+							_this1.historyAdd("TRIANGLE_ARCH");
+							_this1.historyParameters.push(distance7);
+							_this1.historyParameters.push(distance21);
+							_this1.historyParameters.push(radius5);
+						}
+						if(_this1.repeatCommands) {
+							_this1.turtleCommands.push("TRIANGLE_ARCH");
+							_this1.turtleParameters.push(distance7);
+							_this1.turtleParameters.push(distance21);
+							_this1.turtleParameters.push(radius5);
+						} else {
+							var nx11 = _this1.x + distance7 * Math.cos(_this1.rotation);
+							var ny11 = _this1.y + distance7 * Math.sin(_this1.rotation);
+							if(_this1.penIsDown) {
+								var thruX1 = _this1.x + distance21 * Math.cos(_this1.rotation) - radius5 * Math.cos(_this1.rotation + Math.PI / 2);
+								var thruY1 = _this1.y + distance21 * Math.sin(_this1.rotation) - radius5 * Math.sin(_this1.rotation + Math.PI / 2);
+								if(_this1.fill) {
+									_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX1,thruY1,nx11,ny11);
+								}
+								_this1.lineTo(thruX1,thruY1);
+								_this1.lineTo(nx11,ny11);
+								if(_this1.fill) {
+									_this1.lineTo(_this1.x,_this1.y);
+								}
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx11;
+								_this1.y = ny11;
+								var l20 = _this1.points.length;
+								_this1.points[l20] = [];
+								_this1.points[l20][0] = nx11;
+								_this1.points[l20][1] = ny11;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d14 = _this1.dim[_this1.dim.length - 1];
+								if(nx11 < d14.minX) {
+									d14.minX = nx11;
+								}
+								if(nx11 > d14.maxX) {
+									d14.maxX = nx11;
+								}
+								if(ny11 < d14.minY) {
+									d14.minY = ny11;
+								}
+								if(ny11 > d14.maxY) {
+									d14.maxY = ny11;
+								}
+								_this1.contour.reset();
+							} else {
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = nx11;
+								_this1.y = ny11;
+								var l21 = _this1.points.length;
+								_this1.points[l21] = [];
+								_this1.points[l21][0] = nx11;
+								_this1.points[l21][1] = ny11;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d15 = _this1.dim[_this1.dim.length - 1];
+								if(nx11 < d15.minX) {
+									d15.minX = nx11;
+								}
+								if(nx11 > d15.maxX) {
+									d15.maxX = nx11;
+								}
+								if(ny11 < d15.minY) {
+									d15.minY = ny11;
+								}
+								if(ny11 > d15.maxY) {
+									d15.maxY = ny11;
+								}
+								_this1.contour.reset();
+							}
+						}
+						j += 3;
 						break;
 					case "WEST":
 						if(_this1.turtleHistoryOn) {
@@ -13239,13 +11745,13 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 		}
 		var _this = _this1;
 		if(_this.turtleHistoryOn) {
-			_this.historyAdd("FORWARD_CURVE_RIGHT");
+			_this.historyAdd("ARCH_BEZIER");
 			_this.historyParameters.push(300);
 			_this.historyParameters.push(150);
 			_this.historyParameters.push(-10);
 		}
 		if(_this.repeatCommands) {
-			_this.turtleCommands.push("FORWARD_CURVE_RIGHT");
+			_this.turtleCommands.push("ARCH_BEZIER");
 			_this.turtleParameters.push(300);
 			_this.turtleParameters.push(150);
 			_this.turtleParameters.push(-10);
@@ -13543,8 +12049,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					j += 2;
 					break;
+				case "ARCH_BEZIER":
+					var distance = v[j];
+					var distance2 = v[j + 1];
+					var radius1 = v[j + 2];
+					if(_this1.turtleHistoryOn) {
+						_this1.historyAdd("ARCH_BEZIER");
+						_this1.historyParameters.push(distance);
+						_this1.historyParameters.push(distance2);
+						_this1.historyParameters.push(radius1);
+					}
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("ARCH_BEZIER");
+						_this1.turtleParameters.push(distance);
+						_this1.turtleParameters.push(distance2);
+						_this1.turtleParameters.push(radius1);
+					} else {
+						var nx1 = _this1.x + distance * Math.cos(_this1.rotation);
+						var ny1 = _this1.y + distance * Math.sin(_this1.rotation);
+						if(_this1.penIsDown) {
+							var thruX = _this1.x + distance2 * Math.cos(_this1.rotation) - radius1 * Math.cos(_this1.rotation + Math.PI / 2);
+							var thruY = _this1.y + distance2 * Math.sin(_this1.rotation) - radius1 * Math.sin(_this1.rotation + Math.PI / 2);
+							var newx = 2 * thruX - 0.5 * (_this1.x + nx1);
+							var newy = 2 * thruY - 0.5 * (_this1.y + ny1);
+							_this1.tempArr = [];
+							var p = _this1.tempArr;
+							var ax = _this1.x;
+							var ay = _this1.y;
+							var x = ax - newx;
+							var y = ay - newy;
+							var x1 = newx - nx1;
+							var y1 = newy - ny1;
+							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+							if(approxDistance == 0) {
+								approxDistance = 0.000001;
+							}
+							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+							var l2 = p.length;
+							p[l2++] = ax;
+							p[l2++] = ay;
+							var t = step;
+							while(t < 1.) {
+								var u = 1 - t;
+								p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+								var u1 = 1 - t;
+								p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+								t += step;
+							}
+							p[l2++] = nx1;
+							p[l2++] = ny1;
+							var arr1 = _this1.tempArr;
+							var withMove = false;
+							if(withMove == null) {
+								withMove = true;
+							}
+							var l3 = arr1.length;
+							var i3 = 2;
+							if(withMove) {
+								var x_ = arr1[0];
+								var y_ = arr1[1];
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = x_;
+								_this1.y = y_;
+								var l4 = _this1.points.length;
+								_this1.points[l4] = [];
+								_this1.points[l4][0] = x_;
+								_this1.points[l4][1] = y_;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d1 = _this1.dim[_this1.dim.length - 1];
+								if(x_ < d1.minX) {
+									d1.minX = x_;
+								}
+								if(x_ > d1.maxX) {
+									d1.maxX = x_;
+								}
+								if(y_ < d1.minY) {
+									d1.minY = y_;
+								}
+								if(y_ > d1.maxY) {
+									d1.maxY = y_;
+								}
+								_this1.contour.reset();
+							} else {
+								_this1.lineTo(arr1[0],arr1[1]);
+							}
+							var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+							var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+							var ox1 = _this1.x;
+							var oy1 = _this1.y;
+							while(i3 < l3) {
+								if(_this1.fill && _this1.penIsDown) {
+									if(i3 > 0 && i3 < l3 - 2) {
+										_this1.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+									}
+								}
+								_this1.lineTo(arr1[i3],arr1[i3 + 1]);
+								i3 += 2;
+							}
+							if(_this1.fill && _this1.penIsDown) {
+								if(_this1.endLine == 2 || _this1.endLine == 3) {
+									_this1.contour.end(_this1.width);
+								}
+								_this1.x = ox1;
+								_this1.y = oy1;
+								var l5 = _this1.points.length;
+								_this1.points[l5] = [];
+								_this1.points[l5][0] = ox1;
+								_this1.points[l5][1] = oy1;
+								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d2 = _this1.dim[_this1.dim.length - 1];
+								if(ox1 < d2.minX) {
+									d2.minX = ox1;
+								}
+								if(ox1 > d2.maxX) {
+									d2.maxX = ox1;
+								}
+								if(oy1 < d2.minY) {
+									d2.minY = oy1;
+								}
+								if(oy1 > d2.maxY) {
+									d2.maxY = oy1;
+								}
+								_this1.contour.reset();
+								_this1.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+							}
+							_this1.x = nx1;
+							_this1.y = ny1;
+						} else {
+							if(_this1.endLine == 2 || _this1.endLine == 3) {
+								_this1.contour.end(_this1.width);
+							}
+							_this1.x = nx1;
+							_this1.y = ny1;
+							var l6 = _this1.points.length;
+							_this1.points[l6] = [];
+							_this1.points[l6][0] = nx1;
+							_this1.points[l6][1] = ny1;
+							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d3 = _this1.dim[_this1.dim.length - 1];
+							if(nx1 < d3.minX) {
+								d3.minX = nx1;
+							}
+							if(nx1 > d3.maxX) {
+								d3.maxX = nx1;
+							}
+							if(ny1 < d3.minY) {
+								d3.minY = ny1;
+							}
+							if(ny1 > d3.maxY) {
+								d3.maxY = ny1;
+							}
+							_this1.contour.reset();
+						}
+					}
+					j += 3;
+					break;
 				case "ARC_SIDES":
-					var radius1 = v[j];
+					var radius2 = v[j];
 					var degrees1 = v[j + 1];
 					var sides = v[j + 2];
 					if(sides == null) {
@@ -13553,24 +12222,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this1.turtleHistoryOn) {
 						if(sides == 24) {
 							_this1.historyAdd("ARC");
-							_this1.historyParameters.push(radius1);
+							_this1.historyParameters.push(radius2);
 							_this1.historyParameters.push(degrees1);
 						} else {
 							_this1.historyAdd("ARC_SIDES");
-							_this1.historyParameters.push(radius1);
+							_this1.historyParameters.push(radius2);
 							_this1.historyParameters.push(degrees1);
 							_this1.historyParameters.push(sides);
 						}
 					}
-					if(radius1 != 0) {
+					if(radius2 != 0) {
 						if(_this1.repeatCommands) {
 							if(sides == 24) {
 								_this1.turtleCommands.push("ARC");
-								_this1.turtleParameters.push(radius1);
+								_this1.turtleParameters.push(radius2);
 								_this1.turtleParameters.push(degrees1);
 							} else {
 								_this1.turtleCommands.push("ARC_SIDES");
-								_this1.turtleParameters.push(radius1);
+								_this1.turtleParameters.push(radius2);
 								_this1.turtleParameters.push(degrees1);
 								_this1.turtleParameters.push(sides);
 							}
@@ -13578,15 +12247,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							var beta1 = degrees1 * Math.PI / 180 / sides;
 							var alpha1 = (Math.PI - beta1) / 2;
 							var rotate1 = -(Math.PI / 2 - alpha1);
-							var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-							var ox1 = _this1.x;
-							var oy1 = _this1.y;
-							var arr1 = [];
-							arr1.push(_this1.x);
-							arr1.push(_this1.y);
+							var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+							var ox2 = _this1.x;
+							var oy2 = _this1.y;
+							var arr2 = [];
+							arr2.push(_this1.x);
+							arr2.push(_this1.y);
 							var _g5 = 0;
 							while(_g5 < 48) {
-								var i3 = _g5++;
+								var i4 = _g5++;
 								_this1.rotation += rotate1;
 								var wasHistoryOn2 = _this1.turtleHistoryOn;
 								_this1.turtleHistoryOn = false;
@@ -13598,107 +12267,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this1.turtleCommands.push("FORWARD");
 									_this1.turtleParameters.push(baseLength1);
 								} else {
-									var nx1 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
-									var ny1 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
+									var nx2 = _this1.x + baseLength1 * Math.cos(_this1.rotation);
+									var ny2 = _this1.y + baseLength1 * Math.sin(_this1.rotation);
 									if(_this1.penIsDown) {
 										_this1.lastDistance = baseLength1;
-										_this1.lineTo(nx1,ny1);
+										_this1.lineTo(nx2,ny2);
 									} else {
 										if(_this1.endLine == 2 || _this1.endLine == 3) {
 											_this1.contour.end(_this1.width);
 										}
-										_this1.x = nx1;
-										_this1.y = ny1;
-										var l2 = _this1.points.length;
-										_this1.points[l2] = [];
-										_this1.points[l2][0] = nx1;
-										_this1.points[l2][1] = ny1;
+										_this1.x = nx2;
+										_this1.y = ny2;
+										var l7 = _this1.points.length;
+										_this1.points[l7] = [];
+										_this1.points[l7][0] = nx2;
+										_this1.points[l7][1] = ny2;
 										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d1 = _this1.dim[_this1.dim.length - 1];
-										if(nx1 < d1.minX) {
-											d1.minX = nx1;
+										var d4 = _this1.dim[_this1.dim.length - 1];
+										if(nx2 < d4.minX) {
+											d4.minX = nx2;
 										}
-										if(nx1 > d1.maxX) {
-											d1.maxX = nx1;
+										if(nx2 > d4.maxX) {
+											d4.maxX = nx2;
 										}
-										if(ny1 < d1.minY) {
-											d1.minY = ny1;
+										if(ny2 < d4.minY) {
+											d4.minY = ny2;
 										}
-										if(ny1 > d1.maxY) {
-											d1.maxY = ny1;
+										if(ny2 > d4.maxY) {
+											d4.maxY = ny2;
 										}
 										_this1.contour.reset();
 									}
 								}
 								_this1.turtleHistoryOn = wasHistoryOn2;
 								if(_this1.fill) {
-									arr1.push(_this1.x);
-									arr1.push(_this1.y);
+									arr2.push(_this1.x);
+									arr2.push(_this1.y);
 								}
 							}
 							if(_this1.fill) {
-								var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-								var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-								var l3 = arr1.length;
-								var i4 = 2;
+								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+								var l8 = arr2.length;
+								var i5 = 2;
 								var lx1 = 0.;
 								var ly1 = 0.;
-								_this1.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-								while(i4 < l3) {
-									if(i4 > 2) {
-										_this1.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+								_this1.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+								while(i5 < l8) {
+									if(i5 > 2) {
+										_this1.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 									}
-									lx1 = arr1[i4];
-									ly1 = arr1[i4 + 1];
-									i4 += 2;
+									lx1 = arr2[i5];
+									ly1 = arr2[i5 + 1];
+									i5 += 2;
 								}
 							}
-							arr1.length = 0;
+							arr2.length = 0;
 						}
 					}
 					j += 3;
 					break;
 				case "BACKWARD":
-					var distance = v[j];
+					var distance1 = v[j];
 					if(_this1.turtleHistoryOn) {
 						_this1.historyAdd("BACKWARD");
-						_this1.historyParameters.push(distance);
+						_this1.historyParameters.push(distance1);
 					}
 					if(_this1.repeatCommands) {
 						_this1.turtleCommands.push("BACKWARD");
-						_this1.turtleParameters.push(distance);
+						_this1.turtleParameters.push(distance1);
 					} else {
-						var nx2 = _this1.x + distance * Math.cos(_this1.rotation + Math.PI);
-						var ny2 = _this1.y + distance * Math.sin(_this1.rotation + Math.PI);
+						var nx3 = _this1.x + distance1 * Math.cos(_this1.rotation + Math.PI);
+						var ny3 = _this1.y + distance1 * Math.sin(_this1.rotation + Math.PI);
 						if(_this1.penIsDown) {
-							_this1.lineTo(nx2,ny2);
+							_this1.lineTo(nx3,ny3);
 						} else {
 							if(_this1.endLine == 2 || _this1.endLine == 3) {
 								_this1.contour.end(_this1.width);
 							}
-							_this1.x = nx2;
-							_this1.y = ny2;
-							var l4 = _this1.points.length;
-							_this1.points[l4] = [];
-							_this1.points[l4][0] = nx2;
-							_this1.points[l4][1] = ny2;
+							_this1.x = nx3;
+							_this1.y = ny3;
+							var l9 = _this1.points.length;
+							_this1.points[l9] = [];
+							_this1.points[l9][0] = nx3;
+							_this1.points[l9][1] = ny3;
 							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d2 = _this1.dim[_this1.dim.length - 1];
-							if(nx2 < d2.minX) {
-								d2.minX = nx2;
+							var d5 = _this1.dim[_this1.dim.length - 1];
+							if(nx3 < d5.minX) {
+								d5.minX = nx3;
 							}
-							if(nx2 > d2.maxX) {
-								d2.maxX = nx2;
+							if(nx3 > d5.maxX) {
+								d5.maxX = nx3;
 							}
-							if(ny2 < d2.minY) {
-								d2.minY = ny2;
+							if(ny3 < d5.minY) {
+								d5.minY = ny3;
 							}
-							if(ny2 > d2.maxY) {
-								d2.maxY = ny2;
+							if(ny3 > d5.maxY) {
+								d5.maxY = ny3;
 							}
 							_this1.contour.reset();
 						}
@@ -13738,26 +12407,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "CIRCLE":
-					var radius2 = v[j];
+					var radius3 = v[j];
 					if(_this1.turtleHistoryOn) {
 						_this1.historyAdd("CIRCLE");
-						_this1.historyParameters.push(radius2);
+						_this1.historyParameters.push(radius3);
 					}
-					if(radius2 != 0) {
+					if(radius3 != 0) {
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("CIRCLE");
-							_this1.turtleParameters.push(radius2);
+							_this1.turtleParameters.push(radius3);
 						} else {
 							var beta2 = 2 * Math.PI / 24;
 							var alpha2 = (Math.PI - beta2) / 2;
 							var rotate2 = -(Math.PI / 2 - alpha2);
-							var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-							var ox2 = _this1.x;
-							var oy2 = _this1.y;
-							var arr2 = [];
+							var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+							var ox3 = _this1.x;
+							var oy3 = _this1.y;
+							var arr3 = [];
 							var _g6 = 0;
 							while(_g6 < 48) {
-								var i5 = _g6++;
+								var i6 = _g6++;
 								_this1.rotation += rotate2;
 								var wasHistoryOn3 = _this1.turtleHistoryOn;
 								_this1.turtleHistoryOn = false;
@@ -13769,69 +12438,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this1.turtleCommands.push("FORWARD");
 									_this1.turtleParameters.push(baseLength2);
 								} else {
-									var nx3 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
-									var ny3 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
+									var nx4 = _this1.x + baseLength2 * Math.cos(_this1.rotation);
+									var ny4 = _this1.y + baseLength2 * Math.sin(_this1.rotation);
 									if(_this1.penIsDown) {
 										_this1.lastDistance = baseLength2;
-										_this1.lineTo(nx3,ny3);
+										_this1.lineTo(nx4,ny4);
 									} else {
 										if(_this1.endLine == 2 || _this1.endLine == 3) {
 											_this1.contour.end(_this1.width);
 										}
-										_this1.x = nx3;
-										_this1.y = ny3;
-										var l5 = _this1.points.length;
-										_this1.points[l5] = [];
-										_this1.points[l5][0] = nx3;
-										_this1.points[l5][1] = ny3;
+										_this1.x = nx4;
+										_this1.y = ny4;
+										var l10 = _this1.points.length;
+										_this1.points[l10] = [];
+										_this1.points[l10][0] = nx4;
+										_this1.points[l10][1] = ny4;
 										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d3 = _this1.dim[_this1.dim.length - 1];
-										if(nx3 < d3.minX) {
-											d3.minX = nx3;
+										var d6 = _this1.dim[_this1.dim.length - 1];
+										if(nx4 < d6.minX) {
+											d6.minX = nx4;
 										}
-										if(nx3 > d3.maxX) {
-											d3.maxX = nx3;
+										if(nx4 > d6.maxX) {
+											d6.maxX = nx4;
 										}
-										if(ny3 < d3.minY) {
-											d3.minY = ny3;
+										if(ny4 < d6.minY) {
+											d6.minY = ny4;
 										}
-										if(ny3 > d3.maxY) {
-											d3.maxY = ny3;
+										if(ny4 > d6.maxY) {
+											d6.maxY = ny4;
 										}
 										_this1.contour.reset();
 									}
 								}
 								_this1.turtleHistoryOn = wasHistoryOn3;
 								if(_this1.fill) {
-									arr2.push(_this1.x);
-									arr2.push(_this1.y);
+									arr3.push(_this1.x);
+									arr3.push(_this1.y);
 								}
 							}
 							if(_this1.fill) {
-								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-								var l6 = arr2.length;
-								var i6 = 2;
+								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+								var l11 = arr3.length;
+								var i7 = 2;
 								var lx2 = 0.;
 								var ly2 = 0.;
-								while(i6 < l6) {
-									if(i6 > 2) {
-										_this1.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+								while(i7 < l11) {
+									if(i7 > 2) {
+										_this1.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 									}
-									lx2 = arr2[i6];
-									ly2 = arr2[i6 + 1];
-									i6 += 2;
+									lx2 = arr3[i7];
+									ly2 = arr3[i7 + 1];
+									i7 += 2;
 								}
 							}
-							arr2.length = 0;
+							arr3.length = 0;
 						}
 					}
 					++j;
 					break;
 				case "CIRCLE_SIDES":
-					var radius3 = v[j];
+					var radius4 = v[j];
 					var sides1 = v[j + 1];
 					if(sides1 == null) {
 						sides1 = 24;
@@ -13839,34 +12508,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this1.turtleHistoryOn) {
 						if(sides1 == 24) {
 							_this1.historyAdd("CIRCLE");
-							_this1.historyParameters.push(radius3);
+							_this1.historyParameters.push(radius4);
 						} else {
 							_this1.historyAdd("CIRCLE_SIDES");
-							_this1.historyParameters.push(radius3);
+							_this1.historyParameters.push(radius4);
 							_this1.historyParameters.push(sides1);
 						}
 					}
-					if(radius3 != 0) {
+					if(radius4 != 0) {
 						if(_this1.repeatCommands) {
 							if(sides1 == 24) {
 								_this1.turtleCommands.push("CIRCLE");
-								_this1.turtleParameters.push(radius3);
+								_this1.turtleParameters.push(radius4);
 							} else {
 								_this1.turtleCommands.push("CIRCLE_SIDES");
-								_this1.turtleParameters.push(radius3);
+								_this1.turtleParameters.push(radius4);
 								_this1.turtleParameters.push(sides1);
 							}
 						} else {
 							var beta3 = 2 * Math.PI / sides1;
 							var alpha3 = (Math.PI - beta3) / 2;
 							var rotate3 = -(Math.PI / 2 - alpha3);
-							var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-							var ox3 = _this1.x;
-							var oy3 = _this1.y;
-							var arr3 = [];
+							var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+							var ox4 = _this1.x;
+							var oy4 = _this1.y;
+							var arr4 = [];
 							var _g7 = 0;
 							while(_g7 < 48) {
-								var i7 = _g7++;
+								var i8 = _g7++;
 								_this1.rotation += rotate3;
 								var wasHistoryOn4 = _this1.turtleHistoryOn;
 								_this1.turtleHistoryOn = false;
@@ -13878,63 +12547,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this1.turtleCommands.push("FORWARD");
 									_this1.turtleParameters.push(baseLength3);
 								} else {
-									var nx4 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
-									var ny4 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
+									var nx5 = _this1.x + baseLength3 * Math.cos(_this1.rotation);
+									var ny5 = _this1.y + baseLength3 * Math.sin(_this1.rotation);
 									if(_this1.penIsDown) {
 										_this1.lastDistance = baseLength3;
-										_this1.lineTo(nx4,ny4);
+										_this1.lineTo(nx5,ny5);
 									} else {
 										if(_this1.endLine == 2 || _this1.endLine == 3) {
 											_this1.contour.end(_this1.width);
 										}
-										_this1.x = nx4;
-										_this1.y = ny4;
-										var l7 = _this1.points.length;
-										_this1.points[l7] = [];
-										_this1.points[l7][0] = nx4;
-										_this1.points[l7][1] = ny4;
+										_this1.x = nx5;
+										_this1.y = ny5;
+										var l12 = _this1.points.length;
+										_this1.points[l12] = [];
+										_this1.points[l12][0] = nx5;
+										_this1.points[l12][1] = ny5;
 										_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 										_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 										_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d4 = _this1.dim[_this1.dim.length - 1];
-										if(nx4 < d4.minX) {
-											d4.minX = nx4;
+										var d7 = _this1.dim[_this1.dim.length - 1];
+										if(nx5 < d7.minX) {
+											d7.minX = nx5;
 										}
-										if(nx4 > d4.maxX) {
-											d4.maxX = nx4;
+										if(nx5 > d7.maxX) {
+											d7.maxX = nx5;
 										}
-										if(ny4 < d4.minY) {
-											d4.minY = ny4;
+										if(ny5 < d7.minY) {
+											d7.minY = ny5;
 										}
-										if(ny4 > d4.maxY) {
-											d4.maxY = ny4;
+										if(ny5 > d7.maxY) {
+											d7.maxY = ny5;
 										}
 										_this1.contour.reset();
 									}
 								}
 								_this1.turtleHistoryOn = wasHistoryOn4;
 								if(_this1.fill) {
-									arr3.push(_this1.x);
-									arr3.push(_this1.y);
+									arr4.push(_this1.x);
+									arr4.push(_this1.y);
 								}
 							}
 							if(_this1.fill) {
-								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-								var l8 = arr3.length;
-								var i8 = 2;
+								var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+								var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+								var l13 = arr4.length;
+								var i9 = 2;
 								var lx3 = 0.;
 								var ly3 = 0.;
-								while(i8 < l8) {
-									if(i8 > 2) {
-										_this1.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+								while(i9 < l13) {
+									if(i9 > 2) {
+										_this1.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 									}
-									lx3 = arr3[i8];
-									ly3 = arr3[i8 + 1];
-									i8 += 2;
+									lx3 = arr4[i9];
+									ly3 = arr4[i9 + 1];
+									i9 += 2;
 								}
 							}
-							arr3.length = 0;
+							arr4.length = 0;
 						}
 					}
 					j += 2;
@@ -14002,45 +12671,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "FORWARD":
-					var distance1 = v[j];
+					var distance3 = v[j];
 					if(_this1.turtleHistoryOn) {
 						_this1.historyAdd("FORWARD");
-						_this1.historyParameters.push(distance1);
+						_this1.historyParameters.push(distance3);
 					}
 					if(_this1.repeatCommands) {
 						_this1.turtleCommands.push("FORWARD");
-						_this1.turtleParameters.push(distance1);
+						_this1.turtleParameters.push(distance3);
 					} else {
-						var nx5 = _this1.x + distance1 * Math.cos(_this1.rotation);
-						var ny5 = _this1.y + distance1 * Math.sin(_this1.rotation);
+						var nx6 = _this1.x + distance3 * Math.cos(_this1.rotation);
+						var ny6 = _this1.y + distance3 * Math.sin(_this1.rotation);
 						if(_this1.penIsDown) {
-							_this1.lastDistance = distance1;
-							_this1.lineTo(nx5,ny5);
+							_this1.lastDistance = distance3;
+							_this1.lineTo(nx6,ny6);
 						} else {
 							if(_this1.endLine == 2 || _this1.endLine == 3) {
 								_this1.contour.end(_this1.width);
 							}
-							_this1.x = nx5;
-							_this1.y = ny5;
-							var l9 = _this1.points.length;
-							_this1.points[l9] = [];
-							_this1.points[l9][0] = nx5;
-							_this1.points[l9][1] = ny5;
+							_this1.x = nx6;
+							_this1.y = ny6;
+							var l14 = _this1.points.length;
+							_this1.points[l14] = [];
+							_this1.points[l14][0] = nx6;
+							_this1.points[l14][1] = ny6;
 							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d5 = _this1.dim[_this1.dim.length - 1];
-							if(nx5 < d5.minX) {
-								d5.minX = nx5;
+							var d8 = _this1.dim[_this1.dim.length - 1];
+							if(nx6 < d8.minX) {
+								d8.minX = nx6;
 							}
-							if(nx5 > d5.maxX) {
-								d5.maxX = nx5;
+							if(nx6 > d8.maxX) {
+								d8.maxX = nx6;
 							}
-							if(ny5 < d5.minY) {
-								d5.minY = ny5;
+							if(ny6 < d8.minY) {
+								d8.minY = ny6;
 							}
-							if(ny5 > d5.maxY) {
-								d5.maxY = ny5;
+							if(ny6 > d8.maxY) {
+								d8.maxY = ny6;
 							}
 							_this1.contour.reset();
 						}
@@ -14057,175 +12726,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this1.turtleCommands.push("FORWARD_CHANGE");
 						_this1.turtleParameters.push(deltaDistance);
 					} else {
-						var distance2 = _this1.lastDistance + deltaDistance;
-						var nx6 = _this1.x + distance2 * Math.cos(_this1.rotation);
-						var ny6 = _this1.y + distance2 * Math.sin(_this1.rotation);
+						var distance4 = _this1.lastDistance + deltaDistance;
+						var nx7 = _this1.x + distance4 * Math.cos(_this1.rotation);
+						var ny7 = _this1.y + distance4 * Math.sin(_this1.rotation);
 						if(_this1.penIsDown) {
-							_this1.lastDistance = distance2 + deltaDistance;
-							_this1.lineTo(nx6,ny6);
-						} else {
-							if(_this1.endLine == 2 || _this1.endLine == 3) {
-								_this1.contour.end(_this1.width);
-							}
-							_this1.x = nx6;
-							_this1.y = ny6;
-							var l10 = _this1.points.length;
-							_this1.points[l10] = [];
-							_this1.points[l10][0] = nx6;
-							_this1.points[l10][1] = ny6;
-							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d6 = _this1.dim[_this1.dim.length - 1];
-							if(nx6 < d6.minX) {
-								d6.minX = nx6;
-							}
-							if(nx6 > d6.maxX) {
-								d6.maxX = nx6;
-							}
-							if(ny6 < d6.minY) {
-								d6.minY = ny6;
-							}
-							if(ny6 > d6.maxY) {
-								d6.maxY = ny6;
-							}
-							_this1.contour.reset();
-						}
-					}
-					++j;
-					break;
-				case "FORWARD_CURVE_LEFT":
-					var distance3 = v[j];
-					var distance21 = v[j + 1];
-					var radius4 = v[j + 2];
-					if(_this1.turtleHistoryOn) {
-						_this1.historyAdd("FORWARD_CURVE_LEFT");
-						_this1.historyParameters.push(distance3);
-						_this1.historyParameters.push(distance21);
-						_this1.historyParameters.push(radius4);
-					}
-					if(_this1.repeatCommands) {
-						_this1.turtleCommands.push("FORWARD_CURVE_LEFT");
-						_this1.turtleParameters.push(distance3);
-						_this1.turtleParameters.push(distance21);
-						_this1.turtleParameters.push(radius4);
-					} else {
-						var nx7 = _this1.x + distance3 * Math.cos(_this1.rotation);
-						var ny7 = _this1.y + distance3 * Math.sin(_this1.rotation);
-						if(_this1.penIsDown) {
-							var thruX = _this1.x + distance21 * Math.cos(_this1.rotation) + radius4 * Math.cos(_this1.rotation + Math.PI / 2);
-							var thruY = _this1.y + distance21 * Math.sin(_this1.rotation) + radius4 * Math.sin(_this1.rotation + Math.PI / 2);
-							var newx = 2 * thruX - 0.5 * (_this1.x + nx7);
-							var newy = 2 * thruY - 0.5 * (_this1.y + ny7);
-							_this1.tempArr = [];
-							var p = _this1.tempArr;
-							var ax = _this1.x;
-							var ay = _this1.y;
-							var x = ax - newx;
-							var y = ay - newy;
-							var x1 = newx - nx7;
-							var y1 = newy - ny7;
-							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-							if(approxDistance == 0) {
-								approxDistance = 0.000001;
-							}
-							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-							var l11 = p.length;
-							p[l11++] = ax;
-							p[l11++] = ay;
-							var t = step;
-							while(t < 1.) {
-								var u = 1 - t;
-								p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-								var u1 = 1 - t;
-								p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-								t += step;
-							}
-							p[l11++] = nx7;
-							p[l11++] = ny7;
-							var arr4 = _this1.tempArr;
-							var withMove = false;
-							if(withMove == null) {
-								withMove = true;
-							}
-							var l12 = arr4.length;
-							var i9 = 2;
-							if(withMove) {
-								var x_ = arr4[0];
-								var y_ = arr4[1];
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = x_;
-								_this1.y = y_;
-								var l13 = _this1.points.length;
-								_this1.points[l13] = [];
-								_this1.points[l13][0] = x_;
-								_this1.points[l13][1] = y_;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d7 = _this1.dim[_this1.dim.length - 1];
-								if(x_ < d7.minX) {
-									d7.minX = x_;
-								}
-								if(x_ > d7.maxX) {
-									d7.maxX = x_;
-								}
-								if(y_ < d7.minY) {
-									d7.minY = y_;
-								}
-								if(y_ > d7.maxY) {
-									d7.maxY = y_;
-								}
-								_this1.contour.reset();
-							} else {
-								_this1.lineTo(arr4[0],arr4[1]);
-							}
-							var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-							var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-							var ox4 = _this1.x;
-							var oy4 = _this1.y;
-							while(i9 < l12) {
-								if(_this1.fill && _this1.penIsDown) {
-									if(i9 > 0 && i9 < l12 - 2) {
-										_this1.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-									}
-								}
-								_this1.lineTo(arr4[i9],arr4[i9 + 1]);
-								i9 += 2;
-							}
-							if(_this1.fill && _this1.penIsDown) {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = ox4;
-								_this1.y = oy4;
-								var l14 = _this1.points.length;
-								_this1.points[l14] = [];
-								_this1.points[l14][0] = ox4;
-								_this1.points[l14][1] = oy4;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d8 = _this1.dim[_this1.dim.length - 1];
-								if(ox4 < d8.minX) {
-									d8.minX = ox4;
-								}
-								if(ox4 > d8.maxX) {
-									d8.maxX = ox4;
-								}
-								if(oy4 < d8.minY) {
-									d8.minY = oy4;
-								}
-								if(oy4 > d8.maxY) {
-									d8.maxY = oy4;
-								}
-								_this1.contour.reset();
-								_this1.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-							}
-							_this1.x = nx7;
-							_this1.y = ny7;
+							_this1.lastDistance = distance4 + deltaDistance;
+							_this1.lineTo(nx7,ny7);
 						} else {
 							if(_this1.endLine == 2 || _this1.endLine == 3) {
 								_this1.contour.end(_this1.width);
@@ -14255,170 +12761,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this1.contour.reset();
 						}
 					}
-					j += 3;
-					break;
-				case "FORWARD_CURVE_RIGHT":
-					var distance4 = v[j];
-					var distance22 = v[j + 1];
-					var radius5 = v[j + 2];
-					if(_this1.turtleHistoryOn) {
-						_this1.historyAdd("FORWARD_CURVE_RIGHT");
-						_this1.historyParameters.push(distance4);
-						_this1.historyParameters.push(distance22);
-						_this1.historyParameters.push(radius5);
-					}
-					if(_this1.repeatCommands) {
-						_this1.turtleCommands.push("FORWARD_CURVE_RIGHT");
-						_this1.turtleParameters.push(distance4);
-						_this1.turtleParameters.push(distance22);
-						_this1.turtleParameters.push(radius5);
-					} else {
-						var nx8 = _this1.x + distance4 * Math.cos(_this1.rotation);
-						var ny8 = _this1.y + distance4 * Math.sin(_this1.rotation);
-						if(_this1.penIsDown) {
-							var thruX1 = _this1.x + distance22 * Math.cos(_this1.rotation) - radius5 * Math.cos(_this1.rotation + Math.PI / 2);
-							var thruY1 = _this1.y + distance22 * Math.sin(_this1.rotation) - radius5 * Math.sin(_this1.rotation + Math.PI / 2);
-							var newx1 = 2 * thruX1 - 0.5 * (_this1.x + nx8);
-							var newy1 = 2 * thruY1 - 0.5 * (_this1.y + ny8);
-							_this1.tempArr = [];
-							var p1 = _this1.tempArr;
-							var ax1 = _this1.x;
-							var ay1 = _this1.y;
-							var x2 = ax1 - newx1;
-							var y2 = ay1 - newy1;
-							var x3 = newx1 - nx8;
-							var y3 = newy1 - ny8;
-							var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-							if(approxDistance1 == 0) {
-								approxDistance1 = 0.000001;
-							}
-							var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-							var l16 = p1.length;
-							p1[l16++] = ax1;
-							p1[l16++] = ay1;
-							var t1 = step1;
-							while(t1 < 1.) {
-								var u2 = 1 - t1;
-								p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-								var u3 = 1 - t1;
-								p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-								t1 += step1;
-							}
-							p1[l16++] = nx8;
-							p1[l16++] = ny8;
-							var arr5 = _this1.tempArr;
-							var withMove1 = false;
-							if(withMove1 == null) {
-								withMove1 = true;
-							}
-							var l17 = arr5.length;
-							var i10 = 2;
-							if(withMove1) {
-								var x_1 = arr5[0];
-								var y_1 = arr5[1];
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = x_1;
-								_this1.y = y_1;
-								var l18 = _this1.points.length;
-								_this1.points[l18] = [];
-								_this1.points[l18][0] = x_1;
-								_this1.points[l18][1] = y_1;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d10 = _this1.dim[_this1.dim.length - 1];
-								if(x_1 < d10.minX) {
-									d10.minX = x_1;
-								}
-								if(x_1 > d10.maxX) {
-									d10.maxX = x_1;
-								}
-								if(y_1 < d10.minY) {
-									d10.minY = y_1;
-								}
-								if(y_1 > d10.maxY) {
-									d10.maxY = y_1;
-								}
-								_this1.contour.reset();
-							} else {
-								_this1.lineTo(arr5[0],arr5[1]);
-							}
-							var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-							var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-							var ox5 = _this1.x;
-							var oy5 = _this1.y;
-							while(i10 < l17) {
-								if(_this1.fill && _this1.penIsDown) {
-									if(i10 > 0 && i10 < l17 - 2) {
-										_this1.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-									}
-								}
-								_this1.lineTo(arr5[i10],arr5[i10 + 1]);
-								i10 += 2;
-							}
-							if(_this1.fill && _this1.penIsDown) {
-								if(_this1.endLine == 2 || _this1.endLine == 3) {
-									_this1.contour.end(_this1.width);
-								}
-								_this1.x = ox5;
-								_this1.y = oy5;
-								var l19 = _this1.points.length;
-								_this1.points[l19] = [];
-								_this1.points[l19][0] = ox5;
-								_this1.points[l19][1] = oy5;
-								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d11 = _this1.dim[_this1.dim.length - 1];
-								if(ox5 < d11.minX) {
-									d11.minX = ox5;
-								}
-								if(ox5 > d11.maxX) {
-									d11.maxX = ox5;
-								}
-								if(oy5 < d11.minY) {
-									d11.minY = oy5;
-								}
-								if(oy5 > d11.maxY) {
-									d11.maxY = oy5;
-								}
-								_this1.contour.reset();
-								_this1.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-							}
-							_this1.x = nx8;
-							_this1.y = ny8;
-						} else {
-							if(_this1.endLine == 2 || _this1.endLine == 3) {
-								_this1.contour.end(_this1.width);
-							}
-							_this1.x = nx8;
-							_this1.y = ny8;
-							var l20 = _this1.points.length;
-							_this1.points[l20] = [];
-							_this1.points[l20][0] = nx8;
-							_this1.points[l20][1] = ny8;
-							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d12 = _this1.dim[_this1.dim.length - 1];
-							if(nx8 < d12.minX) {
-								d12.minX = nx8;
-							}
-							if(nx8 > d12.maxX) {
-								d12.maxX = nx8;
-							}
-							if(ny8 < d12.minY) {
-								d12.minY = ny8;
-							}
-							if(ny8 > d12.maxY) {
-								d12.maxY = ny8;
-							}
-							_this1.contour.reset();
-						}
-					}
-					j += 3;
+					++j;
 					break;
 				case "FORWARD_FACTOR":
 					var factor = v[j];
@@ -14431,213 +12774,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this1.turtleParameters.push(factor);
 					} else {
 						var distance5 = _this1.lastDistance * factor;
-						var nx9 = _this1.x + distance5 * Math.cos(_this1.rotation);
-						var ny9 = _this1.y + distance5 * Math.sin(_this1.rotation);
+						var nx8 = _this1.x + distance5 * Math.cos(_this1.rotation);
+						var ny8 = _this1.y + distance5 * Math.sin(_this1.rotation);
 						if(_this1.penIsDown) {
 							_this1.lastDistance = distance5;
-							_this1.lineTo(nx9,ny9);
+							_this1.lineTo(nx8,ny8);
 						} else {
 							if(_this1.endLine == 2 || _this1.endLine == 3) {
 								_this1.contour.end(_this1.width);
 							}
-							_this1.x = nx9;
-							_this1.y = ny9;
-							var l21 = _this1.points.length;
-							_this1.points[l21] = [];
-							_this1.points[l21][0] = nx9;
-							_this1.points[l21][1] = ny9;
+							_this1.x = nx8;
+							_this1.y = ny8;
+							var l16 = _this1.points.length;
+							_this1.points[l16] = [];
+							_this1.points[l16][0] = nx8;
+							_this1.points[l16][1] = ny8;
 							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d13 = _this1.dim[_this1.dim.length - 1];
-							if(nx9 < d13.minX) {
-								d13.minX = nx9;
+							var d10 = _this1.dim[_this1.dim.length - 1];
+							if(nx8 < d10.minX) {
+								d10.minX = nx8;
 							}
-							if(nx9 > d13.maxX) {
-								d13.maxX = nx9;
+							if(nx8 > d10.maxX) {
+								d10.maxX = nx8;
 							}
-							if(ny9 < d13.minY) {
-								d13.minY = ny9;
+							if(ny8 < d10.minY) {
+								d10.minY = ny8;
 							}
-							if(ny9 > d13.maxY) {
-								d13.maxY = ny9;
+							if(ny8 > d10.maxY) {
+								d10.maxY = ny8;
 							}
 							_this1.contour.reset();
 						}
 					}
 					++j;
-					break;
-				case "FORWARD_TRIANGLE_LEFT":
-					var distance6 = v[j];
-					var distance23 = v[j + 1];
-					var radius6 = v[j + 2];
-					if(_this1.turtleHistoryOn) {
-						_this1.historyAdd("FORWARD_TRIANGLE_LEFT");
-						_this1.historyParameters.push(distance6);
-						_this1.historyParameters.push(distance23);
-						_this1.historyParameters.push(radius6);
-					}
-					if(_this1.repeatCommands) {
-						_this1.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-						_this1.turtleParameters.push(distance6);
-						_this1.turtleParameters.push(distance23);
-						_this1.turtleParameters.push(radius6);
-					} else {
-						var nx10 = _this1.x + distance6 * Math.cos(_this1.rotation);
-						var ny10 = _this1.y + distance6 * Math.sin(_this1.rotation);
-						if(_this1.penIsDown) {
-							var thruX2 = _this1.x + distance23 * Math.cos(_this1.rotation) + radius6 * Math.cos(_this1.rotation + Math.PI / 2);
-							var thruY2 = _this1.y + distance23 * Math.sin(_this1.rotation) + radius6 * Math.sin(_this1.rotation + Math.PI / 2);
-							if(_this1.fill) {
-								_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX2,thruY2,nx10,ny10);
-							}
-							_this1.lineTo(thruX2,thruY2);
-							_this1.lineTo(nx10,ny10);
-							if(_this1.fill) {
-								_this1.lineTo(_this1.x,_this1.y);
-							}
-							if(_this1.endLine == 2 || _this1.endLine == 3) {
-								_this1.contour.end(_this1.width);
-							}
-							_this1.x = nx10;
-							_this1.y = ny10;
-							var l22 = _this1.points.length;
-							_this1.points[l22] = [];
-							_this1.points[l22][0] = nx10;
-							_this1.points[l22][1] = ny10;
-							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d14 = _this1.dim[_this1.dim.length - 1];
-							if(nx10 < d14.minX) {
-								d14.minX = nx10;
-							}
-							if(nx10 > d14.maxX) {
-								d14.maxX = nx10;
-							}
-							if(ny10 < d14.minY) {
-								d14.minY = ny10;
-							}
-							if(ny10 > d14.maxY) {
-								d14.maxY = ny10;
-							}
-							_this1.contour.reset();
-						} else {
-							if(_this1.endLine == 2 || _this1.endLine == 3) {
-								_this1.contour.end(_this1.width);
-							}
-							_this1.x = nx10;
-							_this1.y = ny10;
-							var l23 = _this1.points.length;
-							_this1.points[l23] = [];
-							_this1.points[l23][0] = nx10;
-							_this1.points[l23][1] = ny10;
-							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d15 = _this1.dim[_this1.dim.length - 1];
-							if(nx10 < d15.minX) {
-								d15.minX = nx10;
-							}
-							if(nx10 > d15.maxX) {
-								d15.maxX = nx10;
-							}
-							if(ny10 < d15.minY) {
-								d15.minY = ny10;
-							}
-							if(ny10 > d15.maxY) {
-								d15.maxY = ny10;
-							}
-							_this1.contour.reset();
-						}
-					}
-					j += 3;
-					break;
-				case "FORWARD_TRIANGLE_RIGHT":
-					var distance7 = v[j];
-					var distance24 = v[j + 1];
-					var radius7 = v[j + 2];
-					if(_this1.turtleHistoryOn) {
-						_this1.historyAdd("FORWARD_TRIANGLE_RIGHT");
-						_this1.historyParameters.push(distance7);
-						_this1.historyParameters.push(distance24);
-						_this1.historyParameters.push(radius7);
-					}
-					if(_this1.repeatCommands) {
-						_this1.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-						_this1.turtleParameters.push(distance7);
-						_this1.turtleParameters.push(distance24);
-						_this1.turtleParameters.push(radius7);
-					} else {
-						var nx11 = _this1.x + distance7 * Math.cos(_this1.rotation);
-						var ny11 = _this1.y + distance7 * Math.sin(_this1.rotation);
-						if(_this1.penIsDown) {
-							var thruX3 = _this1.x + distance24 * Math.cos(_this1.rotation) - radius7 * Math.cos(_this1.rotation + Math.PI / 2);
-							var thruY3 = _this1.y + distance24 * Math.sin(_this1.rotation) - radius7 * Math.sin(_this1.rotation + Math.PI / 2);
-							if(_this1.fill) {
-								_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX3,thruY3,nx11,ny11);
-							}
-							_this1.lineTo(thruX3,thruY3);
-							_this1.lineTo(nx11,ny11);
-							if(_this1.fill) {
-								_this1.lineTo(_this1.x,_this1.y);
-							}
-							if(_this1.endLine == 2 || _this1.endLine == 3) {
-								_this1.contour.end(_this1.width);
-							}
-							_this1.x = nx11;
-							_this1.y = ny11;
-							var l24 = _this1.points.length;
-							_this1.points[l24] = [];
-							_this1.points[l24][0] = nx11;
-							_this1.points[l24][1] = ny11;
-							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d16 = _this1.dim[_this1.dim.length - 1];
-							if(nx11 < d16.minX) {
-								d16.minX = nx11;
-							}
-							if(nx11 > d16.maxX) {
-								d16.maxX = nx11;
-							}
-							if(ny11 < d16.minY) {
-								d16.minY = ny11;
-							}
-							if(ny11 > d16.maxY) {
-								d16.maxY = ny11;
-							}
-							_this1.contour.reset();
-						} else {
-							if(_this1.endLine == 2 || _this1.endLine == 3) {
-								_this1.contour.end(_this1.width);
-							}
-							_this1.x = nx11;
-							_this1.y = ny11;
-							var l25 = _this1.points.length;
-							_this1.points[l25] = [];
-							_this1.points[l25][0] = nx11;
-							_this1.points[l25][1] = ny11;
-							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
-							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
-							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d17 = _this1.dim[_this1.dim.length - 1];
-							if(nx11 < d17.minX) {
-								d17.minX = nx11;
-							}
-							if(nx11 > d17.maxX) {
-								d17.maxX = nx11;
-							}
-							if(ny11 < d17.minY) {
-								d17.minY = ny11;
-							}
-							if(ny11 > d17.maxY) {
-								d17.maxY = ny11;
-							}
-							_this1.contour.reset();
-						}
-					}
-					j += 3;
 					break;
 				case "GREEN":
 					if(_this1.turtleHistoryOn) {
@@ -14694,10 +12865,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "MOVE_PEN":
-					var distance8 = v[j];
+					var distance6 = v[j];
 					if(_this1.repeatCommands) {
 						_this1.turtleCommands.push("MOVE_PEN");
-						_this1.turtleParameters.push(distance8);
+						_this1.turtleParameters.push(distance6);
 					} else if(_this1.penIsDown) {
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("PEN_UP");
@@ -14709,42 +12880,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("FORWARD");
-							_this1.historyParameters.push(distance8);
+							_this1.historyParameters.push(distance6);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("FORWARD");
-							_this1.turtleParameters.push(distance8);
+							_this1.turtleParameters.push(distance6);
 						} else {
-							var nx12 = _this1.x + distance8 * Math.cos(_this1.rotation);
-							var ny12 = _this1.y + distance8 * Math.sin(_this1.rotation);
+							var nx9 = _this1.x + distance6 * Math.cos(_this1.rotation);
+							var ny9 = _this1.y + distance6 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
-								_this1.lastDistance = distance8;
-								_this1.lineTo(nx12,ny12);
+								_this1.lastDistance = distance6;
+								_this1.lineTo(nx9,ny9);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx12;
-								_this1.y = ny12;
-								var l26 = _this1.points.length;
-								_this1.points[l26] = [];
-								_this1.points[l26][0] = nx12;
-								_this1.points[l26][1] = ny12;
+								_this1.x = nx9;
+								_this1.y = ny9;
+								var l17 = _this1.points.length;
+								_this1.points[l17] = [];
+								_this1.points[l17][0] = nx9;
+								_this1.points[l17][1] = ny9;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d18 = _this1.dim[_this1.dim.length - 1];
-								if(nx12 < d18.minX) {
-									d18.minX = nx12;
+								var d11 = _this1.dim[_this1.dim.length - 1];
+								if(nx9 < d11.minX) {
+									d11.minX = nx9;
 								}
-								if(nx12 > d18.maxX) {
-									d18.maxX = nx12;
+								if(nx9 > d11.maxX) {
+									d11.maxX = nx9;
 								}
-								if(ny12 < d18.minY) {
-									d18.minY = ny12;
+								if(ny9 < d11.minY) {
+									d11.minY = ny9;
 								}
-								if(ny12 > d18.maxY) {
-									d18.maxY = ny12;
+								if(ny9 > d11.maxY) {
+									d11.maxY = ny9;
 								}
 								_this1.contour.reset();
 							}
@@ -14760,42 +12931,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						if(_this1.turtleHistoryOn) {
 							_this1.historyAdd("FORWARD");
-							_this1.historyParameters.push(distance8);
+							_this1.historyParameters.push(distance6);
 						}
 						if(_this1.repeatCommands) {
 							_this1.turtleCommands.push("FORWARD");
-							_this1.turtleParameters.push(distance8);
+							_this1.turtleParameters.push(distance6);
 						} else {
-							var nx13 = _this1.x + distance8 * Math.cos(_this1.rotation);
-							var ny13 = _this1.y + distance8 * Math.sin(_this1.rotation);
+							var nx10 = _this1.x + distance6 * Math.cos(_this1.rotation);
+							var ny10 = _this1.y + distance6 * Math.sin(_this1.rotation);
 							if(_this1.penIsDown) {
-								_this1.lastDistance = distance8;
-								_this1.lineTo(nx13,ny13);
+								_this1.lastDistance = distance6;
+								_this1.lineTo(nx10,ny10);
 							} else {
 								if(_this1.endLine == 2 || _this1.endLine == 3) {
 									_this1.contour.end(_this1.width);
 								}
-								_this1.x = nx13;
-								_this1.y = ny13;
-								var l27 = _this1.points.length;
-								_this1.points[l27] = [];
-								_this1.points[l27][0] = nx13;
-								_this1.points[l27][1] = ny13;
+								_this1.x = nx10;
+								_this1.y = ny10;
+								var l18 = _this1.points.length;
+								_this1.points[l18] = [];
+								_this1.points[l18][0] = nx10;
+								_this1.points[l18][1] = ny10;
 								_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 								_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 								_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d19 = _this1.dim[_this1.dim.length - 1];
-								if(nx13 < d19.minX) {
-									d19.minX = nx13;
+								var d12 = _this1.dim[_this1.dim.length - 1];
+								if(nx10 < d12.minX) {
+									d12.minX = nx10;
 								}
-								if(nx13 > d19.maxX) {
-									d19.maxX = nx13;
+								if(nx10 > d12.maxX) {
+									d12.maxX = nx10;
 								}
-								if(ny13 < d19.minY) {
-									d19.minY = ny13;
+								if(ny10 < d12.minY) {
+									d12.minY = ny10;
 								}
-								if(ny13 > d19.maxY) {
-									d19.maxY = ny13;
+								if(ny10 > d12.maxY) {
+									d12.maxY = ny10;
 								}
 								_this1.contour.reset();
 							}
@@ -15067,42 +13238,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					++j;
 					break;
 				case "SET_POSITION":
-					var x4 = v[j];
-					var y4 = v[j + 1];
+					var x2 = v[j];
+					var y2 = v[j + 1];
 					if(_this1.turtleHistoryOn) {
 						_this1.historyAdd("SET_POSITION");
-						_this1.historyParameters.push(x4);
-						_this1.historyParameters.push(y4);
+						_this1.historyParameters.push(x2);
+						_this1.historyParameters.push(y2);
 					}
 					if(_this1.repeatCommands) {
 						_this1.turtleCommands.push("SET_POSITION");
-						_this1.turtleParameters.push(x4);
-						_this1.turtleParameters.push(y4);
+						_this1.turtleParameters.push(x2);
+						_this1.turtleParameters.push(y2);
 					} else {
 						if(_this1.endLine == 2 || _this1.endLine == 3) {
 							_this1.contour.end(_this1.width);
 						}
-						_this1.x = x4;
-						_this1.y = y4;
-						var l28 = _this1.points.length;
-						_this1.points[l28] = [];
-						_this1.points[l28][0] = x4;
-						_this1.points[l28][1] = y4;
+						_this1.x = x2;
+						_this1.y = y2;
+						var l19 = _this1.points.length;
+						_this1.points[l19] = [];
+						_this1.points[l19][0] = x2;
+						_this1.points[l19][1] = y2;
 						_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
 						_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
 						_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d20 = _this1.dim[_this1.dim.length - 1];
-						if(x4 < d20.minX) {
-							d20.minX = x4;
+						var d13 = _this1.dim[_this1.dim.length - 1];
+						if(x2 < d13.minX) {
+							d13.minX = x2;
 						}
-						if(x4 > d20.maxX) {
-							d20.maxX = x4;
+						if(x2 > d13.maxX) {
+							d13.maxX = x2;
 						}
-						if(y4 < d20.minY) {
-							d20.minY = y4;
+						if(y2 < d13.minY) {
+							d13.minY = y2;
 						}
-						if(y4 > d20.maxY) {
-							d20.maxY = y4;
+						if(y2 > d13.maxY) {
+							d13.maxY = y2;
 						}
 						_this1.contour.reset();
 					}
@@ -15127,6 +13298,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						_this1.pen.currentColor = -27273;
 					}
+					break;
+				case "TRIANGLE_ARCH":
+					var distance7 = v[j];
+					var distance21 = v[j + 1];
+					var radius5 = v[j + 2];
+					if(_this1.turtleHistoryOn) {
+						_this1.historyAdd("TRIANGLE_ARCH");
+						_this1.historyParameters.push(distance7);
+						_this1.historyParameters.push(distance21);
+						_this1.historyParameters.push(radius5);
+					}
+					if(_this1.repeatCommands) {
+						_this1.turtleCommands.push("TRIANGLE_ARCH");
+						_this1.turtleParameters.push(distance7);
+						_this1.turtleParameters.push(distance21);
+						_this1.turtleParameters.push(radius5);
+					} else {
+						var nx11 = _this1.x + distance7 * Math.cos(_this1.rotation);
+						var ny11 = _this1.y + distance7 * Math.sin(_this1.rotation);
+						if(_this1.penIsDown) {
+							var thruX1 = _this1.x + distance21 * Math.cos(_this1.rotation) - radius5 * Math.cos(_this1.rotation + Math.PI / 2);
+							var thruY1 = _this1.y + distance21 * Math.sin(_this1.rotation) - radius5 * Math.sin(_this1.rotation + Math.PI / 2);
+							if(_this1.fill) {
+								_this1.pen.triangle2DFill(_this1.x,_this1.y,thruX1,thruY1,nx11,ny11);
+							}
+							_this1.lineTo(thruX1,thruY1);
+							_this1.lineTo(nx11,ny11);
+							if(_this1.fill) {
+								_this1.lineTo(_this1.x,_this1.y);
+							}
+							if(_this1.endLine == 2 || _this1.endLine == 3) {
+								_this1.contour.end(_this1.width);
+							}
+							_this1.x = nx11;
+							_this1.y = ny11;
+							var l20 = _this1.points.length;
+							_this1.points[l20] = [];
+							_this1.points[l20][0] = nx11;
+							_this1.points[l20][1] = ny11;
+							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d14 = _this1.dim[_this1.dim.length - 1];
+							if(nx11 < d14.minX) {
+								d14.minX = nx11;
+							}
+							if(nx11 > d14.maxX) {
+								d14.maxX = nx11;
+							}
+							if(ny11 < d14.minY) {
+								d14.minY = ny11;
+							}
+							if(ny11 > d14.maxY) {
+								d14.maxY = ny11;
+							}
+							_this1.contour.reset();
+						} else {
+							if(_this1.endLine == 2 || _this1.endLine == 3) {
+								_this1.contour.end(_this1.width);
+							}
+							_this1.x = nx11;
+							_this1.y = ny11;
+							var l21 = _this1.points.length;
+							_this1.points[l21] = [];
+							_this1.points[l21][0] = nx11;
+							_this1.points[l21][1] = ny11;
+							_this1.pointsClock[_this1.pointsClock.length] = _this1.contour.pointsClock.slice();
+							_this1.pointsAnti[_this1.pointsAnti.length] = _this1.contour.pointsAnti.slice();
+							_this1.dim[_this1.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d15 = _this1.dim[_this1.dim.length - 1];
+							if(nx11 < d15.minX) {
+								d15.minX = nx11;
+							}
+							if(nx11 > d15.maxX) {
+								d15.maxX = nx11;
+							}
+							if(ny11 < d15.minY) {
+								d15.minY = ny11;
+							}
+							if(ny11 > d15.maxY) {
+								d15.maxY = ny11;
+							}
+							_this1.contour.reset();
+						}
+					}
+					j += 3;
 					break;
 				case "WEST":
 					if(_this1.turtleHistoryOn) {
@@ -15375,8 +13632,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						j += 2;
 						break;
+					case "ARCH_BEZIER":
+						var distance = v[j];
+						var distance2 = v[j + 1];
+						var radius1 = v[j + 2];
+						if(_this.turtleHistoryOn) {
+							_this.historyAdd("ARCH_BEZIER");
+							_this.historyParameters.push(distance);
+							_this.historyParameters.push(distance2);
+							_this.historyParameters.push(radius1);
+						}
+						if(_this.repeatCommands) {
+							_this.turtleCommands.push("ARCH_BEZIER");
+							_this.turtleParameters.push(distance);
+							_this.turtleParameters.push(distance2);
+							_this.turtleParameters.push(radius1);
+						} else {
+							var nx1 = _this.x + distance * Math.cos(_this.rotation);
+							var ny1 = _this.y + distance * Math.sin(_this.rotation);
+							if(_this.penIsDown) {
+								var thruX = _this.x + distance2 * Math.cos(_this.rotation) - radius1 * Math.cos(_this.rotation + Math.PI / 2);
+								var thruY = _this.y + distance2 * Math.sin(_this.rotation) - radius1 * Math.sin(_this.rotation + Math.PI / 2);
+								var newx = 2 * thruX - 0.5 * (_this.x + nx1);
+								var newy = 2 * thruY - 0.5 * (_this.y + ny1);
+								_this.tempArr = [];
+								var p = _this.tempArr;
+								var ax = _this.x;
+								var ay = _this.y;
+								var x = ax - newx;
+								var y = ay - newy;
+								var x1 = newx - nx1;
+								var y1 = newy - ny1;
+								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+								if(approxDistance == 0) {
+									approxDistance = 0.000001;
+								}
+								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+								var l2 = p.length;
+								p[l2++] = ax;
+								p[l2++] = ay;
+								var t = step;
+								while(t < 1.) {
+									var u = 1 - t;
+									p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+									var u1 = 1 - t;
+									p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+									t += step;
+								}
+								p[l2++] = nx1;
+								p[l2++] = ny1;
+								var arr1 = _this.tempArr;
+								var withMove = false;
+								if(withMove == null) {
+									withMove = true;
+								}
+								var l3 = arr1.length;
+								var i3 = 2;
+								if(withMove) {
+									var x_ = arr1[0];
+									var y_ = arr1[1];
+									if(_this.endLine == 2 || _this.endLine == 3) {
+										_this.contour.end(_this.width);
+									}
+									_this.x = x_;
+									_this.y = y_;
+									var l4 = _this.points.length;
+									_this.points[l4] = [];
+									_this.points[l4][0] = x_;
+									_this.points[l4][1] = y_;
+									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d1 = _this.dim[_this.dim.length - 1];
+									if(x_ < d1.minX) {
+										d1.minX = x_;
+									}
+									if(x_ > d1.maxX) {
+										d1.maxX = x_;
+									}
+									if(y_ < d1.minY) {
+										d1.minY = y_;
+									}
+									if(y_ > d1.maxY) {
+										d1.maxY = y_;
+									}
+									_this.contour.reset();
+								} else {
+									_this.lineTo(arr1[0],arr1[1]);
+								}
+								var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+								var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+								var ox1 = _this.x;
+								var oy1 = _this.y;
+								while(i3 < l3) {
+									if(_this.fill && _this.penIsDown) {
+										if(i3 > 0 && i3 < l3 - 2) {
+											_this.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+										}
+									}
+									_this.lineTo(arr1[i3],arr1[i3 + 1]);
+									i3 += 2;
+								}
+								if(_this.fill && _this.penIsDown) {
+									if(_this.endLine == 2 || _this.endLine == 3) {
+										_this.contour.end(_this.width);
+									}
+									_this.x = ox1;
+									_this.y = oy1;
+									var l5 = _this.points.length;
+									_this.points[l5] = [];
+									_this.points[l5][0] = ox1;
+									_this.points[l5][1] = oy1;
+									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d2 = _this.dim[_this.dim.length - 1];
+									if(ox1 < d2.minX) {
+										d2.minX = ox1;
+									}
+									if(ox1 > d2.maxX) {
+										d2.maxX = ox1;
+									}
+									if(oy1 < d2.minY) {
+										d2.minY = oy1;
+									}
+									if(oy1 > d2.maxY) {
+										d2.maxY = oy1;
+									}
+									_this.contour.reset();
+									_this.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+								}
+								_this.x = nx1;
+								_this.y = ny1;
+							} else {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = nx1;
+								_this.y = ny1;
+								var l6 = _this.points.length;
+								_this.points[l6] = [];
+								_this.points[l6][0] = nx1;
+								_this.points[l6][1] = ny1;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d3 = _this.dim[_this.dim.length - 1];
+								if(nx1 < d3.minX) {
+									d3.minX = nx1;
+								}
+								if(nx1 > d3.maxX) {
+									d3.maxX = nx1;
+								}
+								if(ny1 < d3.minY) {
+									d3.minY = ny1;
+								}
+								if(ny1 > d3.maxY) {
+									d3.maxY = ny1;
+								}
+								_this.contour.reset();
+							}
+						}
+						j += 3;
+						break;
 					case "ARC_SIDES":
-						var radius1 = v[j];
+						var radius2 = v[j];
 						var degrees1 = v[j + 1];
 						var sides = v[j + 2];
 						if(sides == null) {
@@ -15385,24 +13805,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this.turtleHistoryOn) {
 							if(sides == 24) {
 								_this.historyAdd("ARC");
-								_this.historyParameters.push(radius1);
+								_this.historyParameters.push(radius2);
 								_this.historyParameters.push(degrees1);
 							} else {
 								_this.historyAdd("ARC_SIDES");
-								_this.historyParameters.push(radius1);
+								_this.historyParameters.push(radius2);
 								_this.historyParameters.push(degrees1);
 								_this.historyParameters.push(sides);
 							}
 						}
-						if(radius1 != 0) {
+						if(radius2 != 0) {
 							if(_this.repeatCommands) {
 								if(sides == 24) {
 									_this.turtleCommands.push("ARC");
-									_this.turtleParameters.push(radius1);
+									_this.turtleParameters.push(radius2);
 									_this.turtleParameters.push(degrees1);
 								} else {
 									_this.turtleCommands.push("ARC_SIDES");
-									_this.turtleParameters.push(radius1);
+									_this.turtleParameters.push(radius2);
 									_this.turtleParameters.push(degrees1);
 									_this.turtleParameters.push(sides);
 								}
@@ -15410,15 +13830,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								var beta1 = degrees1 * Math.PI / 180 / sides;
 								var alpha1 = (Math.PI - beta1) / 2;
 								var rotate1 = -(Math.PI / 2 - alpha1);
-								var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-								var ox1 = _this.x;
-								var oy1 = _this.y;
-								var arr1 = [];
-								arr1.push(_this.x);
-								arr1.push(_this.y);
+								var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+								var ox2 = _this.x;
+								var oy2 = _this.y;
+								var arr2 = [];
+								arr2.push(_this.x);
+								arr2.push(_this.y);
 								var _g5 = 0;
 								while(_g5 < 48) {
-									var i3 = _g5++;
+									var i4 = _g5++;
 									_this.rotation += rotate1;
 									var wasHistoryOn2 = _this.turtleHistoryOn;
 									_this.turtleHistoryOn = false;
@@ -15430,107 +13850,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this.turtleCommands.push("FORWARD");
 										_this.turtleParameters.push(baseLength1);
 									} else {
-										var nx1 = _this.x + baseLength1 * Math.cos(_this.rotation);
-										var ny1 = _this.y + baseLength1 * Math.sin(_this.rotation);
+										var nx2 = _this.x + baseLength1 * Math.cos(_this.rotation);
+										var ny2 = _this.y + baseLength1 * Math.sin(_this.rotation);
 										if(_this.penIsDown) {
 											_this.lastDistance = baseLength1;
-											_this.lineTo(nx1,ny1);
+											_this.lineTo(nx2,ny2);
 										} else {
 											if(_this.endLine == 2 || _this.endLine == 3) {
 												_this.contour.end(_this.width);
 											}
-											_this.x = nx1;
-											_this.y = ny1;
-											var l2 = _this.points.length;
-											_this.points[l2] = [];
-											_this.points[l2][0] = nx1;
-											_this.points[l2][1] = ny1;
+											_this.x = nx2;
+											_this.y = ny2;
+											var l7 = _this.points.length;
+											_this.points[l7] = [];
+											_this.points[l7][0] = nx2;
+											_this.points[l7][1] = ny2;
 											_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 											_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 											_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d1 = _this.dim[_this.dim.length - 1];
-											if(nx1 < d1.minX) {
-												d1.minX = nx1;
+											var d4 = _this.dim[_this.dim.length - 1];
+											if(nx2 < d4.minX) {
+												d4.minX = nx2;
 											}
-											if(nx1 > d1.maxX) {
-												d1.maxX = nx1;
+											if(nx2 > d4.maxX) {
+												d4.maxX = nx2;
 											}
-											if(ny1 < d1.minY) {
-												d1.minY = ny1;
+											if(ny2 < d4.minY) {
+												d4.minY = ny2;
 											}
-											if(ny1 > d1.maxY) {
-												d1.maxY = ny1;
+											if(ny2 > d4.maxY) {
+												d4.maxY = ny2;
 											}
 											_this.contour.reset();
 										}
 									}
 									_this.turtleHistoryOn = wasHistoryOn2;
 									if(_this.fill) {
-										arr1.push(_this.x);
-										arr1.push(_this.y);
+										arr2.push(_this.x);
+										arr2.push(_this.y);
 									}
 								}
 								if(_this.fill) {
-									var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-									var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-									var l3 = arr1.length;
-									var i4 = 2;
+									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+									var l8 = arr2.length;
+									var i5 = 2;
 									var lx1 = 0.;
 									var ly1 = 0.;
-									_this.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-									while(i4 < l3) {
-										if(i4 > 2) {
-											_this.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+									_this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+									while(i5 < l8) {
+										if(i5 > 2) {
+											_this.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 										}
-										lx1 = arr1[i4];
-										ly1 = arr1[i4 + 1];
-										i4 += 2;
+										lx1 = arr2[i5];
+										ly1 = arr2[i5 + 1];
+										i5 += 2;
 									}
 								}
-								arr1.length = 0;
+								arr2.length = 0;
 							}
 						}
 						j += 3;
 						break;
 					case "BACKWARD":
-						var distance = v[j];
+						var distance1 = v[j];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("BACKWARD");
-							_this.historyParameters.push(distance);
+							_this.historyParameters.push(distance1);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("BACKWARD");
-							_this.turtleParameters.push(distance);
+							_this.turtleParameters.push(distance1);
 						} else {
-							var nx2 = _this.x + distance * Math.cos(_this.rotation + Math.PI);
-							var ny2 = _this.y + distance * Math.sin(_this.rotation + Math.PI);
+							var nx3 = _this.x + distance1 * Math.cos(_this.rotation + Math.PI);
+							var ny3 = _this.y + distance1 * Math.sin(_this.rotation + Math.PI);
 							if(_this.penIsDown) {
-								_this.lineTo(nx2,ny2);
+								_this.lineTo(nx3,ny3);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx2;
-								_this.y = ny2;
-								var l4 = _this.points.length;
-								_this.points[l4] = [];
-								_this.points[l4][0] = nx2;
-								_this.points[l4][1] = ny2;
+								_this.x = nx3;
+								_this.y = ny3;
+								var l9 = _this.points.length;
+								_this.points[l9] = [];
+								_this.points[l9][0] = nx3;
+								_this.points[l9][1] = ny3;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d2 = _this.dim[_this.dim.length - 1];
-								if(nx2 < d2.minX) {
-									d2.minX = nx2;
+								var d5 = _this.dim[_this.dim.length - 1];
+								if(nx3 < d5.minX) {
+									d5.minX = nx3;
 								}
-								if(nx2 > d2.maxX) {
-									d2.maxX = nx2;
+								if(nx3 > d5.maxX) {
+									d5.maxX = nx3;
 								}
-								if(ny2 < d2.minY) {
-									d2.minY = ny2;
+								if(ny3 < d5.minY) {
+									d5.minY = ny3;
 								}
-								if(ny2 > d2.maxY) {
-									d2.maxY = ny2;
+								if(ny3 > d5.maxY) {
+									d5.maxY = ny3;
 								}
 								_this.contour.reset();
 							}
@@ -15570,26 +13990,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "CIRCLE":
-						var radius2 = v[j];
+						var radius3 = v[j];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("CIRCLE");
-							_this.historyParameters.push(radius2);
+							_this.historyParameters.push(radius3);
 						}
-						if(radius2 != 0) {
+						if(radius3 != 0) {
 							if(_this.repeatCommands) {
 								_this.turtleCommands.push("CIRCLE");
-								_this.turtleParameters.push(radius2);
+								_this.turtleParameters.push(radius3);
 							} else {
 								var beta2 = 2 * Math.PI / 24;
 								var alpha2 = (Math.PI - beta2) / 2;
 								var rotate2 = -(Math.PI / 2 - alpha2);
-								var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-								var ox2 = _this.x;
-								var oy2 = _this.y;
-								var arr2 = [];
+								var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+								var ox3 = _this.x;
+								var oy3 = _this.y;
+								var arr3 = [];
 								var _g6 = 0;
 								while(_g6 < 48) {
-									var i5 = _g6++;
+									var i6 = _g6++;
 									_this.rotation += rotate2;
 									var wasHistoryOn3 = _this.turtleHistoryOn;
 									_this.turtleHistoryOn = false;
@@ -15601,69 +14021,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this.turtleCommands.push("FORWARD");
 										_this.turtleParameters.push(baseLength2);
 									} else {
-										var nx3 = _this.x + baseLength2 * Math.cos(_this.rotation);
-										var ny3 = _this.y + baseLength2 * Math.sin(_this.rotation);
+										var nx4 = _this.x + baseLength2 * Math.cos(_this.rotation);
+										var ny4 = _this.y + baseLength2 * Math.sin(_this.rotation);
 										if(_this.penIsDown) {
 											_this.lastDistance = baseLength2;
-											_this.lineTo(nx3,ny3);
+											_this.lineTo(nx4,ny4);
 										} else {
 											if(_this.endLine == 2 || _this.endLine == 3) {
 												_this.contour.end(_this.width);
 											}
-											_this.x = nx3;
-											_this.y = ny3;
-											var l5 = _this.points.length;
-											_this.points[l5] = [];
-											_this.points[l5][0] = nx3;
-											_this.points[l5][1] = ny3;
+											_this.x = nx4;
+											_this.y = ny4;
+											var l10 = _this.points.length;
+											_this.points[l10] = [];
+											_this.points[l10][0] = nx4;
+											_this.points[l10][1] = ny4;
 											_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 											_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 											_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d3 = _this.dim[_this.dim.length - 1];
-											if(nx3 < d3.minX) {
-												d3.minX = nx3;
+											var d6 = _this.dim[_this.dim.length - 1];
+											if(nx4 < d6.minX) {
+												d6.minX = nx4;
 											}
-											if(nx3 > d3.maxX) {
-												d3.maxX = nx3;
+											if(nx4 > d6.maxX) {
+												d6.maxX = nx4;
 											}
-											if(ny3 < d3.minY) {
-												d3.minY = ny3;
+											if(ny4 < d6.minY) {
+												d6.minY = ny4;
 											}
-											if(ny3 > d3.maxY) {
-												d3.maxY = ny3;
+											if(ny4 > d6.maxY) {
+												d6.maxY = ny4;
 											}
 											_this.contour.reset();
 										}
 									}
 									_this.turtleHistoryOn = wasHistoryOn3;
 									if(_this.fill) {
-										arr2.push(_this.x);
-										arr2.push(_this.y);
+										arr3.push(_this.x);
+										arr3.push(_this.y);
 									}
 								}
 								if(_this.fill) {
-									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-									var l6 = arr2.length;
-									var i6 = 2;
+									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+									var l11 = arr3.length;
+									var i7 = 2;
 									var lx2 = 0.;
 									var ly2 = 0.;
-									while(i6 < l6) {
-										if(i6 > 2) {
-											_this.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+									while(i7 < l11) {
+										if(i7 > 2) {
+											_this.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 										}
-										lx2 = arr2[i6];
-										ly2 = arr2[i6 + 1];
-										i6 += 2;
+										lx2 = arr3[i7];
+										ly2 = arr3[i7 + 1];
+										i7 += 2;
 									}
 								}
-								arr2.length = 0;
+								arr3.length = 0;
 							}
 						}
 						++j;
 						break;
 					case "CIRCLE_SIDES":
-						var radius3 = v[j];
+						var radius4 = v[j];
 						var sides1 = v[j + 1];
 						if(sides1 == null) {
 							sides1 = 24;
@@ -15671,34 +14091,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this.turtleHistoryOn) {
 							if(sides1 == 24) {
 								_this.historyAdd("CIRCLE");
-								_this.historyParameters.push(radius3);
+								_this.historyParameters.push(radius4);
 							} else {
 								_this.historyAdd("CIRCLE_SIDES");
-								_this.historyParameters.push(radius3);
+								_this.historyParameters.push(radius4);
 								_this.historyParameters.push(sides1);
 							}
 						}
-						if(radius3 != 0) {
+						if(radius4 != 0) {
 							if(_this.repeatCommands) {
 								if(sides1 == 24) {
 									_this.turtleCommands.push("CIRCLE");
-									_this.turtleParameters.push(radius3);
+									_this.turtleParameters.push(radius4);
 								} else {
 									_this.turtleCommands.push("CIRCLE_SIDES");
-									_this.turtleParameters.push(radius3);
+									_this.turtleParameters.push(radius4);
 									_this.turtleParameters.push(sides1);
 								}
 							} else {
 								var beta3 = 2 * Math.PI / sides1;
 								var alpha3 = (Math.PI - beta3) / 2;
 								var rotate3 = -(Math.PI / 2 - alpha3);
-								var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-								var ox3 = _this.x;
-								var oy3 = _this.y;
-								var arr3 = [];
+								var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+								var ox4 = _this.x;
+								var oy4 = _this.y;
+								var arr4 = [];
 								var _g7 = 0;
 								while(_g7 < 48) {
-									var i7 = _g7++;
+									var i8 = _g7++;
 									_this.rotation += rotate3;
 									var wasHistoryOn4 = _this.turtleHistoryOn;
 									_this.turtleHistoryOn = false;
@@ -15710,63 +14130,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this.turtleCommands.push("FORWARD");
 										_this.turtleParameters.push(baseLength3);
 									} else {
-										var nx4 = _this.x + baseLength3 * Math.cos(_this.rotation);
-										var ny4 = _this.y + baseLength3 * Math.sin(_this.rotation);
+										var nx5 = _this.x + baseLength3 * Math.cos(_this.rotation);
+										var ny5 = _this.y + baseLength3 * Math.sin(_this.rotation);
 										if(_this.penIsDown) {
 											_this.lastDistance = baseLength3;
-											_this.lineTo(nx4,ny4);
+											_this.lineTo(nx5,ny5);
 										} else {
 											if(_this.endLine == 2 || _this.endLine == 3) {
 												_this.contour.end(_this.width);
 											}
-											_this.x = nx4;
-											_this.y = ny4;
-											var l7 = _this.points.length;
-											_this.points[l7] = [];
-											_this.points[l7][0] = nx4;
-											_this.points[l7][1] = ny4;
+											_this.x = nx5;
+											_this.y = ny5;
+											var l12 = _this.points.length;
+											_this.points[l12] = [];
+											_this.points[l12][0] = nx5;
+											_this.points[l12][1] = ny5;
 											_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 											_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 											_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d4 = _this.dim[_this.dim.length - 1];
-											if(nx4 < d4.minX) {
-												d4.minX = nx4;
+											var d7 = _this.dim[_this.dim.length - 1];
+											if(nx5 < d7.minX) {
+												d7.minX = nx5;
 											}
-											if(nx4 > d4.maxX) {
-												d4.maxX = nx4;
+											if(nx5 > d7.maxX) {
+												d7.maxX = nx5;
 											}
-											if(ny4 < d4.minY) {
-												d4.minY = ny4;
+											if(ny5 < d7.minY) {
+												d7.minY = ny5;
 											}
-											if(ny4 > d4.maxY) {
-												d4.maxY = ny4;
+											if(ny5 > d7.maxY) {
+												d7.maxY = ny5;
 											}
 											_this.contour.reset();
 										}
 									}
 									_this.turtleHistoryOn = wasHistoryOn4;
 									if(_this.fill) {
-										arr3.push(_this.x);
-										arr3.push(_this.y);
+										arr4.push(_this.x);
+										arr4.push(_this.y);
 									}
 								}
 								if(_this.fill) {
-									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-									var l8 = arr3.length;
-									var i8 = 2;
+									var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+									var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+									var l13 = arr4.length;
+									var i9 = 2;
 									var lx3 = 0.;
 									var ly3 = 0.;
-									while(i8 < l8) {
-										if(i8 > 2) {
-											_this.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+									while(i9 < l13) {
+										if(i9 > 2) {
+											_this.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 										}
-										lx3 = arr3[i8];
-										ly3 = arr3[i8 + 1];
-										i8 += 2;
+										lx3 = arr4[i9];
+										ly3 = arr4[i9 + 1];
+										i9 += 2;
 									}
 								}
-								arr3.length = 0;
+								arr4.length = 0;
 							}
 						}
 						j += 2;
@@ -15834,45 +14254,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "FORWARD":
-						var distance1 = v[j];
+						var distance3 = v[j];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance1);
+							_this.historyParameters.push(distance3);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance1);
+							_this.turtleParameters.push(distance3);
 						} else {
-							var nx5 = _this.x + distance1 * Math.cos(_this.rotation);
-							var ny5 = _this.y + distance1 * Math.sin(_this.rotation);
+							var nx6 = _this.x + distance3 * Math.cos(_this.rotation);
+							var ny6 = _this.y + distance3 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance1;
-								_this.lineTo(nx5,ny5);
+								_this.lastDistance = distance3;
+								_this.lineTo(nx6,ny6);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx5;
-								_this.y = ny5;
-								var l9 = _this.points.length;
-								_this.points[l9] = [];
-								_this.points[l9][0] = nx5;
-								_this.points[l9][1] = ny5;
+								_this.x = nx6;
+								_this.y = ny6;
+								var l14 = _this.points.length;
+								_this.points[l14] = [];
+								_this.points[l14][0] = nx6;
+								_this.points[l14][1] = ny6;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d5 = _this.dim[_this.dim.length - 1];
-								if(nx5 < d5.minX) {
-									d5.minX = nx5;
+								var d8 = _this.dim[_this.dim.length - 1];
+								if(nx6 < d8.minX) {
+									d8.minX = nx6;
 								}
-								if(nx5 > d5.maxX) {
-									d5.maxX = nx5;
+								if(nx6 > d8.maxX) {
+									d8.maxX = nx6;
 								}
-								if(ny5 < d5.minY) {
-									d5.minY = ny5;
+								if(ny6 < d8.minY) {
+									d8.minY = ny6;
 								}
-								if(ny5 > d5.maxY) {
-									d5.maxY = ny5;
+								if(ny6 > d8.maxY) {
+									d8.maxY = ny6;
 								}
 								_this.contour.reset();
 							}
@@ -15889,175 +14309,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.turtleCommands.push("FORWARD_CHANGE");
 							_this.turtleParameters.push(deltaDistance);
 						} else {
-							var distance2 = _this.lastDistance + deltaDistance;
-							var nx6 = _this.x + distance2 * Math.cos(_this.rotation);
-							var ny6 = _this.y + distance2 * Math.sin(_this.rotation);
+							var distance4 = _this.lastDistance + deltaDistance;
+							var nx7 = _this.x + distance4 * Math.cos(_this.rotation);
+							var ny7 = _this.y + distance4 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance2 + deltaDistance;
-								_this.lineTo(nx6,ny6);
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx6;
-								_this.y = ny6;
-								var l10 = _this.points.length;
-								_this.points[l10] = [];
-								_this.points[l10][0] = nx6;
-								_this.points[l10][1] = ny6;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d6 = _this.dim[_this.dim.length - 1];
-								if(nx6 < d6.minX) {
-									d6.minX = nx6;
-								}
-								if(nx6 > d6.maxX) {
-									d6.maxX = nx6;
-								}
-								if(ny6 < d6.minY) {
-									d6.minY = ny6;
-								}
-								if(ny6 > d6.maxY) {
-									d6.maxY = ny6;
-								}
-								_this.contour.reset();
-							}
-						}
-						++j;
-						break;
-					case "FORWARD_CURVE_LEFT":
-						var distance3 = v[j];
-						var distance21 = v[j + 1];
-						var radius4 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_CURVE_LEFT");
-							_this.historyParameters.push(distance3);
-							_this.historyParameters.push(distance21);
-							_this.historyParameters.push(radius4);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_CURVE_LEFT");
-							_this.turtleParameters.push(distance3);
-							_this.turtleParameters.push(distance21);
-							_this.turtleParameters.push(radius4);
-						} else {
-							var nx7 = _this.x + distance3 * Math.cos(_this.rotation);
-							var ny7 = _this.y + distance3 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX = _this.x + distance21 * Math.cos(_this.rotation) + radius4 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY = _this.y + distance21 * Math.sin(_this.rotation) + radius4 * Math.sin(_this.rotation + Math.PI / 2);
-								var newx = 2 * thruX - 0.5 * (_this.x + nx7);
-								var newy = 2 * thruY - 0.5 * (_this.y + ny7);
-								_this.tempArr = [];
-								var p = _this.tempArr;
-								var ax = _this.x;
-								var ay = _this.y;
-								var x = ax - newx;
-								var y = ay - newy;
-								var x1 = newx - nx7;
-								var y1 = newy - ny7;
-								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-								if(approxDistance == 0) {
-									approxDistance = 0.000001;
-								}
-								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-								var l11 = p.length;
-								p[l11++] = ax;
-								p[l11++] = ay;
-								var t = step;
-								while(t < 1.) {
-									var u = 1 - t;
-									p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-									var u1 = 1 - t;
-									p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-									t += step;
-								}
-								p[l11++] = nx7;
-								p[l11++] = ny7;
-								var arr4 = _this.tempArr;
-								var withMove = false;
-								if(withMove == null) {
-									withMove = true;
-								}
-								var l12 = arr4.length;
-								var i9 = 2;
-								if(withMove) {
-									var x_ = arr4[0];
-									var y_ = arr4[1];
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = x_;
-									_this.y = y_;
-									var l13 = _this.points.length;
-									_this.points[l13] = [];
-									_this.points[l13][0] = x_;
-									_this.points[l13][1] = y_;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d7 = _this.dim[_this.dim.length - 1];
-									if(x_ < d7.minX) {
-										d7.minX = x_;
-									}
-									if(x_ > d7.maxX) {
-										d7.maxX = x_;
-									}
-									if(y_ < d7.minY) {
-										d7.minY = y_;
-									}
-									if(y_ > d7.maxY) {
-										d7.maxY = y_;
-									}
-									_this.contour.reset();
-								} else {
-									_this.lineTo(arr4[0],arr4[1]);
-								}
-								var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-								var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-								var ox4 = _this.x;
-								var oy4 = _this.y;
-								while(i9 < l12) {
-									if(_this.fill && _this.penIsDown) {
-										if(i9 > 0 && i9 < l12 - 2) {
-											_this.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-										}
-									}
-									_this.lineTo(arr4[i9],arr4[i9 + 1]);
-									i9 += 2;
-								}
-								if(_this.fill && _this.penIsDown) {
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = ox4;
-									_this.y = oy4;
-									var l14 = _this.points.length;
-									_this.points[l14] = [];
-									_this.points[l14][0] = ox4;
-									_this.points[l14][1] = oy4;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d8 = _this.dim[_this.dim.length - 1];
-									if(ox4 < d8.minX) {
-										d8.minX = ox4;
-									}
-									if(ox4 > d8.maxX) {
-										d8.maxX = ox4;
-									}
-									if(oy4 < d8.minY) {
-										d8.minY = oy4;
-									}
-									if(oy4 > d8.maxY) {
-										d8.maxY = oy4;
-									}
-									_this.contour.reset();
-									_this.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-								}
-								_this.x = nx7;
-								_this.y = ny7;
+								_this.lastDistance = distance4 + deltaDistance;
+								_this.lineTo(nx7,ny7);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
@@ -16087,170 +14344,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								_this.contour.reset();
 							}
 						}
-						j += 3;
-						break;
-					case "FORWARD_CURVE_RIGHT":
-						var distance4 = v[j];
-						var distance22 = v[j + 1];
-						var radius5 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_CURVE_RIGHT");
-							_this.historyParameters.push(distance4);
-							_this.historyParameters.push(distance22);
-							_this.historyParameters.push(radius5);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-							_this.turtleParameters.push(distance4);
-							_this.turtleParameters.push(distance22);
-							_this.turtleParameters.push(radius5);
-						} else {
-							var nx8 = _this.x + distance4 * Math.cos(_this.rotation);
-							var ny8 = _this.y + distance4 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX1 = _this.x + distance22 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY1 = _this.y + distance22 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
-								var newx1 = 2 * thruX1 - 0.5 * (_this.x + nx8);
-								var newy1 = 2 * thruY1 - 0.5 * (_this.y + ny8);
-								_this.tempArr = [];
-								var p1 = _this.tempArr;
-								var ax1 = _this.x;
-								var ay1 = _this.y;
-								var x2 = ax1 - newx1;
-								var y2 = ay1 - newy1;
-								var x3 = newx1 - nx8;
-								var y3 = newy1 - ny8;
-								var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-								if(approxDistance1 == 0) {
-									approxDistance1 = 0.000001;
-								}
-								var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-								var l16 = p1.length;
-								p1[l16++] = ax1;
-								p1[l16++] = ay1;
-								var t1 = step1;
-								while(t1 < 1.) {
-									var u2 = 1 - t1;
-									p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-									var u3 = 1 - t1;
-									p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-									t1 += step1;
-								}
-								p1[l16++] = nx8;
-								p1[l16++] = ny8;
-								var arr5 = _this.tempArr;
-								var withMove1 = false;
-								if(withMove1 == null) {
-									withMove1 = true;
-								}
-								var l17 = arr5.length;
-								var i10 = 2;
-								if(withMove1) {
-									var x_1 = arr5[0];
-									var y_1 = arr5[1];
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = x_1;
-									_this.y = y_1;
-									var l18 = _this.points.length;
-									_this.points[l18] = [];
-									_this.points[l18][0] = x_1;
-									_this.points[l18][1] = y_1;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d10 = _this.dim[_this.dim.length - 1];
-									if(x_1 < d10.minX) {
-										d10.minX = x_1;
-									}
-									if(x_1 > d10.maxX) {
-										d10.maxX = x_1;
-									}
-									if(y_1 < d10.minY) {
-										d10.minY = y_1;
-									}
-									if(y_1 > d10.maxY) {
-										d10.maxY = y_1;
-									}
-									_this.contour.reset();
-								} else {
-									_this.lineTo(arr5[0],arr5[1]);
-								}
-								var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-								var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-								var ox5 = _this.x;
-								var oy5 = _this.y;
-								while(i10 < l17) {
-									if(_this.fill && _this.penIsDown) {
-										if(i10 > 0 && i10 < l17 - 2) {
-											_this.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-										}
-									}
-									_this.lineTo(arr5[i10],arr5[i10 + 1]);
-									i10 += 2;
-								}
-								if(_this.fill && _this.penIsDown) {
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = ox5;
-									_this.y = oy5;
-									var l19 = _this.points.length;
-									_this.points[l19] = [];
-									_this.points[l19][0] = ox5;
-									_this.points[l19][1] = oy5;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d11 = _this.dim[_this.dim.length - 1];
-									if(ox5 < d11.minX) {
-										d11.minX = ox5;
-									}
-									if(ox5 > d11.maxX) {
-										d11.maxX = ox5;
-									}
-									if(oy5 < d11.minY) {
-										d11.minY = oy5;
-									}
-									if(oy5 > d11.maxY) {
-										d11.maxY = oy5;
-									}
-									_this.contour.reset();
-									_this.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-								}
-								_this.x = nx8;
-								_this.y = ny8;
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx8;
-								_this.y = ny8;
-								var l20 = _this.points.length;
-								_this.points[l20] = [];
-								_this.points[l20][0] = nx8;
-								_this.points[l20][1] = ny8;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d12 = _this.dim[_this.dim.length - 1];
-								if(nx8 < d12.minX) {
-									d12.minX = nx8;
-								}
-								if(nx8 > d12.maxX) {
-									d12.maxX = nx8;
-								}
-								if(ny8 < d12.minY) {
-									d12.minY = ny8;
-								}
-								if(ny8 > d12.maxY) {
-									d12.maxY = ny8;
-								}
-								_this.contour.reset();
-							}
-						}
-						j += 3;
+						++j;
 						break;
 					case "FORWARD_FACTOR":
 						var factor = v[j];
@@ -16263,213 +14357,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.turtleParameters.push(factor);
 						} else {
 							var distance5 = _this.lastDistance * factor;
-							var nx9 = _this.x + distance5 * Math.cos(_this.rotation);
-							var ny9 = _this.y + distance5 * Math.sin(_this.rotation);
+							var nx8 = _this.x + distance5 * Math.cos(_this.rotation);
+							var ny8 = _this.y + distance5 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
 								_this.lastDistance = distance5;
-								_this.lineTo(nx9,ny9);
+								_this.lineTo(nx8,ny8);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx9;
-								_this.y = ny9;
-								var l21 = _this.points.length;
-								_this.points[l21] = [];
-								_this.points[l21][0] = nx9;
-								_this.points[l21][1] = ny9;
+								_this.x = nx8;
+								_this.y = ny8;
+								var l16 = _this.points.length;
+								_this.points[l16] = [];
+								_this.points[l16][0] = nx8;
+								_this.points[l16][1] = ny8;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d13 = _this.dim[_this.dim.length - 1];
-								if(nx9 < d13.minX) {
-									d13.minX = nx9;
+								var d10 = _this.dim[_this.dim.length - 1];
+								if(nx8 < d10.minX) {
+									d10.minX = nx8;
 								}
-								if(nx9 > d13.maxX) {
-									d13.maxX = nx9;
+								if(nx8 > d10.maxX) {
+									d10.maxX = nx8;
 								}
-								if(ny9 < d13.minY) {
-									d13.minY = ny9;
+								if(ny8 < d10.minY) {
+									d10.minY = ny8;
 								}
-								if(ny9 > d13.maxY) {
-									d13.maxY = ny9;
+								if(ny8 > d10.maxY) {
+									d10.maxY = ny8;
 								}
 								_this.contour.reset();
 							}
 						}
 						++j;
-						break;
-					case "FORWARD_TRIANGLE_LEFT":
-						var distance6 = v[j];
-						var distance23 = v[j + 1];
-						var radius6 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_TRIANGLE_LEFT");
-							_this.historyParameters.push(distance6);
-							_this.historyParameters.push(distance23);
-							_this.historyParameters.push(radius6);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-							_this.turtleParameters.push(distance6);
-							_this.turtleParameters.push(distance23);
-							_this.turtleParameters.push(radius6);
-						} else {
-							var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
-							var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX2 = _this.x + distance23 * Math.cos(_this.rotation) + radius6 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY2 = _this.y + distance23 * Math.sin(_this.rotation) + radius6 * Math.sin(_this.rotation + Math.PI / 2);
-								if(_this.fill) {
-									_this.pen.triangle2DFill(_this.x,_this.y,thruX2,thruY2,nx10,ny10);
-								}
-								_this.lineTo(thruX2,thruY2);
-								_this.lineTo(nx10,ny10);
-								if(_this.fill) {
-									_this.lineTo(_this.x,_this.y);
-								}
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx10;
-								_this.y = ny10;
-								var l22 = _this.points.length;
-								_this.points[l22] = [];
-								_this.points[l22][0] = nx10;
-								_this.points[l22][1] = ny10;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d14 = _this.dim[_this.dim.length - 1];
-								if(nx10 < d14.minX) {
-									d14.minX = nx10;
-								}
-								if(nx10 > d14.maxX) {
-									d14.maxX = nx10;
-								}
-								if(ny10 < d14.minY) {
-									d14.minY = ny10;
-								}
-								if(ny10 > d14.maxY) {
-									d14.maxY = ny10;
-								}
-								_this.contour.reset();
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx10;
-								_this.y = ny10;
-								var l23 = _this.points.length;
-								_this.points[l23] = [];
-								_this.points[l23][0] = nx10;
-								_this.points[l23][1] = ny10;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d15 = _this.dim[_this.dim.length - 1];
-								if(nx10 < d15.minX) {
-									d15.minX = nx10;
-								}
-								if(nx10 > d15.maxX) {
-									d15.maxX = nx10;
-								}
-								if(ny10 < d15.minY) {
-									d15.minY = ny10;
-								}
-								if(ny10 > d15.maxY) {
-									d15.maxY = ny10;
-								}
-								_this.contour.reset();
-							}
-						}
-						j += 3;
-						break;
-					case "FORWARD_TRIANGLE_RIGHT":
-						var distance7 = v[j];
-						var distance24 = v[j + 1];
-						var radius7 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-							_this.historyParameters.push(distance7);
-							_this.historyParameters.push(distance24);
-							_this.historyParameters.push(radius7);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-							_this.turtleParameters.push(distance7);
-							_this.turtleParameters.push(distance24);
-							_this.turtleParameters.push(radius7);
-						} else {
-							var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
-							var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX3 = _this.x + distance24 * Math.cos(_this.rotation) - radius7 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY3 = _this.y + distance24 * Math.sin(_this.rotation) - radius7 * Math.sin(_this.rotation + Math.PI / 2);
-								if(_this.fill) {
-									_this.pen.triangle2DFill(_this.x,_this.y,thruX3,thruY3,nx11,ny11);
-								}
-								_this.lineTo(thruX3,thruY3);
-								_this.lineTo(nx11,ny11);
-								if(_this.fill) {
-									_this.lineTo(_this.x,_this.y);
-								}
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx11;
-								_this.y = ny11;
-								var l24 = _this.points.length;
-								_this.points[l24] = [];
-								_this.points[l24][0] = nx11;
-								_this.points[l24][1] = ny11;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d16 = _this.dim[_this.dim.length - 1];
-								if(nx11 < d16.minX) {
-									d16.minX = nx11;
-								}
-								if(nx11 > d16.maxX) {
-									d16.maxX = nx11;
-								}
-								if(ny11 < d16.minY) {
-									d16.minY = ny11;
-								}
-								if(ny11 > d16.maxY) {
-									d16.maxY = ny11;
-								}
-								_this.contour.reset();
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx11;
-								_this.y = ny11;
-								var l25 = _this.points.length;
-								_this.points[l25] = [];
-								_this.points[l25][0] = nx11;
-								_this.points[l25][1] = ny11;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d17 = _this.dim[_this.dim.length - 1];
-								if(nx11 < d17.minX) {
-									d17.minX = nx11;
-								}
-								if(nx11 > d17.maxX) {
-									d17.maxX = nx11;
-								}
-								if(ny11 < d17.minY) {
-									d17.minY = ny11;
-								}
-								if(ny11 > d17.maxY) {
-									d17.maxY = ny11;
-								}
-								_this.contour.reset();
-							}
-						}
-						j += 3;
 						break;
 					case "GREEN":
 						if(_this.turtleHistoryOn) {
@@ -16526,10 +14448,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "MOVE_PEN":
-						var distance8 = v[j];
+						var distance6 = v[j];
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("MOVE_PEN");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else if(_this.penIsDown) {
 							if(_this.turtleHistoryOn) {
 								_this.historyAdd("PEN_UP");
@@ -16541,42 +14463,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							}
 							if(_this.turtleHistoryOn) {
 								_this.historyAdd("FORWARD");
-								_this.historyParameters.push(distance8);
+								_this.historyParameters.push(distance6);
 							}
 							if(_this.repeatCommands) {
 								_this.turtleCommands.push("FORWARD");
-								_this.turtleParameters.push(distance8);
+								_this.turtleParameters.push(distance6);
 							} else {
-								var nx12 = _this.x + distance8 * Math.cos(_this.rotation);
-								var ny12 = _this.y + distance8 * Math.sin(_this.rotation);
+								var nx9 = _this.x + distance6 * Math.cos(_this.rotation);
+								var ny9 = _this.y + distance6 * Math.sin(_this.rotation);
 								if(_this.penIsDown) {
-									_this.lastDistance = distance8;
-									_this.lineTo(nx12,ny12);
+									_this.lastDistance = distance6;
+									_this.lineTo(nx9,ny9);
 								} else {
 									if(_this.endLine == 2 || _this.endLine == 3) {
 										_this.contour.end(_this.width);
 									}
-									_this.x = nx12;
-									_this.y = ny12;
-									var l26 = _this.points.length;
-									_this.points[l26] = [];
-									_this.points[l26][0] = nx12;
-									_this.points[l26][1] = ny12;
+									_this.x = nx9;
+									_this.y = ny9;
+									var l17 = _this.points.length;
+									_this.points[l17] = [];
+									_this.points[l17][0] = nx9;
+									_this.points[l17][1] = ny9;
 									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d18 = _this.dim[_this.dim.length - 1];
-									if(nx12 < d18.minX) {
-										d18.minX = nx12;
+									var d11 = _this.dim[_this.dim.length - 1];
+									if(nx9 < d11.minX) {
+										d11.minX = nx9;
 									}
-									if(nx12 > d18.maxX) {
-										d18.maxX = nx12;
+									if(nx9 > d11.maxX) {
+										d11.maxX = nx9;
 									}
-									if(ny12 < d18.minY) {
-										d18.minY = ny12;
+									if(ny9 < d11.minY) {
+										d11.minY = ny9;
 									}
-									if(ny12 > d18.maxY) {
-										d18.maxY = ny12;
+									if(ny9 > d11.maxY) {
+										d11.maxY = ny9;
 									}
 									_this.contour.reset();
 								}
@@ -16592,42 +14514,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							if(_this.turtleHistoryOn) {
 								_this.historyAdd("FORWARD");
-								_this.historyParameters.push(distance8);
+								_this.historyParameters.push(distance6);
 							}
 							if(_this.repeatCommands) {
 								_this.turtleCommands.push("FORWARD");
-								_this.turtleParameters.push(distance8);
+								_this.turtleParameters.push(distance6);
 							} else {
-								var nx13 = _this.x + distance8 * Math.cos(_this.rotation);
-								var ny13 = _this.y + distance8 * Math.sin(_this.rotation);
+								var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
+								var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
 								if(_this.penIsDown) {
-									_this.lastDistance = distance8;
-									_this.lineTo(nx13,ny13);
+									_this.lastDistance = distance6;
+									_this.lineTo(nx10,ny10);
 								} else {
 									if(_this.endLine == 2 || _this.endLine == 3) {
 										_this.contour.end(_this.width);
 									}
-									_this.x = nx13;
-									_this.y = ny13;
-									var l27 = _this.points.length;
-									_this.points[l27] = [];
-									_this.points[l27][0] = nx13;
-									_this.points[l27][1] = ny13;
+									_this.x = nx10;
+									_this.y = ny10;
+									var l18 = _this.points.length;
+									_this.points[l18] = [];
+									_this.points[l18][0] = nx10;
+									_this.points[l18][1] = ny10;
 									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d19 = _this.dim[_this.dim.length - 1];
-									if(nx13 < d19.minX) {
-										d19.minX = nx13;
+									var d12 = _this.dim[_this.dim.length - 1];
+									if(nx10 < d12.minX) {
+										d12.minX = nx10;
 									}
-									if(nx13 > d19.maxX) {
-										d19.maxX = nx13;
+									if(nx10 > d12.maxX) {
+										d12.maxX = nx10;
 									}
-									if(ny13 < d19.minY) {
-										d19.minY = ny13;
+									if(ny10 < d12.minY) {
+										d12.minY = ny10;
 									}
-									if(ny13 > d19.maxY) {
-										d19.maxY = ny13;
+									if(ny10 > d12.maxY) {
+										d12.maxY = ny10;
 									}
 									_this.contour.reset();
 								}
@@ -16899,42 +14821,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						++j;
 						break;
 					case "SET_POSITION":
-						var x4 = v[j];
-						var y4 = v[j + 1];
+						var x2 = v[j];
+						var y2 = v[j + 1];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("SET_POSITION");
-							_this.historyParameters.push(x4);
-							_this.historyParameters.push(y4);
+							_this.historyParameters.push(x2);
+							_this.historyParameters.push(y2);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("SET_POSITION");
-							_this.turtleParameters.push(x4);
-							_this.turtleParameters.push(y4);
+							_this.turtleParameters.push(x2);
+							_this.turtleParameters.push(y2);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = x4;
-							_this.y = y4;
-							var l28 = _this.points.length;
-							_this.points[l28] = [];
-							_this.points[l28][0] = x4;
-							_this.points[l28][1] = y4;
+							_this.x = x2;
+							_this.y = y2;
+							var l19 = _this.points.length;
+							_this.points[l19] = [];
+							_this.points[l19][0] = x2;
+							_this.points[l19][1] = y2;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d20 = _this.dim[_this.dim.length - 1];
-							if(x4 < d20.minX) {
-								d20.minX = x4;
+							var d13 = _this.dim[_this.dim.length - 1];
+							if(x2 < d13.minX) {
+								d13.minX = x2;
 							}
-							if(x4 > d20.maxX) {
-								d20.maxX = x4;
+							if(x2 > d13.maxX) {
+								d13.maxX = x2;
 							}
-							if(y4 < d20.minY) {
-								d20.minY = y4;
+							if(y2 < d13.minY) {
+								d13.minY = y2;
 							}
-							if(y4 > d20.maxY) {
-								d20.maxY = y4;
+							if(y2 > d13.maxY) {
+								d13.maxY = y2;
 							}
 							_this.contour.reset();
 						}
@@ -16959,6 +14881,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							_this.pen.currentColor = -27273;
 						}
+						break;
+					case "TRIANGLE_ARCH":
+						var distance7 = v[j];
+						var distance21 = v[j + 1];
+						var radius5 = v[j + 2];
+						if(_this.turtleHistoryOn) {
+							_this.historyAdd("TRIANGLE_ARCH");
+							_this.historyParameters.push(distance7);
+							_this.historyParameters.push(distance21);
+							_this.historyParameters.push(radius5);
+						}
+						if(_this.repeatCommands) {
+							_this.turtleCommands.push("TRIANGLE_ARCH");
+							_this.turtleParameters.push(distance7);
+							_this.turtleParameters.push(distance21);
+							_this.turtleParameters.push(radius5);
+						} else {
+							var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
+							var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
+							if(_this.penIsDown) {
+								var thruX1 = _this.x + distance21 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
+								var thruY1 = _this.y + distance21 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
+								if(_this.fill) {
+									_this.pen.triangle2DFill(_this.x,_this.y,thruX1,thruY1,nx11,ny11);
+								}
+								_this.lineTo(thruX1,thruY1);
+								_this.lineTo(nx11,ny11);
+								if(_this.fill) {
+									_this.lineTo(_this.x,_this.y);
+								}
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = nx11;
+								_this.y = ny11;
+								var l20 = _this.points.length;
+								_this.points[l20] = [];
+								_this.points[l20][0] = nx11;
+								_this.points[l20][1] = ny11;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d14 = _this.dim[_this.dim.length - 1];
+								if(nx11 < d14.minX) {
+									d14.minX = nx11;
+								}
+								if(nx11 > d14.maxX) {
+									d14.maxX = nx11;
+								}
+								if(ny11 < d14.minY) {
+									d14.minY = ny11;
+								}
+								if(ny11 > d14.maxY) {
+									d14.maxY = ny11;
+								}
+								_this.contour.reset();
+							} else {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = nx11;
+								_this.y = ny11;
+								var l21 = _this.points.length;
+								_this.points[l21] = [];
+								_this.points[l21][0] = nx11;
+								_this.points[l21][1] = ny11;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d15 = _this.dim[_this.dim.length - 1];
+								if(nx11 < d15.minX) {
+									d15.minX = nx11;
+								}
+								if(nx11 > d15.maxX) {
+									d15.maxX = nx11;
+								}
+								if(ny11 < d15.minY) {
+									d15.minY = ny11;
+								}
+								if(ny11 > d15.maxY) {
+									d15.maxY = ny11;
+								}
+								_this.contour.reset();
+							}
+						}
+						j += 3;
 						break;
 					case "WEST":
 						if(_this.turtleHistoryOn) {
@@ -17004,13 +15012,13 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 		_this.turtleParameters.length = 0;
 		var _this1 = _this;
 		if(_this1.turtleHistoryOn) {
-			_this1.historyAdd("FORWARD_CURVE_RIGHT");
+			_this1.historyAdd("ARCH_BEZIER");
 			_this1.historyParameters.push(300);
 			_this1.historyParameters.push(150);
 			_this1.historyParameters.push(30);
 		}
 		if(_this1.repeatCommands) {
-			_this1.turtleCommands.push("FORWARD_CURVE_RIGHT");
+			_this1.turtleCommands.push("ARCH_BEZIER");
 			_this1.turtleParameters.push(300);
 			_this1.turtleParameters.push(150);
 			_this1.turtleParameters.push(30);
@@ -17308,8 +15316,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					j += 2;
 					break;
+				case "ARCH_BEZIER":
+					var distance = v[j];
+					var distance2 = v[j + 1];
+					var radius1 = v[j + 2];
+					if(_this.turtleHistoryOn) {
+						_this.historyAdd("ARCH_BEZIER");
+						_this.historyParameters.push(distance);
+						_this.historyParameters.push(distance2);
+						_this.historyParameters.push(radius1);
+					}
+					if(_this.repeatCommands) {
+						_this.turtleCommands.push("ARCH_BEZIER");
+						_this.turtleParameters.push(distance);
+						_this.turtleParameters.push(distance2);
+						_this.turtleParameters.push(radius1);
+					} else {
+						var nx1 = _this.x + distance * Math.cos(_this.rotation);
+						var ny1 = _this.y + distance * Math.sin(_this.rotation);
+						if(_this.penIsDown) {
+							var thruX = _this.x + distance2 * Math.cos(_this.rotation) - radius1 * Math.cos(_this.rotation + Math.PI / 2);
+							var thruY = _this.y + distance2 * Math.sin(_this.rotation) - radius1 * Math.sin(_this.rotation + Math.PI / 2);
+							var newx = 2 * thruX - 0.5 * (_this.x + nx1);
+							var newy = 2 * thruY - 0.5 * (_this.y + ny1);
+							_this.tempArr = [];
+							var p = _this.tempArr;
+							var ax = _this.x;
+							var ay = _this.y;
+							var x = ax - newx;
+							var y = ay - newy;
+							var x1 = newx - nx1;
+							var y1 = newy - ny1;
+							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+							if(approxDistance == 0) {
+								approxDistance = 0.000001;
+							}
+							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+							var l2 = p.length;
+							p[l2++] = ax;
+							p[l2++] = ay;
+							var t = step;
+							while(t < 1.) {
+								var u = 1 - t;
+								p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+								var u1 = 1 - t;
+								p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+								t += step;
+							}
+							p[l2++] = nx1;
+							p[l2++] = ny1;
+							var arr1 = _this.tempArr;
+							var withMove = false;
+							if(withMove == null) {
+								withMove = true;
+							}
+							var l3 = arr1.length;
+							var i3 = 2;
+							if(withMove) {
+								var x_ = arr1[0];
+								var y_ = arr1[1];
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = x_;
+								_this.y = y_;
+								var l4 = _this.points.length;
+								_this.points[l4] = [];
+								_this.points[l4][0] = x_;
+								_this.points[l4][1] = y_;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d1 = _this.dim[_this.dim.length - 1];
+								if(x_ < d1.minX) {
+									d1.minX = x_;
+								}
+								if(x_ > d1.maxX) {
+									d1.maxX = x_;
+								}
+								if(y_ < d1.minY) {
+									d1.minY = y_;
+								}
+								if(y_ > d1.maxY) {
+									d1.maxY = y_;
+								}
+								_this.contour.reset();
+							} else {
+								_this.lineTo(arr1[0],arr1[1]);
+							}
+							var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+							var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+							var ox1 = _this.x;
+							var oy1 = _this.y;
+							while(i3 < l3) {
+								if(_this.fill && _this.penIsDown) {
+									if(i3 > 0 && i3 < l3 - 2) {
+										_this.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+									}
+								}
+								_this.lineTo(arr1[i3],arr1[i3 + 1]);
+								i3 += 2;
+							}
+							if(_this.fill && _this.penIsDown) {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = ox1;
+								_this.y = oy1;
+								var l5 = _this.points.length;
+								_this.points[l5] = [];
+								_this.points[l5][0] = ox1;
+								_this.points[l5][1] = oy1;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d2 = _this.dim[_this.dim.length - 1];
+								if(ox1 < d2.minX) {
+									d2.minX = ox1;
+								}
+								if(ox1 > d2.maxX) {
+									d2.maxX = ox1;
+								}
+								if(oy1 < d2.minY) {
+									d2.minY = oy1;
+								}
+								if(oy1 > d2.maxY) {
+									d2.maxY = oy1;
+								}
+								_this.contour.reset();
+								_this.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+							}
+							_this.x = nx1;
+							_this.y = ny1;
+						} else {
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx1;
+							_this.y = ny1;
+							var l6 = _this.points.length;
+							_this.points[l6] = [];
+							_this.points[l6][0] = nx1;
+							_this.points[l6][1] = ny1;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d3 = _this.dim[_this.dim.length - 1];
+							if(nx1 < d3.minX) {
+								d3.minX = nx1;
+							}
+							if(nx1 > d3.maxX) {
+								d3.maxX = nx1;
+							}
+							if(ny1 < d3.minY) {
+								d3.minY = ny1;
+							}
+							if(ny1 > d3.maxY) {
+								d3.maxY = ny1;
+							}
+							_this.contour.reset();
+						}
+					}
+					j += 3;
+					break;
 				case "ARC_SIDES":
-					var radius1 = v[j];
+					var radius2 = v[j];
 					var degrees1 = v[j + 1];
 					var sides = v[j + 2];
 					if(sides == null) {
@@ -17318,24 +15489,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this.turtleHistoryOn) {
 						if(sides == 24) {
 							_this.historyAdd("ARC");
-							_this.historyParameters.push(radius1);
+							_this.historyParameters.push(radius2);
 							_this.historyParameters.push(degrees1);
 						} else {
 							_this.historyAdd("ARC_SIDES");
-							_this.historyParameters.push(radius1);
+							_this.historyParameters.push(radius2);
 							_this.historyParameters.push(degrees1);
 							_this.historyParameters.push(sides);
 						}
 					}
-					if(radius1 != 0) {
+					if(radius2 != 0) {
 						if(_this.repeatCommands) {
 							if(sides == 24) {
 								_this.turtleCommands.push("ARC");
-								_this.turtleParameters.push(radius1);
+								_this.turtleParameters.push(radius2);
 								_this.turtleParameters.push(degrees1);
 							} else {
 								_this.turtleCommands.push("ARC_SIDES");
-								_this.turtleParameters.push(radius1);
+								_this.turtleParameters.push(radius2);
 								_this.turtleParameters.push(degrees1);
 								_this.turtleParameters.push(sides);
 							}
@@ -17343,15 +15514,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							var beta1 = degrees1 * Math.PI / 180 / sides;
 							var alpha1 = (Math.PI - beta1) / 2;
 							var rotate1 = -(Math.PI / 2 - alpha1);
-							var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-							var ox1 = _this.x;
-							var oy1 = _this.y;
-							var arr1 = [];
-							arr1.push(_this.x);
-							arr1.push(_this.y);
+							var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+							var ox2 = _this.x;
+							var oy2 = _this.y;
+							var arr2 = [];
+							arr2.push(_this.x);
+							arr2.push(_this.y);
 							var _g5 = 0;
 							while(_g5 < 48) {
-								var i3 = _g5++;
+								var i4 = _g5++;
 								_this.rotation += rotate1;
 								var wasHistoryOn2 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -17363,107 +15534,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength1);
 								} else {
-									var nx1 = _this.x + baseLength1 * Math.cos(_this.rotation);
-									var ny1 = _this.y + baseLength1 * Math.sin(_this.rotation);
+									var nx2 = _this.x + baseLength1 * Math.cos(_this.rotation);
+									var ny2 = _this.y + baseLength1 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength1;
-										_this.lineTo(nx1,ny1);
+										_this.lineTo(nx2,ny2);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx1;
-										_this.y = ny1;
-										var l2 = _this.points.length;
-										_this.points[l2] = [];
-										_this.points[l2][0] = nx1;
-										_this.points[l2][1] = ny1;
+										_this.x = nx2;
+										_this.y = ny2;
+										var l7 = _this.points.length;
+										_this.points[l7] = [];
+										_this.points[l7][0] = nx2;
+										_this.points[l7][1] = ny2;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d1 = _this.dim[_this.dim.length - 1];
-										if(nx1 < d1.minX) {
-											d1.minX = nx1;
+										var d4 = _this.dim[_this.dim.length - 1];
+										if(nx2 < d4.minX) {
+											d4.minX = nx2;
 										}
-										if(nx1 > d1.maxX) {
-											d1.maxX = nx1;
+										if(nx2 > d4.maxX) {
+											d4.maxX = nx2;
 										}
-										if(ny1 < d1.minY) {
-											d1.minY = ny1;
+										if(ny2 < d4.minY) {
+											d4.minY = ny2;
 										}
-										if(ny1 > d1.maxY) {
-											d1.maxY = ny1;
+										if(ny2 > d4.maxY) {
+											d4.maxY = ny2;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn2;
 								if(_this.fill) {
-									arr1.push(_this.x);
-									arr1.push(_this.y);
+									arr2.push(_this.x);
+									arr2.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-								var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-								var l3 = arr1.length;
-								var i4 = 2;
+								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+								var l8 = arr2.length;
+								var i5 = 2;
 								var lx1 = 0.;
 								var ly1 = 0.;
-								_this.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-								while(i4 < l3) {
-									if(i4 > 2) {
-										_this.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+								_this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+								while(i5 < l8) {
+									if(i5 > 2) {
+										_this.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 									}
-									lx1 = arr1[i4];
-									ly1 = arr1[i4 + 1];
-									i4 += 2;
+									lx1 = arr2[i5];
+									ly1 = arr2[i5 + 1];
+									i5 += 2;
 								}
 							}
-							arr1.length = 0;
+							arr2.length = 0;
 						}
 					}
 					j += 3;
 					break;
 				case "BACKWARD":
-					var distance = v[j];
+					var distance1 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("BACKWARD");
-						_this.historyParameters.push(distance);
+						_this.historyParameters.push(distance1);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("BACKWARD");
-						_this.turtleParameters.push(distance);
+						_this.turtleParameters.push(distance1);
 					} else {
-						var nx2 = _this.x + distance * Math.cos(_this.rotation + Math.PI);
-						var ny2 = _this.y + distance * Math.sin(_this.rotation + Math.PI);
+						var nx3 = _this.x + distance1 * Math.cos(_this.rotation + Math.PI);
+						var ny3 = _this.y + distance1 * Math.sin(_this.rotation + Math.PI);
 						if(_this.penIsDown) {
-							_this.lineTo(nx2,ny2);
+							_this.lineTo(nx3,ny3);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx2;
-							_this.y = ny2;
-							var l4 = _this.points.length;
-							_this.points[l4] = [];
-							_this.points[l4][0] = nx2;
-							_this.points[l4][1] = ny2;
+							_this.x = nx3;
+							_this.y = ny3;
+							var l9 = _this.points.length;
+							_this.points[l9] = [];
+							_this.points[l9][0] = nx3;
+							_this.points[l9][1] = ny3;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d2 = _this.dim[_this.dim.length - 1];
-							if(nx2 < d2.minX) {
-								d2.minX = nx2;
+							var d5 = _this.dim[_this.dim.length - 1];
+							if(nx3 < d5.minX) {
+								d5.minX = nx3;
 							}
-							if(nx2 > d2.maxX) {
-								d2.maxX = nx2;
+							if(nx3 > d5.maxX) {
+								d5.maxX = nx3;
 							}
-							if(ny2 < d2.minY) {
-								d2.minY = ny2;
+							if(ny3 < d5.minY) {
+								d5.minY = ny3;
 							}
-							if(ny2 > d2.maxY) {
-								d2.maxY = ny2;
+							if(ny3 > d5.maxY) {
+								d5.maxY = ny3;
 							}
 							_this.contour.reset();
 						}
@@ -17503,26 +15674,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "CIRCLE":
-					var radius2 = v[j];
+					var radius3 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("CIRCLE");
-						_this.historyParameters.push(radius2);
+						_this.historyParameters.push(radius3);
 					}
-					if(radius2 != 0) {
+					if(radius3 != 0) {
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("CIRCLE");
-							_this.turtleParameters.push(radius2);
+							_this.turtleParameters.push(radius3);
 						} else {
 							var beta2 = 2 * Math.PI / 24;
 							var alpha2 = (Math.PI - beta2) / 2;
 							var rotate2 = -(Math.PI / 2 - alpha2);
-							var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-							var ox2 = _this.x;
-							var oy2 = _this.y;
-							var arr2 = [];
+							var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+							var ox3 = _this.x;
+							var oy3 = _this.y;
+							var arr3 = [];
 							var _g6 = 0;
 							while(_g6 < 48) {
-								var i5 = _g6++;
+								var i6 = _g6++;
 								_this.rotation += rotate2;
 								var wasHistoryOn3 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -17534,69 +15705,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength2);
 								} else {
-									var nx3 = _this.x + baseLength2 * Math.cos(_this.rotation);
-									var ny3 = _this.y + baseLength2 * Math.sin(_this.rotation);
+									var nx4 = _this.x + baseLength2 * Math.cos(_this.rotation);
+									var ny4 = _this.y + baseLength2 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength2;
-										_this.lineTo(nx3,ny3);
+										_this.lineTo(nx4,ny4);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx3;
-										_this.y = ny3;
-										var l5 = _this.points.length;
-										_this.points[l5] = [];
-										_this.points[l5][0] = nx3;
-										_this.points[l5][1] = ny3;
+										_this.x = nx4;
+										_this.y = ny4;
+										var l10 = _this.points.length;
+										_this.points[l10] = [];
+										_this.points[l10][0] = nx4;
+										_this.points[l10][1] = ny4;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d3 = _this.dim[_this.dim.length - 1];
-										if(nx3 < d3.minX) {
-											d3.minX = nx3;
+										var d6 = _this.dim[_this.dim.length - 1];
+										if(nx4 < d6.minX) {
+											d6.minX = nx4;
 										}
-										if(nx3 > d3.maxX) {
-											d3.maxX = nx3;
+										if(nx4 > d6.maxX) {
+											d6.maxX = nx4;
 										}
-										if(ny3 < d3.minY) {
-											d3.minY = ny3;
+										if(ny4 < d6.minY) {
+											d6.minY = ny4;
 										}
-										if(ny3 > d3.maxY) {
-											d3.maxY = ny3;
+										if(ny4 > d6.maxY) {
+											d6.maxY = ny4;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn3;
 								if(_this.fill) {
-									arr2.push(_this.x);
-									arr2.push(_this.y);
+									arr3.push(_this.x);
+									arr3.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-								var l6 = arr2.length;
-								var i6 = 2;
+								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+								var l11 = arr3.length;
+								var i7 = 2;
 								var lx2 = 0.;
 								var ly2 = 0.;
-								while(i6 < l6) {
-									if(i6 > 2) {
-										_this.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+								while(i7 < l11) {
+									if(i7 > 2) {
+										_this.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 									}
-									lx2 = arr2[i6];
-									ly2 = arr2[i6 + 1];
-									i6 += 2;
+									lx2 = arr3[i7];
+									ly2 = arr3[i7 + 1];
+									i7 += 2;
 								}
 							}
-							arr2.length = 0;
+							arr3.length = 0;
 						}
 					}
 					++j;
 					break;
 				case "CIRCLE_SIDES":
-					var radius3 = v[j];
+					var radius4 = v[j];
 					var sides1 = v[j + 1];
 					if(sides1 == null) {
 						sides1 = 24;
@@ -17604,34 +15775,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this.turtleHistoryOn) {
 						if(sides1 == 24) {
 							_this.historyAdd("CIRCLE");
-							_this.historyParameters.push(radius3);
+							_this.historyParameters.push(radius4);
 						} else {
 							_this.historyAdd("CIRCLE_SIDES");
-							_this.historyParameters.push(radius3);
+							_this.historyParameters.push(radius4);
 							_this.historyParameters.push(sides1);
 						}
 					}
-					if(radius3 != 0) {
+					if(radius4 != 0) {
 						if(_this.repeatCommands) {
 							if(sides1 == 24) {
 								_this.turtleCommands.push("CIRCLE");
-								_this.turtleParameters.push(radius3);
+								_this.turtleParameters.push(radius4);
 							} else {
 								_this.turtleCommands.push("CIRCLE_SIDES");
-								_this.turtleParameters.push(radius3);
+								_this.turtleParameters.push(radius4);
 								_this.turtleParameters.push(sides1);
 							}
 						} else {
 							var beta3 = 2 * Math.PI / sides1;
 							var alpha3 = (Math.PI - beta3) / 2;
 							var rotate3 = -(Math.PI / 2 - alpha3);
-							var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-							var ox3 = _this.x;
-							var oy3 = _this.y;
-							var arr3 = [];
+							var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+							var ox4 = _this.x;
+							var oy4 = _this.y;
+							var arr4 = [];
 							var _g7 = 0;
 							while(_g7 < 48) {
-								var i7 = _g7++;
+								var i8 = _g7++;
 								_this.rotation += rotate3;
 								var wasHistoryOn4 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -17643,63 +15814,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength3);
 								} else {
-									var nx4 = _this.x + baseLength3 * Math.cos(_this.rotation);
-									var ny4 = _this.y + baseLength3 * Math.sin(_this.rotation);
+									var nx5 = _this.x + baseLength3 * Math.cos(_this.rotation);
+									var ny5 = _this.y + baseLength3 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength3;
-										_this.lineTo(nx4,ny4);
+										_this.lineTo(nx5,ny5);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx4;
-										_this.y = ny4;
-										var l7 = _this.points.length;
-										_this.points[l7] = [];
-										_this.points[l7][0] = nx4;
-										_this.points[l7][1] = ny4;
+										_this.x = nx5;
+										_this.y = ny5;
+										var l12 = _this.points.length;
+										_this.points[l12] = [];
+										_this.points[l12][0] = nx5;
+										_this.points[l12][1] = ny5;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d4 = _this.dim[_this.dim.length - 1];
-										if(nx4 < d4.minX) {
-											d4.minX = nx4;
+										var d7 = _this.dim[_this.dim.length - 1];
+										if(nx5 < d7.minX) {
+											d7.minX = nx5;
 										}
-										if(nx4 > d4.maxX) {
-											d4.maxX = nx4;
+										if(nx5 > d7.maxX) {
+											d7.maxX = nx5;
 										}
-										if(ny4 < d4.minY) {
-											d4.minY = ny4;
+										if(ny5 < d7.minY) {
+											d7.minY = ny5;
 										}
-										if(ny4 > d4.maxY) {
-											d4.maxY = ny4;
+										if(ny5 > d7.maxY) {
+											d7.maxY = ny5;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn4;
 								if(_this.fill) {
-									arr3.push(_this.x);
-									arr3.push(_this.y);
+									arr4.push(_this.x);
+									arr4.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-								var l8 = arr3.length;
-								var i8 = 2;
+								var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+								var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+								var l13 = arr4.length;
+								var i9 = 2;
 								var lx3 = 0.;
 								var ly3 = 0.;
-								while(i8 < l8) {
-									if(i8 > 2) {
-										_this.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+								while(i9 < l13) {
+									if(i9 > 2) {
+										_this.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 									}
-									lx3 = arr3[i8];
-									ly3 = arr3[i8 + 1];
-									i8 += 2;
+									lx3 = arr4[i9];
+									ly3 = arr4[i9 + 1];
+									i9 += 2;
 								}
 							}
-							arr3.length = 0;
+							arr4.length = 0;
 						}
 					}
 					j += 2;
@@ -17767,45 +15938,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "FORWARD":
-					var distance1 = v[j];
+					var distance3 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("FORWARD");
-						_this.historyParameters.push(distance1);
+						_this.historyParameters.push(distance3);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("FORWARD");
-						_this.turtleParameters.push(distance1);
+						_this.turtleParameters.push(distance3);
 					} else {
-						var nx5 = _this.x + distance1 * Math.cos(_this.rotation);
-						var ny5 = _this.y + distance1 * Math.sin(_this.rotation);
+						var nx6 = _this.x + distance3 * Math.cos(_this.rotation);
+						var ny6 = _this.y + distance3 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
-							_this.lastDistance = distance1;
-							_this.lineTo(nx5,ny5);
+							_this.lastDistance = distance3;
+							_this.lineTo(nx6,ny6);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx5;
-							_this.y = ny5;
-							var l9 = _this.points.length;
-							_this.points[l9] = [];
-							_this.points[l9][0] = nx5;
-							_this.points[l9][1] = ny5;
+							_this.x = nx6;
+							_this.y = ny6;
+							var l14 = _this.points.length;
+							_this.points[l14] = [];
+							_this.points[l14][0] = nx6;
+							_this.points[l14][1] = ny6;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d5 = _this.dim[_this.dim.length - 1];
-							if(nx5 < d5.minX) {
-								d5.minX = nx5;
+							var d8 = _this.dim[_this.dim.length - 1];
+							if(nx6 < d8.minX) {
+								d8.minX = nx6;
 							}
-							if(nx5 > d5.maxX) {
-								d5.maxX = nx5;
+							if(nx6 > d8.maxX) {
+								d8.maxX = nx6;
 							}
-							if(ny5 < d5.minY) {
-								d5.minY = ny5;
+							if(ny6 < d8.minY) {
+								d8.minY = ny6;
 							}
-							if(ny5 > d5.maxY) {
-								d5.maxY = ny5;
+							if(ny6 > d8.maxY) {
+								d8.maxY = ny6;
 							}
 							_this.contour.reset();
 						}
@@ -17822,175 +15993,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this.turtleCommands.push("FORWARD_CHANGE");
 						_this.turtleParameters.push(deltaDistance);
 					} else {
-						var distance2 = _this.lastDistance + deltaDistance;
-						var nx6 = _this.x + distance2 * Math.cos(_this.rotation);
-						var ny6 = _this.y + distance2 * Math.sin(_this.rotation);
+						var distance4 = _this.lastDistance + deltaDistance;
+						var nx7 = _this.x + distance4 * Math.cos(_this.rotation);
+						var ny7 = _this.y + distance4 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
-							_this.lastDistance = distance2 + deltaDistance;
-							_this.lineTo(nx6,ny6);
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx6;
-							_this.y = ny6;
-							var l10 = _this.points.length;
-							_this.points[l10] = [];
-							_this.points[l10][0] = nx6;
-							_this.points[l10][1] = ny6;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d6 = _this.dim[_this.dim.length - 1];
-							if(nx6 < d6.minX) {
-								d6.minX = nx6;
-							}
-							if(nx6 > d6.maxX) {
-								d6.maxX = nx6;
-							}
-							if(ny6 < d6.minY) {
-								d6.minY = ny6;
-							}
-							if(ny6 > d6.maxY) {
-								d6.maxY = ny6;
-							}
-							_this.contour.reset();
-						}
-					}
-					++j;
-					break;
-				case "FORWARD_CURVE_LEFT":
-					var distance3 = v[j];
-					var distance21 = v[j + 1];
-					var radius4 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_CURVE_LEFT");
-						_this.historyParameters.push(distance3);
-						_this.historyParameters.push(distance21);
-						_this.historyParameters.push(radius4);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_CURVE_LEFT");
-						_this.turtleParameters.push(distance3);
-						_this.turtleParameters.push(distance21);
-						_this.turtleParameters.push(radius4);
-					} else {
-						var nx7 = _this.x + distance3 * Math.cos(_this.rotation);
-						var ny7 = _this.y + distance3 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX = _this.x + distance21 * Math.cos(_this.rotation) + radius4 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY = _this.y + distance21 * Math.sin(_this.rotation) + radius4 * Math.sin(_this.rotation + Math.PI / 2);
-							var newx = 2 * thruX - 0.5 * (_this.x + nx7);
-							var newy = 2 * thruY - 0.5 * (_this.y + ny7);
-							_this.tempArr = [];
-							var p = _this.tempArr;
-							var ax = _this.x;
-							var ay = _this.y;
-							var x = ax - newx;
-							var y = ay - newy;
-							var x1 = newx - nx7;
-							var y1 = newy - ny7;
-							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-							if(approxDistance == 0) {
-								approxDistance = 0.000001;
-							}
-							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-							var l11 = p.length;
-							p[l11++] = ax;
-							p[l11++] = ay;
-							var t = step;
-							while(t < 1.) {
-								var u = 1 - t;
-								p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-								var u1 = 1 - t;
-								p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-								t += step;
-							}
-							p[l11++] = nx7;
-							p[l11++] = ny7;
-							var arr4 = _this.tempArr;
-							var withMove = false;
-							if(withMove == null) {
-								withMove = true;
-							}
-							var l12 = arr4.length;
-							var i9 = 2;
-							if(withMove) {
-								var x_ = arr4[0];
-								var y_ = arr4[1];
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = x_;
-								_this.y = y_;
-								var l13 = _this.points.length;
-								_this.points[l13] = [];
-								_this.points[l13][0] = x_;
-								_this.points[l13][1] = y_;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d7 = _this.dim[_this.dim.length - 1];
-								if(x_ < d7.minX) {
-									d7.minX = x_;
-								}
-								if(x_ > d7.maxX) {
-									d7.maxX = x_;
-								}
-								if(y_ < d7.minY) {
-									d7.minY = y_;
-								}
-								if(y_ > d7.maxY) {
-									d7.maxY = y_;
-								}
-								_this.contour.reset();
-							} else {
-								_this.lineTo(arr4[0],arr4[1]);
-							}
-							var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-							var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-							var ox4 = _this.x;
-							var oy4 = _this.y;
-							while(i9 < l12) {
-								if(_this.fill && _this.penIsDown) {
-									if(i9 > 0 && i9 < l12 - 2) {
-										_this.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-									}
-								}
-								_this.lineTo(arr4[i9],arr4[i9 + 1]);
-								i9 += 2;
-							}
-							if(_this.fill && _this.penIsDown) {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = ox4;
-								_this.y = oy4;
-								var l14 = _this.points.length;
-								_this.points[l14] = [];
-								_this.points[l14][0] = ox4;
-								_this.points[l14][1] = oy4;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d8 = _this.dim[_this.dim.length - 1];
-								if(ox4 < d8.minX) {
-									d8.minX = ox4;
-								}
-								if(ox4 > d8.maxX) {
-									d8.maxX = ox4;
-								}
-								if(oy4 < d8.minY) {
-									d8.minY = oy4;
-								}
-								if(oy4 > d8.maxY) {
-									d8.maxY = oy4;
-								}
-								_this.contour.reset();
-								_this.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-							}
-							_this.x = nx7;
-							_this.y = ny7;
+							_this.lastDistance = distance4 + deltaDistance;
+							_this.lineTo(nx7,ny7);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
@@ -18020,170 +16028,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.contour.reset();
 						}
 					}
-					j += 3;
-					break;
-				case "FORWARD_CURVE_RIGHT":
-					var distance4 = v[j];
-					var distance22 = v[j + 1];
-					var radius5 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_CURVE_RIGHT");
-						_this.historyParameters.push(distance4);
-						_this.historyParameters.push(distance22);
-						_this.historyParameters.push(radius5);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-						_this.turtleParameters.push(distance4);
-						_this.turtleParameters.push(distance22);
-						_this.turtleParameters.push(radius5);
-					} else {
-						var nx8 = _this.x + distance4 * Math.cos(_this.rotation);
-						var ny8 = _this.y + distance4 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX1 = _this.x + distance22 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY1 = _this.y + distance22 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
-							var newx1 = 2 * thruX1 - 0.5 * (_this.x + nx8);
-							var newy1 = 2 * thruY1 - 0.5 * (_this.y + ny8);
-							_this.tempArr = [];
-							var p1 = _this.tempArr;
-							var ax1 = _this.x;
-							var ay1 = _this.y;
-							var x2 = ax1 - newx1;
-							var y2 = ay1 - newy1;
-							var x3 = newx1 - nx8;
-							var y3 = newy1 - ny8;
-							var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-							if(approxDistance1 == 0) {
-								approxDistance1 = 0.000001;
-							}
-							var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-							var l16 = p1.length;
-							p1[l16++] = ax1;
-							p1[l16++] = ay1;
-							var t1 = step1;
-							while(t1 < 1.) {
-								var u2 = 1 - t1;
-								p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-								var u3 = 1 - t1;
-								p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-								t1 += step1;
-							}
-							p1[l16++] = nx8;
-							p1[l16++] = ny8;
-							var arr5 = _this.tempArr;
-							var withMove1 = false;
-							if(withMove1 == null) {
-								withMove1 = true;
-							}
-							var l17 = arr5.length;
-							var i10 = 2;
-							if(withMove1) {
-								var x_1 = arr5[0];
-								var y_1 = arr5[1];
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = x_1;
-								_this.y = y_1;
-								var l18 = _this.points.length;
-								_this.points[l18] = [];
-								_this.points[l18][0] = x_1;
-								_this.points[l18][1] = y_1;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d10 = _this.dim[_this.dim.length - 1];
-								if(x_1 < d10.minX) {
-									d10.minX = x_1;
-								}
-								if(x_1 > d10.maxX) {
-									d10.maxX = x_1;
-								}
-								if(y_1 < d10.minY) {
-									d10.minY = y_1;
-								}
-								if(y_1 > d10.maxY) {
-									d10.maxY = y_1;
-								}
-								_this.contour.reset();
-							} else {
-								_this.lineTo(arr5[0],arr5[1]);
-							}
-							var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-							var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-							var ox5 = _this.x;
-							var oy5 = _this.y;
-							while(i10 < l17) {
-								if(_this.fill && _this.penIsDown) {
-									if(i10 > 0 && i10 < l17 - 2) {
-										_this.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-									}
-								}
-								_this.lineTo(arr5[i10],arr5[i10 + 1]);
-								i10 += 2;
-							}
-							if(_this.fill && _this.penIsDown) {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = ox5;
-								_this.y = oy5;
-								var l19 = _this.points.length;
-								_this.points[l19] = [];
-								_this.points[l19][0] = ox5;
-								_this.points[l19][1] = oy5;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d11 = _this.dim[_this.dim.length - 1];
-								if(ox5 < d11.minX) {
-									d11.minX = ox5;
-								}
-								if(ox5 > d11.maxX) {
-									d11.maxX = ox5;
-								}
-								if(oy5 < d11.minY) {
-									d11.minY = oy5;
-								}
-								if(oy5 > d11.maxY) {
-									d11.maxY = oy5;
-								}
-								_this.contour.reset();
-								_this.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-							}
-							_this.x = nx8;
-							_this.y = ny8;
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx8;
-							_this.y = ny8;
-							var l20 = _this.points.length;
-							_this.points[l20] = [];
-							_this.points[l20][0] = nx8;
-							_this.points[l20][1] = ny8;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d12 = _this.dim[_this.dim.length - 1];
-							if(nx8 < d12.minX) {
-								d12.minX = nx8;
-							}
-							if(nx8 > d12.maxX) {
-								d12.maxX = nx8;
-							}
-							if(ny8 < d12.minY) {
-								d12.minY = ny8;
-							}
-							if(ny8 > d12.maxY) {
-								d12.maxY = ny8;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
+					++j;
 					break;
 				case "FORWARD_FACTOR":
 					var factor = v[j];
@@ -18196,213 +16041,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this.turtleParameters.push(factor);
 					} else {
 						var distance5 = _this.lastDistance * factor;
-						var nx9 = _this.x + distance5 * Math.cos(_this.rotation);
-						var ny9 = _this.y + distance5 * Math.sin(_this.rotation);
+						var nx8 = _this.x + distance5 * Math.cos(_this.rotation);
+						var ny8 = _this.y + distance5 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
 							_this.lastDistance = distance5;
-							_this.lineTo(nx9,ny9);
+							_this.lineTo(nx8,ny8);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx9;
-							_this.y = ny9;
-							var l21 = _this.points.length;
-							_this.points[l21] = [];
-							_this.points[l21][0] = nx9;
-							_this.points[l21][1] = ny9;
+							_this.x = nx8;
+							_this.y = ny8;
+							var l16 = _this.points.length;
+							_this.points[l16] = [];
+							_this.points[l16][0] = nx8;
+							_this.points[l16][1] = ny8;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d13 = _this.dim[_this.dim.length - 1];
-							if(nx9 < d13.minX) {
-								d13.minX = nx9;
+							var d10 = _this.dim[_this.dim.length - 1];
+							if(nx8 < d10.minX) {
+								d10.minX = nx8;
 							}
-							if(nx9 > d13.maxX) {
-								d13.maxX = nx9;
+							if(nx8 > d10.maxX) {
+								d10.maxX = nx8;
 							}
-							if(ny9 < d13.minY) {
-								d13.minY = ny9;
+							if(ny8 < d10.minY) {
+								d10.minY = ny8;
 							}
-							if(ny9 > d13.maxY) {
-								d13.maxY = ny9;
+							if(ny8 > d10.maxY) {
+								d10.maxY = ny8;
 							}
 							_this.contour.reset();
 						}
 					}
 					++j;
-					break;
-				case "FORWARD_TRIANGLE_LEFT":
-					var distance6 = v[j];
-					var distance23 = v[j + 1];
-					var radius6 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_TRIANGLE_LEFT");
-						_this.historyParameters.push(distance6);
-						_this.historyParameters.push(distance23);
-						_this.historyParameters.push(radius6);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-						_this.turtleParameters.push(distance6);
-						_this.turtleParameters.push(distance23);
-						_this.turtleParameters.push(radius6);
-					} else {
-						var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
-						var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX2 = _this.x + distance23 * Math.cos(_this.rotation) + radius6 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY2 = _this.y + distance23 * Math.sin(_this.rotation) + radius6 * Math.sin(_this.rotation + Math.PI / 2);
-							if(_this.fill) {
-								_this.pen.triangle2DFill(_this.x,_this.y,thruX2,thruY2,nx10,ny10);
-							}
-							_this.lineTo(thruX2,thruY2);
-							_this.lineTo(nx10,ny10);
-							if(_this.fill) {
-								_this.lineTo(_this.x,_this.y);
-							}
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx10;
-							_this.y = ny10;
-							var l22 = _this.points.length;
-							_this.points[l22] = [];
-							_this.points[l22][0] = nx10;
-							_this.points[l22][1] = ny10;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d14 = _this.dim[_this.dim.length - 1];
-							if(nx10 < d14.minX) {
-								d14.minX = nx10;
-							}
-							if(nx10 > d14.maxX) {
-								d14.maxX = nx10;
-							}
-							if(ny10 < d14.minY) {
-								d14.minY = ny10;
-							}
-							if(ny10 > d14.maxY) {
-								d14.maxY = ny10;
-							}
-							_this.contour.reset();
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx10;
-							_this.y = ny10;
-							var l23 = _this.points.length;
-							_this.points[l23] = [];
-							_this.points[l23][0] = nx10;
-							_this.points[l23][1] = ny10;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d15 = _this.dim[_this.dim.length - 1];
-							if(nx10 < d15.minX) {
-								d15.minX = nx10;
-							}
-							if(nx10 > d15.maxX) {
-								d15.maxX = nx10;
-							}
-							if(ny10 < d15.minY) {
-								d15.minY = ny10;
-							}
-							if(ny10 > d15.maxY) {
-								d15.maxY = ny10;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
-					break;
-				case "FORWARD_TRIANGLE_RIGHT":
-					var distance7 = v[j];
-					var distance24 = v[j + 1];
-					var radius7 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-						_this.historyParameters.push(distance7);
-						_this.historyParameters.push(distance24);
-						_this.historyParameters.push(radius7);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-						_this.turtleParameters.push(distance7);
-						_this.turtleParameters.push(distance24);
-						_this.turtleParameters.push(radius7);
-					} else {
-						var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
-						var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX3 = _this.x + distance24 * Math.cos(_this.rotation) - radius7 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY3 = _this.y + distance24 * Math.sin(_this.rotation) - radius7 * Math.sin(_this.rotation + Math.PI / 2);
-							if(_this.fill) {
-								_this.pen.triangle2DFill(_this.x,_this.y,thruX3,thruY3,nx11,ny11);
-							}
-							_this.lineTo(thruX3,thruY3);
-							_this.lineTo(nx11,ny11);
-							if(_this.fill) {
-								_this.lineTo(_this.x,_this.y);
-							}
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx11;
-							_this.y = ny11;
-							var l24 = _this.points.length;
-							_this.points[l24] = [];
-							_this.points[l24][0] = nx11;
-							_this.points[l24][1] = ny11;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d16 = _this.dim[_this.dim.length - 1];
-							if(nx11 < d16.minX) {
-								d16.minX = nx11;
-							}
-							if(nx11 > d16.maxX) {
-								d16.maxX = nx11;
-							}
-							if(ny11 < d16.minY) {
-								d16.minY = ny11;
-							}
-							if(ny11 > d16.maxY) {
-								d16.maxY = ny11;
-							}
-							_this.contour.reset();
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx11;
-							_this.y = ny11;
-							var l25 = _this.points.length;
-							_this.points[l25] = [];
-							_this.points[l25][0] = nx11;
-							_this.points[l25][1] = ny11;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d17 = _this.dim[_this.dim.length - 1];
-							if(nx11 < d17.minX) {
-								d17.minX = nx11;
-							}
-							if(nx11 > d17.maxX) {
-								d17.maxX = nx11;
-							}
-							if(ny11 < d17.minY) {
-								d17.minY = ny11;
-							}
-							if(ny11 > d17.maxY) {
-								d17.maxY = ny11;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
 					break;
 				case "GREEN":
 					if(_this.turtleHistoryOn) {
@@ -18459,10 +16132,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "MOVE_PEN":
-					var distance8 = v[j];
+					var distance6 = v[j];
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("MOVE_PEN");
-						_this.turtleParameters.push(distance8);
+						_this.turtleParameters.push(distance6);
 					} else if(_this.penIsDown) {
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("PEN_UP");
@@ -18474,42 +16147,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance8);
+							_this.historyParameters.push(distance6);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else {
-							var nx12 = _this.x + distance8 * Math.cos(_this.rotation);
-							var ny12 = _this.y + distance8 * Math.sin(_this.rotation);
+							var nx9 = _this.x + distance6 * Math.cos(_this.rotation);
+							var ny9 = _this.y + distance6 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance8;
-								_this.lineTo(nx12,ny12);
+								_this.lastDistance = distance6;
+								_this.lineTo(nx9,ny9);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx12;
-								_this.y = ny12;
-								var l26 = _this.points.length;
-								_this.points[l26] = [];
-								_this.points[l26][0] = nx12;
-								_this.points[l26][1] = ny12;
+								_this.x = nx9;
+								_this.y = ny9;
+								var l17 = _this.points.length;
+								_this.points[l17] = [];
+								_this.points[l17][0] = nx9;
+								_this.points[l17][1] = ny9;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d18 = _this.dim[_this.dim.length - 1];
-								if(nx12 < d18.minX) {
-									d18.minX = nx12;
+								var d11 = _this.dim[_this.dim.length - 1];
+								if(nx9 < d11.minX) {
+									d11.minX = nx9;
 								}
-								if(nx12 > d18.maxX) {
-									d18.maxX = nx12;
+								if(nx9 > d11.maxX) {
+									d11.maxX = nx9;
 								}
-								if(ny12 < d18.minY) {
-									d18.minY = ny12;
+								if(ny9 < d11.minY) {
+									d11.minY = ny9;
 								}
-								if(ny12 > d18.maxY) {
-									d18.maxY = ny12;
+								if(ny9 > d11.maxY) {
+									d11.maxY = ny9;
 								}
 								_this.contour.reset();
 							}
@@ -18525,42 +16198,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance8);
+							_this.historyParameters.push(distance6);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else {
-							var nx13 = _this.x + distance8 * Math.cos(_this.rotation);
-							var ny13 = _this.y + distance8 * Math.sin(_this.rotation);
+							var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
+							var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance8;
-								_this.lineTo(nx13,ny13);
+								_this.lastDistance = distance6;
+								_this.lineTo(nx10,ny10);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx13;
-								_this.y = ny13;
-								var l27 = _this.points.length;
-								_this.points[l27] = [];
-								_this.points[l27][0] = nx13;
-								_this.points[l27][1] = ny13;
+								_this.x = nx10;
+								_this.y = ny10;
+								var l18 = _this.points.length;
+								_this.points[l18] = [];
+								_this.points[l18][0] = nx10;
+								_this.points[l18][1] = ny10;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d19 = _this.dim[_this.dim.length - 1];
-								if(nx13 < d19.minX) {
-									d19.minX = nx13;
+								var d12 = _this.dim[_this.dim.length - 1];
+								if(nx10 < d12.minX) {
+									d12.minX = nx10;
 								}
-								if(nx13 > d19.maxX) {
-									d19.maxX = nx13;
+								if(nx10 > d12.maxX) {
+									d12.maxX = nx10;
 								}
-								if(ny13 < d19.minY) {
-									d19.minY = ny13;
+								if(ny10 < d12.minY) {
+									d12.minY = ny10;
 								}
-								if(ny13 > d19.maxY) {
-									d19.maxY = ny13;
+								if(ny10 > d12.maxY) {
+									d12.maxY = ny10;
 								}
 								_this.contour.reset();
 							}
@@ -18832,42 +16505,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					++j;
 					break;
 				case "SET_POSITION":
-					var x4 = v[j];
-					var y4 = v[j + 1];
+					var x2 = v[j];
+					var y2 = v[j + 1];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("SET_POSITION");
-						_this.historyParameters.push(x4);
-						_this.historyParameters.push(y4);
+						_this.historyParameters.push(x2);
+						_this.historyParameters.push(y2);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("SET_POSITION");
-						_this.turtleParameters.push(x4);
-						_this.turtleParameters.push(y4);
+						_this.turtleParameters.push(x2);
+						_this.turtleParameters.push(y2);
 					} else {
 						if(_this.endLine == 2 || _this.endLine == 3) {
 							_this.contour.end(_this.width);
 						}
-						_this.x = x4;
-						_this.y = y4;
-						var l28 = _this.points.length;
-						_this.points[l28] = [];
-						_this.points[l28][0] = x4;
-						_this.points[l28][1] = y4;
+						_this.x = x2;
+						_this.y = y2;
+						var l19 = _this.points.length;
+						_this.points[l19] = [];
+						_this.points[l19][0] = x2;
+						_this.points[l19][1] = y2;
 						_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 						_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 						_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d20 = _this.dim[_this.dim.length - 1];
-						if(x4 < d20.minX) {
-							d20.minX = x4;
+						var d13 = _this.dim[_this.dim.length - 1];
+						if(x2 < d13.minX) {
+							d13.minX = x2;
 						}
-						if(x4 > d20.maxX) {
-							d20.maxX = x4;
+						if(x2 > d13.maxX) {
+							d13.maxX = x2;
 						}
-						if(y4 < d20.minY) {
-							d20.minY = y4;
+						if(y2 < d13.minY) {
+							d13.minY = y2;
 						}
-						if(y4 > d20.maxY) {
-							d20.maxY = y4;
+						if(y2 > d13.maxY) {
+							d13.maxY = y2;
 						}
 						_this.contour.reset();
 					}
@@ -18892,6 +16565,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						_this.pen.currentColor = -27273;
 					}
+					break;
+				case "TRIANGLE_ARCH":
+					var distance7 = v[j];
+					var distance21 = v[j + 1];
+					var radius5 = v[j + 2];
+					if(_this.turtleHistoryOn) {
+						_this.historyAdd("TRIANGLE_ARCH");
+						_this.historyParameters.push(distance7);
+						_this.historyParameters.push(distance21);
+						_this.historyParameters.push(radius5);
+					}
+					if(_this.repeatCommands) {
+						_this.turtleCommands.push("TRIANGLE_ARCH");
+						_this.turtleParameters.push(distance7);
+						_this.turtleParameters.push(distance21);
+						_this.turtleParameters.push(radius5);
+					} else {
+						var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
+						var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
+						if(_this.penIsDown) {
+							var thruX1 = _this.x + distance21 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
+							var thruY1 = _this.y + distance21 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
+							if(_this.fill) {
+								_this.pen.triangle2DFill(_this.x,_this.y,thruX1,thruY1,nx11,ny11);
+							}
+							_this.lineTo(thruX1,thruY1);
+							_this.lineTo(nx11,ny11);
+							if(_this.fill) {
+								_this.lineTo(_this.x,_this.y);
+							}
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx11;
+							_this.y = ny11;
+							var l20 = _this.points.length;
+							_this.points[l20] = [];
+							_this.points[l20][0] = nx11;
+							_this.points[l20][1] = ny11;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d14 = _this.dim[_this.dim.length - 1];
+							if(nx11 < d14.minX) {
+								d14.minX = nx11;
+							}
+							if(nx11 > d14.maxX) {
+								d14.maxX = nx11;
+							}
+							if(ny11 < d14.minY) {
+								d14.minY = ny11;
+							}
+							if(ny11 > d14.maxY) {
+								d14.maxY = ny11;
+							}
+							_this.contour.reset();
+						} else {
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx11;
+							_this.y = ny11;
+							var l21 = _this.points.length;
+							_this.points[l21] = [];
+							_this.points[l21][0] = nx11;
+							_this.points[l21][1] = ny11;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d15 = _this.dim[_this.dim.length - 1];
+							if(nx11 < d15.minX) {
+								d15.minX = nx11;
+							}
+							if(nx11 > d15.maxX) {
+								d15.maxX = nx11;
+							}
+							if(ny11 < d15.minY) {
+								d15.minY = ny11;
+							}
+							if(ny11 > d15.maxY) {
+								d15.maxY = ny11;
+							}
+							_this.contour.reset();
+						}
+					}
+					j += 3;
 					break;
 				case "WEST":
 					if(_this.turtleHistoryOn) {
@@ -19140,8 +16899,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						j += 2;
 						break;
+					case "ARCH_BEZIER":
+						var distance = v[j];
+						var distance2 = v[j + 1];
+						var radius1 = v[j + 2];
+						if(_this.turtleHistoryOn) {
+							_this.historyAdd("ARCH_BEZIER");
+							_this.historyParameters.push(distance);
+							_this.historyParameters.push(distance2);
+							_this.historyParameters.push(radius1);
+						}
+						if(_this.repeatCommands) {
+							_this.turtleCommands.push("ARCH_BEZIER");
+							_this.turtleParameters.push(distance);
+							_this.turtleParameters.push(distance2);
+							_this.turtleParameters.push(radius1);
+						} else {
+							var nx1 = _this.x + distance * Math.cos(_this.rotation);
+							var ny1 = _this.y + distance * Math.sin(_this.rotation);
+							if(_this.penIsDown) {
+								var thruX = _this.x + distance2 * Math.cos(_this.rotation) - radius1 * Math.cos(_this.rotation + Math.PI / 2);
+								var thruY = _this.y + distance2 * Math.sin(_this.rotation) - radius1 * Math.sin(_this.rotation + Math.PI / 2);
+								var newx = 2 * thruX - 0.5 * (_this.x + nx1);
+								var newy = 2 * thruY - 0.5 * (_this.y + ny1);
+								_this.tempArr = [];
+								var p = _this.tempArr;
+								var ax = _this.x;
+								var ay = _this.y;
+								var x = ax - newx;
+								var y = ay - newy;
+								var x1 = newx - nx1;
+								var y1 = newy - ny1;
+								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+								if(approxDistance == 0) {
+									approxDistance = 0.000001;
+								}
+								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+								var l2 = p.length;
+								p[l2++] = ax;
+								p[l2++] = ay;
+								var t = step;
+								while(t < 1.) {
+									var u = 1 - t;
+									p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+									var u1 = 1 - t;
+									p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+									t += step;
+								}
+								p[l2++] = nx1;
+								p[l2++] = ny1;
+								var arr1 = _this.tempArr;
+								var withMove = false;
+								if(withMove == null) {
+									withMove = true;
+								}
+								var l3 = arr1.length;
+								var i3 = 2;
+								if(withMove) {
+									var x_ = arr1[0];
+									var y_ = arr1[1];
+									if(_this.endLine == 2 || _this.endLine == 3) {
+										_this.contour.end(_this.width);
+									}
+									_this.x = x_;
+									_this.y = y_;
+									var l4 = _this.points.length;
+									_this.points[l4] = [];
+									_this.points[l4][0] = x_;
+									_this.points[l4][1] = y_;
+									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d1 = _this.dim[_this.dim.length - 1];
+									if(x_ < d1.minX) {
+										d1.minX = x_;
+									}
+									if(x_ > d1.maxX) {
+										d1.maxX = x_;
+									}
+									if(y_ < d1.minY) {
+										d1.minY = y_;
+									}
+									if(y_ > d1.maxY) {
+										d1.maxY = y_;
+									}
+									_this.contour.reset();
+								} else {
+									_this.lineTo(arr1[0],arr1[1]);
+								}
+								var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+								var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+								var ox1 = _this.x;
+								var oy1 = _this.y;
+								while(i3 < l3) {
+									if(_this.fill && _this.penIsDown) {
+										if(i3 > 0 && i3 < l3 - 2) {
+											_this.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+										}
+									}
+									_this.lineTo(arr1[i3],arr1[i3 + 1]);
+									i3 += 2;
+								}
+								if(_this.fill && _this.penIsDown) {
+									if(_this.endLine == 2 || _this.endLine == 3) {
+										_this.contour.end(_this.width);
+									}
+									_this.x = ox1;
+									_this.y = oy1;
+									var l5 = _this.points.length;
+									_this.points[l5] = [];
+									_this.points[l5][0] = ox1;
+									_this.points[l5][1] = oy1;
+									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+									var d2 = _this.dim[_this.dim.length - 1];
+									if(ox1 < d2.minX) {
+										d2.minX = ox1;
+									}
+									if(ox1 > d2.maxX) {
+										d2.maxX = ox1;
+									}
+									if(oy1 < d2.minY) {
+										d2.minY = oy1;
+									}
+									if(oy1 > d2.maxY) {
+										d2.maxY = oy1;
+									}
+									_this.contour.reset();
+									_this.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+								}
+								_this.x = nx1;
+								_this.y = ny1;
+							} else {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = nx1;
+								_this.y = ny1;
+								var l6 = _this.points.length;
+								_this.points[l6] = [];
+								_this.points[l6][0] = nx1;
+								_this.points[l6][1] = ny1;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d3 = _this.dim[_this.dim.length - 1];
+								if(nx1 < d3.minX) {
+									d3.minX = nx1;
+								}
+								if(nx1 > d3.maxX) {
+									d3.maxX = nx1;
+								}
+								if(ny1 < d3.minY) {
+									d3.minY = ny1;
+								}
+								if(ny1 > d3.maxY) {
+									d3.maxY = ny1;
+								}
+								_this.contour.reset();
+							}
+						}
+						j += 3;
+						break;
 					case "ARC_SIDES":
-						var radius1 = v[j];
+						var radius2 = v[j];
 						var degrees1 = v[j + 1];
 						var sides = v[j + 2];
 						if(sides == null) {
@@ -19150,24 +17072,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this.turtleHistoryOn) {
 							if(sides == 24) {
 								_this.historyAdd("ARC");
-								_this.historyParameters.push(radius1);
+								_this.historyParameters.push(radius2);
 								_this.historyParameters.push(degrees1);
 							} else {
 								_this.historyAdd("ARC_SIDES");
-								_this.historyParameters.push(radius1);
+								_this.historyParameters.push(radius2);
 								_this.historyParameters.push(degrees1);
 								_this.historyParameters.push(sides);
 							}
 						}
-						if(radius1 != 0) {
+						if(radius2 != 0) {
 							if(_this.repeatCommands) {
 								if(sides == 24) {
 									_this.turtleCommands.push("ARC");
-									_this.turtleParameters.push(radius1);
+									_this.turtleParameters.push(radius2);
 									_this.turtleParameters.push(degrees1);
 								} else {
 									_this.turtleCommands.push("ARC_SIDES");
-									_this.turtleParameters.push(radius1);
+									_this.turtleParameters.push(radius2);
 									_this.turtleParameters.push(degrees1);
 									_this.turtleParameters.push(sides);
 								}
@@ -19175,15 +17097,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								var beta1 = degrees1 * Math.PI / 180 / sides;
 								var alpha1 = (Math.PI - beta1) / 2;
 								var rotate1 = -(Math.PI / 2 - alpha1);
-								var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-								var ox1 = _this.x;
-								var oy1 = _this.y;
-								var arr1 = [];
-								arr1.push(_this.x);
-								arr1.push(_this.y);
+								var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+								var ox2 = _this.x;
+								var oy2 = _this.y;
+								var arr2 = [];
+								arr2.push(_this.x);
+								arr2.push(_this.y);
 								var _g5 = 0;
 								while(_g5 < 48) {
-									var i3 = _g5++;
+									var i4 = _g5++;
 									_this.rotation += rotate1;
 									var wasHistoryOn2 = _this.turtleHistoryOn;
 									_this.turtleHistoryOn = false;
@@ -19195,107 +17117,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this.turtleCommands.push("FORWARD");
 										_this.turtleParameters.push(baseLength1);
 									} else {
-										var nx1 = _this.x + baseLength1 * Math.cos(_this.rotation);
-										var ny1 = _this.y + baseLength1 * Math.sin(_this.rotation);
+										var nx2 = _this.x + baseLength1 * Math.cos(_this.rotation);
+										var ny2 = _this.y + baseLength1 * Math.sin(_this.rotation);
 										if(_this.penIsDown) {
 											_this.lastDistance = baseLength1;
-											_this.lineTo(nx1,ny1);
+											_this.lineTo(nx2,ny2);
 										} else {
 											if(_this.endLine == 2 || _this.endLine == 3) {
 												_this.contour.end(_this.width);
 											}
-											_this.x = nx1;
-											_this.y = ny1;
-											var l2 = _this.points.length;
-											_this.points[l2] = [];
-											_this.points[l2][0] = nx1;
-											_this.points[l2][1] = ny1;
+											_this.x = nx2;
+											_this.y = ny2;
+											var l7 = _this.points.length;
+											_this.points[l7] = [];
+											_this.points[l7][0] = nx2;
+											_this.points[l7][1] = ny2;
 											_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 											_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 											_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d1 = _this.dim[_this.dim.length - 1];
-											if(nx1 < d1.minX) {
-												d1.minX = nx1;
+											var d4 = _this.dim[_this.dim.length - 1];
+											if(nx2 < d4.minX) {
+												d4.minX = nx2;
 											}
-											if(nx1 > d1.maxX) {
-												d1.maxX = nx1;
+											if(nx2 > d4.maxX) {
+												d4.maxX = nx2;
 											}
-											if(ny1 < d1.minY) {
-												d1.minY = ny1;
+											if(ny2 < d4.minY) {
+												d4.minY = ny2;
 											}
-											if(ny1 > d1.maxY) {
-												d1.maxY = ny1;
+											if(ny2 > d4.maxY) {
+												d4.maxY = ny2;
 											}
 											_this.contour.reset();
 										}
 									}
 									_this.turtleHistoryOn = wasHistoryOn2;
 									if(_this.fill) {
-										arr1.push(_this.x);
-										arr1.push(_this.y);
+										arr2.push(_this.x);
+										arr2.push(_this.y);
 									}
 								}
 								if(_this.fill) {
-									var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-									var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-									var l3 = arr1.length;
-									var i4 = 2;
+									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+									var l8 = arr2.length;
+									var i5 = 2;
 									var lx1 = 0.;
 									var ly1 = 0.;
-									_this.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-									while(i4 < l3) {
-										if(i4 > 2) {
-											_this.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+									_this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+									while(i5 < l8) {
+										if(i5 > 2) {
+											_this.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 										}
-										lx1 = arr1[i4];
-										ly1 = arr1[i4 + 1];
-										i4 += 2;
+										lx1 = arr2[i5];
+										ly1 = arr2[i5 + 1];
+										i5 += 2;
 									}
 								}
-								arr1.length = 0;
+								arr2.length = 0;
 							}
 						}
 						j += 3;
 						break;
 					case "BACKWARD":
-						var distance = v[j];
+						var distance1 = v[j];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("BACKWARD");
-							_this.historyParameters.push(distance);
+							_this.historyParameters.push(distance1);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("BACKWARD");
-							_this.turtleParameters.push(distance);
+							_this.turtleParameters.push(distance1);
 						} else {
-							var nx2 = _this.x + distance * Math.cos(_this.rotation + Math.PI);
-							var ny2 = _this.y + distance * Math.sin(_this.rotation + Math.PI);
+							var nx3 = _this.x + distance1 * Math.cos(_this.rotation + Math.PI);
+							var ny3 = _this.y + distance1 * Math.sin(_this.rotation + Math.PI);
 							if(_this.penIsDown) {
-								_this.lineTo(nx2,ny2);
+								_this.lineTo(nx3,ny3);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx2;
-								_this.y = ny2;
-								var l4 = _this.points.length;
-								_this.points[l4] = [];
-								_this.points[l4][0] = nx2;
-								_this.points[l4][1] = ny2;
+								_this.x = nx3;
+								_this.y = ny3;
+								var l9 = _this.points.length;
+								_this.points[l9] = [];
+								_this.points[l9][0] = nx3;
+								_this.points[l9][1] = ny3;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d2 = _this.dim[_this.dim.length - 1];
-								if(nx2 < d2.minX) {
-									d2.minX = nx2;
+								var d5 = _this.dim[_this.dim.length - 1];
+								if(nx3 < d5.minX) {
+									d5.minX = nx3;
 								}
-								if(nx2 > d2.maxX) {
-									d2.maxX = nx2;
+								if(nx3 > d5.maxX) {
+									d5.maxX = nx3;
 								}
-								if(ny2 < d2.minY) {
-									d2.minY = ny2;
+								if(ny3 < d5.minY) {
+									d5.minY = ny3;
 								}
-								if(ny2 > d2.maxY) {
-									d2.maxY = ny2;
+								if(ny3 > d5.maxY) {
+									d5.maxY = ny3;
 								}
 								_this.contour.reset();
 							}
@@ -19335,26 +17257,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "CIRCLE":
-						var radius2 = v[j];
+						var radius3 = v[j];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("CIRCLE");
-							_this.historyParameters.push(radius2);
+							_this.historyParameters.push(radius3);
 						}
-						if(radius2 != 0) {
+						if(radius3 != 0) {
 							if(_this.repeatCommands) {
 								_this.turtleCommands.push("CIRCLE");
-								_this.turtleParameters.push(radius2);
+								_this.turtleParameters.push(radius3);
 							} else {
 								var beta2 = 2 * Math.PI / 24;
 								var alpha2 = (Math.PI - beta2) / 2;
 								var rotate2 = -(Math.PI / 2 - alpha2);
-								var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-								var ox2 = _this.x;
-								var oy2 = _this.y;
-								var arr2 = [];
+								var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+								var ox3 = _this.x;
+								var oy3 = _this.y;
+								var arr3 = [];
 								var _g6 = 0;
 								while(_g6 < 48) {
-									var i5 = _g6++;
+									var i6 = _g6++;
 									_this.rotation += rotate2;
 									var wasHistoryOn3 = _this.turtleHistoryOn;
 									_this.turtleHistoryOn = false;
@@ -19366,69 +17288,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this.turtleCommands.push("FORWARD");
 										_this.turtleParameters.push(baseLength2);
 									} else {
-										var nx3 = _this.x + baseLength2 * Math.cos(_this.rotation);
-										var ny3 = _this.y + baseLength2 * Math.sin(_this.rotation);
+										var nx4 = _this.x + baseLength2 * Math.cos(_this.rotation);
+										var ny4 = _this.y + baseLength2 * Math.sin(_this.rotation);
 										if(_this.penIsDown) {
 											_this.lastDistance = baseLength2;
-											_this.lineTo(nx3,ny3);
+											_this.lineTo(nx4,ny4);
 										} else {
 											if(_this.endLine == 2 || _this.endLine == 3) {
 												_this.contour.end(_this.width);
 											}
-											_this.x = nx3;
-											_this.y = ny3;
-											var l5 = _this.points.length;
-											_this.points[l5] = [];
-											_this.points[l5][0] = nx3;
-											_this.points[l5][1] = ny3;
+											_this.x = nx4;
+											_this.y = ny4;
+											var l10 = _this.points.length;
+											_this.points[l10] = [];
+											_this.points[l10][0] = nx4;
+											_this.points[l10][1] = ny4;
 											_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 											_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 											_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d3 = _this.dim[_this.dim.length - 1];
-											if(nx3 < d3.minX) {
-												d3.minX = nx3;
+											var d6 = _this.dim[_this.dim.length - 1];
+											if(nx4 < d6.minX) {
+												d6.minX = nx4;
 											}
-											if(nx3 > d3.maxX) {
-												d3.maxX = nx3;
+											if(nx4 > d6.maxX) {
+												d6.maxX = nx4;
 											}
-											if(ny3 < d3.minY) {
-												d3.minY = ny3;
+											if(ny4 < d6.minY) {
+												d6.minY = ny4;
 											}
-											if(ny3 > d3.maxY) {
-												d3.maxY = ny3;
+											if(ny4 > d6.maxY) {
+												d6.maxY = ny4;
 											}
 											_this.contour.reset();
 										}
 									}
 									_this.turtleHistoryOn = wasHistoryOn3;
 									if(_this.fill) {
-										arr2.push(_this.x);
-										arr2.push(_this.y);
+										arr3.push(_this.x);
+										arr3.push(_this.y);
 									}
 								}
 								if(_this.fill) {
-									var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-									var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-									var l6 = arr2.length;
-									var i6 = 2;
+									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+									var l11 = arr3.length;
+									var i7 = 2;
 									var lx2 = 0.;
 									var ly2 = 0.;
-									while(i6 < l6) {
-										if(i6 > 2) {
-											_this.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+									while(i7 < l11) {
+										if(i7 > 2) {
+											_this.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 										}
-										lx2 = arr2[i6];
-										ly2 = arr2[i6 + 1];
-										i6 += 2;
+										lx2 = arr3[i7];
+										ly2 = arr3[i7 + 1];
+										i7 += 2;
 									}
 								}
-								arr2.length = 0;
+								arr3.length = 0;
 							}
 						}
 						++j;
 						break;
 					case "CIRCLE_SIDES":
-						var radius3 = v[j];
+						var radius4 = v[j];
 						var sides1 = v[j + 1];
 						if(sides1 == null) {
 							sides1 = 24;
@@ -19436,34 +17358,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						if(_this.turtleHistoryOn) {
 							if(sides1 == 24) {
 								_this.historyAdd("CIRCLE");
-								_this.historyParameters.push(radius3);
+								_this.historyParameters.push(radius4);
 							} else {
 								_this.historyAdd("CIRCLE_SIDES");
-								_this.historyParameters.push(radius3);
+								_this.historyParameters.push(radius4);
 								_this.historyParameters.push(sides1);
 							}
 						}
-						if(radius3 != 0) {
+						if(radius4 != 0) {
 							if(_this.repeatCommands) {
 								if(sides1 == 24) {
 									_this.turtleCommands.push("CIRCLE");
-									_this.turtleParameters.push(radius3);
+									_this.turtleParameters.push(radius4);
 								} else {
 									_this.turtleCommands.push("CIRCLE_SIDES");
-									_this.turtleParameters.push(radius3);
+									_this.turtleParameters.push(radius4);
 									_this.turtleParameters.push(sides1);
 								}
 							} else {
 								var beta3 = 2 * Math.PI / sides1;
 								var alpha3 = (Math.PI - beta3) / 2;
 								var rotate3 = -(Math.PI / 2 - alpha3);
-								var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-								var ox3 = _this.x;
-								var oy3 = _this.y;
-								var arr3 = [];
+								var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+								var ox4 = _this.x;
+								var oy4 = _this.y;
+								var arr4 = [];
 								var _g7 = 0;
 								while(_g7 < 48) {
-									var i7 = _g7++;
+									var i8 = _g7++;
 									_this.rotation += rotate3;
 									var wasHistoryOn4 = _this.turtleHistoryOn;
 									_this.turtleHistoryOn = false;
@@ -19475,63 +17397,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 										_this.turtleCommands.push("FORWARD");
 										_this.turtleParameters.push(baseLength3);
 									} else {
-										var nx4 = _this.x + baseLength3 * Math.cos(_this.rotation);
-										var ny4 = _this.y + baseLength3 * Math.sin(_this.rotation);
+										var nx5 = _this.x + baseLength3 * Math.cos(_this.rotation);
+										var ny5 = _this.y + baseLength3 * Math.sin(_this.rotation);
 										if(_this.penIsDown) {
 											_this.lastDistance = baseLength3;
-											_this.lineTo(nx4,ny4);
+											_this.lineTo(nx5,ny5);
 										} else {
 											if(_this.endLine == 2 || _this.endLine == 3) {
 												_this.contour.end(_this.width);
 											}
-											_this.x = nx4;
-											_this.y = ny4;
-											var l7 = _this.points.length;
-											_this.points[l7] = [];
-											_this.points[l7][0] = nx4;
-											_this.points[l7][1] = ny4;
+											_this.x = nx5;
+											_this.y = ny5;
+											var l12 = _this.points.length;
+											_this.points[l12] = [];
+											_this.points[l12][0] = nx5;
+											_this.points[l12][1] = ny5;
 											_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 											_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 											_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-											var d4 = _this.dim[_this.dim.length - 1];
-											if(nx4 < d4.minX) {
-												d4.minX = nx4;
+											var d7 = _this.dim[_this.dim.length - 1];
+											if(nx5 < d7.minX) {
+												d7.minX = nx5;
 											}
-											if(nx4 > d4.maxX) {
-												d4.maxX = nx4;
+											if(nx5 > d7.maxX) {
+												d7.maxX = nx5;
 											}
-											if(ny4 < d4.minY) {
-												d4.minY = ny4;
+											if(ny5 < d7.minY) {
+												d7.minY = ny5;
 											}
-											if(ny4 > d4.maxY) {
-												d4.maxY = ny4;
+											if(ny5 > d7.maxY) {
+												d7.maxY = ny5;
 											}
 											_this.contour.reset();
 										}
 									}
 									_this.turtleHistoryOn = wasHistoryOn4;
 									if(_this.fill) {
-										arr3.push(_this.x);
-										arr3.push(_this.y);
+										arr4.push(_this.x);
+										arr4.push(_this.y);
 									}
 								}
 								if(_this.fill) {
-									var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-									var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-									var l8 = arr3.length;
-									var i8 = 2;
+									var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+									var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+									var l13 = arr4.length;
+									var i9 = 2;
 									var lx3 = 0.;
 									var ly3 = 0.;
-									while(i8 < l8) {
-										if(i8 > 2) {
-											_this.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+									while(i9 < l13) {
+										if(i9 > 2) {
+											_this.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 										}
-										lx3 = arr3[i8];
-										ly3 = arr3[i8 + 1];
-										i8 += 2;
+										lx3 = arr4[i9];
+										ly3 = arr4[i9 + 1];
+										i9 += 2;
 									}
 								}
-								arr3.length = 0;
+								arr4.length = 0;
 							}
 						}
 						j += 2;
@@ -19599,45 +17521,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "FORWARD":
-						var distance1 = v[j];
+						var distance3 = v[j];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance1);
+							_this.historyParameters.push(distance3);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance1);
+							_this.turtleParameters.push(distance3);
 						} else {
-							var nx5 = _this.x + distance1 * Math.cos(_this.rotation);
-							var ny5 = _this.y + distance1 * Math.sin(_this.rotation);
+							var nx6 = _this.x + distance3 * Math.cos(_this.rotation);
+							var ny6 = _this.y + distance3 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance1;
-								_this.lineTo(nx5,ny5);
+								_this.lastDistance = distance3;
+								_this.lineTo(nx6,ny6);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx5;
-								_this.y = ny5;
-								var l9 = _this.points.length;
-								_this.points[l9] = [];
-								_this.points[l9][0] = nx5;
-								_this.points[l9][1] = ny5;
+								_this.x = nx6;
+								_this.y = ny6;
+								var l14 = _this.points.length;
+								_this.points[l14] = [];
+								_this.points[l14][0] = nx6;
+								_this.points[l14][1] = ny6;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d5 = _this.dim[_this.dim.length - 1];
-								if(nx5 < d5.minX) {
-									d5.minX = nx5;
+								var d8 = _this.dim[_this.dim.length - 1];
+								if(nx6 < d8.minX) {
+									d8.minX = nx6;
 								}
-								if(nx5 > d5.maxX) {
-									d5.maxX = nx5;
+								if(nx6 > d8.maxX) {
+									d8.maxX = nx6;
 								}
-								if(ny5 < d5.minY) {
-									d5.minY = ny5;
+								if(ny6 < d8.minY) {
+									d8.minY = ny6;
 								}
-								if(ny5 > d5.maxY) {
-									d5.maxY = ny5;
+								if(ny6 > d8.maxY) {
+									d8.maxY = ny6;
 								}
 								_this.contour.reset();
 							}
@@ -19654,175 +17576,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.turtleCommands.push("FORWARD_CHANGE");
 							_this.turtleParameters.push(deltaDistance);
 						} else {
-							var distance2 = _this.lastDistance + deltaDistance;
-							var nx6 = _this.x + distance2 * Math.cos(_this.rotation);
-							var ny6 = _this.y + distance2 * Math.sin(_this.rotation);
+							var distance4 = _this.lastDistance + deltaDistance;
+							var nx7 = _this.x + distance4 * Math.cos(_this.rotation);
+							var ny7 = _this.y + distance4 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance2 + deltaDistance;
-								_this.lineTo(nx6,ny6);
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx6;
-								_this.y = ny6;
-								var l10 = _this.points.length;
-								_this.points[l10] = [];
-								_this.points[l10][0] = nx6;
-								_this.points[l10][1] = ny6;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d6 = _this.dim[_this.dim.length - 1];
-								if(nx6 < d6.minX) {
-									d6.minX = nx6;
-								}
-								if(nx6 > d6.maxX) {
-									d6.maxX = nx6;
-								}
-								if(ny6 < d6.minY) {
-									d6.minY = ny6;
-								}
-								if(ny6 > d6.maxY) {
-									d6.maxY = ny6;
-								}
-								_this.contour.reset();
-							}
-						}
-						++j;
-						break;
-					case "FORWARD_CURVE_LEFT":
-						var distance3 = v[j];
-						var distance21 = v[j + 1];
-						var radius4 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_CURVE_LEFT");
-							_this.historyParameters.push(distance3);
-							_this.historyParameters.push(distance21);
-							_this.historyParameters.push(radius4);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_CURVE_LEFT");
-							_this.turtleParameters.push(distance3);
-							_this.turtleParameters.push(distance21);
-							_this.turtleParameters.push(radius4);
-						} else {
-							var nx7 = _this.x + distance3 * Math.cos(_this.rotation);
-							var ny7 = _this.y + distance3 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX = _this.x + distance21 * Math.cos(_this.rotation) + radius4 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY = _this.y + distance21 * Math.sin(_this.rotation) + radius4 * Math.sin(_this.rotation + Math.PI / 2);
-								var newx = 2 * thruX - 0.5 * (_this.x + nx7);
-								var newy = 2 * thruY - 0.5 * (_this.y + ny7);
-								_this.tempArr = [];
-								var p = _this.tempArr;
-								var ax = _this.x;
-								var ay = _this.y;
-								var x = ax - newx;
-								var y = ay - newy;
-								var x1 = newx - nx7;
-								var y1 = newy - ny7;
-								var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-								if(approxDistance == 0) {
-									approxDistance = 0.000001;
-								}
-								var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-								var l11 = p.length;
-								p[l11++] = ax;
-								p[l11++] = ay;
-								var t = step;
-								while(t < 1.) {
-									var u = 1 - t;
-									p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-									var u1 = 1 - t;
-									p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-									t += step;
-								}
-								p[l11++] = nx7;
-								p[l11++] = ny7;
-								var arr4 = _this.tempArr;
-								var withMove = false;
-								if(withMove == null) {
-									withMove = true;
-								}
-								var l12 = arr4.length;
-								var i9 = 2;
-								if(withMove) {
-									var x_ = arr4[0];
-									var y_ = arr4[1];
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = x_;
-									_this.y = y_;
-									var l13 = _this.points.length;
-									_this.points[l13] = [];
-									_this.points[l13][0] = x_;
-									_this.points[l13][1] = y_;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d7 = _this.dim[_this.dim.length - 1];
-									if(x_ < d7.minX) {
-										d7.minX = x_;
-									}
-									if(x_ > d7.maxX) {
-										d7.maxX = x_;
-									}
-									if(y_ < d7.minY) {
-										d7.minY = y_;
-									}
-									if(y_ > d7.maxY) {
-										d7.maxY = y_;
-									}
-									_this.contour.reset();
-								} else {
-									_this.lineTo(arr4[0],arr4[1]);
-								}
-								var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-								var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-								var ox4 = _this.x;
-								var oy4 = _this.y;
-								while(i9 < l12) {
-									if(_this.fill && _this.penIsDown) {
-										if(i9 > 0 && i9 < l12 - 2) {
-											_this.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-										}
-									}
-									_this.lineTo(arr4[i9],arr4[i9 + 1]);
-									i9 += 2;
-								}
-								if(_this.fill && _this.penIsDown) {
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = ox4;
-									_this.y = oy4;
-									var l14 = _this.points.length;
-									_this.points[l14] = [];
-									_this.points[l14][0] = ox4;
-									_this.points[l14][1] = oy4;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d8 = _this.dim[_this.dim.length - 1];
-									if(ox4 < d8.minX) {
-										d8.minX = ox4;
-									}
-									if(ox4 > d8.maxX) {
-										d8.maxX = ox4;
-									}
-									if(oy4 < d8.minY) {
-										d8.minY = oy4;
-									}
-									if(oy4 > d8.maxY) {
-										d8.maxY = oy4;
-									}
-									_this.contour.reset();
-									_this.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-								}
-								_this.x = nx7;
-								_this.y = ny7;
+								_this.lastDistance = distance4 + deltaDistance;
+								_this.lineTo(nx7,ny7);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
@@ -19852,170 +17611,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 								_this.contour.reset();
 							}
 						}
-						j += 3;
-						break;
-					case "FORWARD_CURVE_RIGHT":
-						var distance4 = v[j];
-						var distance22 = v[j + 1];
-						var radius5 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_CURVE_RIGHT");
-							_this.historyParameters.push(distance4);
-							_this.historyParameters.push(distance22);
-							_this.historyParameters.push(radius5);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-							_this.turtleParameters.push(distance4);
-							_this.turtleParameters.push(distance22);
-							_this.turtleParameters.push(radius5);
-						} else {
-							var nx8 = _this.x + distance4 * Math.cos(_this.rotation);
-							var ny8 = _this.y + distance4 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX1 = _this.x + distance22 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY1 = _this.y + distance22 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
-								var newx1 = 2 * thruX1 - 0.5 * (_this.x + nx8);
-								var newy1 = 2 * thruY1 - 0.5 * (_this.y + ny8);
-								_this.tempArr = [];
-								var p1 = _this.tempArr;
-								var ax1 = _this.x;
-								var ay1 = _this.y;
-								var x2 = ax1 - newx1;
-								var y2 = ay1 - newy1;
-								var x3 = newx1 - nx8;
-								var y3 = newy1 - ny8;
-								var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-								if(approxDistance1 == 0) {
-									approxDistance1 = 0.000001;
-								}
-								var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-								var l16 = p1.length;
-								p1[l16++] = ax1;
-								p1[l16++] = ay1;
-								var t1 = step1;
-								while(t1 < 1.) {
-									var u2 = 1 - t1;
-									p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-									var u3 = 1 - t1;
-									p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-									t1 += step1;
-								}
-								p1[l16++] = nx8;
-								p1[l16++] = ny8;
-								var arr5 = _this.tempArr;
-								var withMove1 = false;
-								if(withMove1 == null) {
-									withMove1 = true;
-								}
-								var l17 = arr5.length;
-								var i10 = 2;
-								if(withMove1) {
-									var x_1 = arr5[0];
-									var y_1 = arr5[1];
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = x_1;
-									_this.y = y_1;
-									var l18 = _this.points.length;
-									_this.points[l18] = [];
-									_this.points[l18][0] = x_1;
-									_this.points[l18][1] = y_1;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d10 = _this.dim[_this.dim.length - 1];
-									if(x_1 < d10.minX) {
-										d10.minX = x_1;
-									}
-									if(x_1 > d10.maxX) {
-										d10.maxX = x_1;
-									}
-									if(y_1 < d10.minY) {
-										d10.minY = y_1;
-									}
-									if(y_1 > d10.maxY) {
-										d10.maxY = y_1;
-									}
-									_this.contour.reset();
-								} else {
-									_this.lineTo(arr5[0],arr5[1]);
-								}
-								var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-								var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-								var ox5 = _this.x;
-								var oy5 = _this.y;
-								while(i10 < l17) {
-									if(_this.fill && _this.penIsDown) {
-										if(i10 > 0 && i10 < l17 - 2) {
-											_this.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-										}
-									}
-									_this.lineTo(arr5[i10],arr5[i10 + 1]);
-									i10 += 2;
-								}
-								if(_this.fill && _this.penIsDown) {
-									if(_this.endLine == 2 || _this.endLine == 3) {
-										_this.contour.end(_this.width);
-									}
-									_this.x = ox5;
-									_this.y = oy5;
-									var l19 = _this.points.length;
-									_this.points[l19] = [];
-									_this.points[l19][0] = ox5;
-									_this.points[l19][1] = oy5;
-									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d11 = _this.dim[_this.dim.length - 1];
-									if(ox5 < d11.minX) {
-										d11.minX = ox5;
-									}
-									if(ox5 > d11.maxX) {
-										d11.maxX = ox5;
-									}
-									if(oy5 < d11.minY) {
-										d11.minY = oy5;
-									}
-									if(oy5 > d11.maxY) {
-										d11.maxY = oy5;
-									}
-									_this.contour.reset();
-									_this.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-								}
-								_this.x = nx8;
-								_this.y = ny8;
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx8;
-								_this.y = ny8;
-								var l20 = _this.points.length;
-								_this.points[l20] = [];
-								_this.points[l20][0] = nx8;
-								_this.points[l20][1] = ny8;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d12 = _this.dim[_this.dim.length - 1];
-								if(nx8 < d12.minX) {
-									d12.minX = nx8;
-								}
-								if(nx8 > d12.maxX) {
-									d12.maxX = nx8;
-								}
-								if(ny8 < d12.minY) {
-									d12.minY = ny8;
-								}
-								if(ny8 > d12.maxY) {
-									d12.maxY = ny8;
-								}
-								_this.contour.reset();
-							}
-						}
-						j += 3;
+						++j;
 						break;
 					case "FORWARD_FACTOR":
 						var factor = v[j];
@@ -20028,213 +17624,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.turtleParameters.push(factor);
 						} else {
 							var distance5 = _this.lastDistance * factor;
-							var nx9 = _this.x + distance5 * Math.cos(_this.rotation);
-							var ny9 = _this.y + distance5 * Math.sin(_this.rotation);
+							var nx8 = _this.x + distance5 * Math.cos(_this.rotation);
+							var ny8 = _this.y + distance5 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
 								_this.lastDistance = distance5;
-								_this.lineTo(nx9,ny9);
+								_this.lineTo(nx8,ny8);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx9;
-								_this.y = ny9;
-								var l21 = _this.points.length;
-								_this.points[l21] = [];
-								_this.points[l21][0] = nx9;
-								_this.points[l21][1] = ny9;
+								_this.x = nx8;
+								_this.y = ny8;
+								var l16 = _this.points.length;
+								_this.points[l16] = [];
+								_this.points[l16][0] = nx8;
+								_this.points[l16][1] = ny8;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d13 = _this.dim[_this.dim.length - 1];
-								if(nx9 < d13.minX) {
-									d13.minX = nx9;
+								var d10 = _this.dim[_this.dim.length - 1];
+								if(nx8 < d10.minX) {
+									d10.minX = nx8;
 								}
-								if(nx9 > d13.maxX) {
-									d13.maxX = nx9;
+								if(nx8 > d10.maxX) {
+									d10.maxX = nx8;
 								}
-								if(ny9 < d13.minY) {
-									d13.minY = ny9;
+								if(ny8 < d10.minY) {
+									d10.minY = ny8;
 								}
-								if(ny9 > d13.maxY) {
-									d13.maxY = ny9;
+								if(ny8 > d10.maxY) {
+									d10.maxY = ny8;
 								}
 								_this.contour.reset();
 							}
 						}
 						++j;
-						break;
-					case "FORWARD_TRIANGLE_LEFT":
-						var distance6 = v[j];
-						var distance23 = v[j + 1];
-						var radius6 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_TRIANGLE_LEFT");
-							_this.historyParameters.push(distance6);
-							_this.historyParameters.push(distance23);
-							_this.historyParameters.push(radius6);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-							_this.turtleParameters.push(distance6);
-							_this.turtleParameters.push(distance23);
-							_this.turtleParameters.push(radius6);
-						} else {
-							var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
-							var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX2 = _this.x + distance23 * Math.cos(_this.rotation) + radius6 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY2 = _this.y + distance23 * Math.sin(_this.rotation) + radius6 * Math.sin(_this.rotation + Math.PI / 2);
-								if(_this.fill) {
-									_this.pen.triangle2DFill(_this.x,_this.y,thruX2,thruY2,nx10,ny10);
-								}
-								_this.lineTo(thruX2,thruY2);
-								_this.lineTo(nx10,ny10);
-								if(_this.fill) {
-									_this.lineTo(_this.x,_this.y);
-								}
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx10;
-								_this.y = ny10;
-								var l22 = _this.points.length;
-								_this.points[l22] = [];
-								_this.points[l22][0] = nx10;
-								_this.points[l22][1] = ny10;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d14 = _this.dim[_this.dim.length - 1];
-								if(nx10 < d14.minX) {
-									d14.minX = nx10;
-								}
-								if(nx10 > d14.maxX) {
-									d14.maxX = nx10;
-								}
-								if(ny10 < d14.minY) {
-									d14.minY = ny10;
-								}
-								if(ny10 > d14.maxY) {
-									d14.maxY = ny10;
-								}
-								_this.contour.reset();
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx10;
-								_this.y = ny10;
-								var l23 = _this.points.length;
-								_this.points[l23] = [];
-								_this.points[l23][0] = nx10;
-								_this.points[l23][1] = ny10;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d15 = _this.dim[_this.dim.length - 1];
-								if(nx10 < d15.minX) {
-									d15.minX = nx10;
-								}
-								if(nx10 > d15.maxX) {
-									d15.maxX = nx10;
-								}
-								if(ny10 < d15.minY) {
-									d15.minY = ny10;
-								}
-								if(ny10 > d15.maxY) {
-									d15.maxY = ny10;
-								}
-								_this.contour.reset();
-							}
-						}
-						j += 3;
-						break;
-					case "FORWARD_TRIANGLE_RIGHT":
-						var distance7 = v[j];
-						var distance24 = v[j + 1];
-						var radius7 = v[j + 2];
-						if(_this.turtleHistoryOn) {
-							_this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-							_this.historyParameters.push(distance7);
-							_this.historyParameters.push(distance24);
-							_this.historyParameters.push(radius7);
-						}
-						if(_this.repeatCommands) {
-							_this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-							_this.turtleParameters.push(distance7);
-							_this.turtleParameters.push(distance24);
-							_this.turtleParameters.push(radius7);
-						} else {
-							var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
-							var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
-							if(_this.penIsDown) {
-								var thruX3 = _this.x + distance24 * Math.cos(_this.rotation) - radius7 * Math.cos(_this.rotation + Math.PI / 2);
-								var thruY3 = _this.y + distance24 * Math.sin(_this.rotation) - radius7 * Math.sin(_this.rotation + Math.PI / 2);
-								if(_this.fill) {
-									_this.pen.triangle2DFill(_this.x,_this.y,thruX3,thruY3,nx11,ny11);
-								}
-								_this.lineTo(thruX3,thruY3);
-								_this.lineTo(nx11,ny11);
-								if(_this.fill) {
-									_this.lineTo(_this.x,_this.y);
-								}
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx11;
-								_this.y = ny11;
-								var l24 = _this.points.length;
-								_this.points[l24] = [];
-								_this.points[l24][0] = nx11;
-								_this.points[l24][1] = ny11;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d16 = _this.dim[_this.dim.length - 1];
-								if(nx11 < d16.minX) {
-									d16.minX = nx11;
-								}
-								if(nx11 > d16.maxX) {
-									d16.maxX = nx11;
-								}
-								if(ny11 < d16.minY) {
-									d16.minY = ny11;
-								}
-								if(ny11 > d16.maxY) {
-									d16.maxY = ny11;
-								}
-								_this.contour.reset();
-							} else {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = nx11;
-								_this.y = ny11;
-								var l25 = _this.points.length;
-								_this.points[l25] = [];
-								_this.points[l25][0] = nx11;
-								_this.points[l25][1] = ny11;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d17 = _this.dim[_this.dim.length - 1];
-								if(nx11 < d17.minX) {
-									d17.minX = nx11;
-								}
-								if(nx11 > d17.maxX) {
-									d17.maxX = nx11;
-								}
-								if(ny11 < d17.minY) {
-									d17.minY = ny11;
-								}
-								if(ny11 > d17.maxY) {
-									d17.maxY = ny11;
-								}
-								_this.contour.reset();
-							}
-						}
-						j += 3;
 						break;
 					case "GREEN":
 						if(_this.turtleHistoryOn) {
@@ -20291,10 +17715,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						break;
 					case "MOVE_PEN":
-						var distance8 = v[j];
+						var distance6 = v[j];
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("MOVE_PEN");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else if(_this.penIsDown) {
 							if(_this.turtleHistoryOn) {
 								_this.historyAdd("PEN_UP");
@@ -20306,42 +17730,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							}
 							if(_this.turtleHistoryOn) {
 								_this.historyAdd("FORWARD");
-								_this.historyParameters.push(distance8);
+								_this.historyParameters.push(distance6);
 							}
 							if(_this.repeatCommands) {
 								_this.turtleCommands.push("FORWARD");
-								_this.turtleParameters.push(distance8);
+								_this.turtleParameters.push(distance6);
 							} else {
-								var nx12 = _this.x + distance8 * Math.cos(_this.rotation);
-								var ny12 = _this.y + distance8 * Math.sin(_this.rotation);
+								var nx9 = _this.x + distance6 * Math.cos(_this.rotation);
+								var ny9 = _this.y + distance6 * Math.sin(_this.rotation);
 								if(_this.penIsDown) {
-									_this.lastDistance = distance8;
-									_this.lineTo(nx12,ny12);
+									_this.lastDistance = distance6;
+									_this.lineTo(nx9,ny9);
 								} else {
 									if(_this.endLine == 2 || _this.endLine == 3) {
 										_this.contour.end(_this.width);
 									}
-									_this.x = nx12;
-									_this.y = ny12;
-									var l26 = _this.points.length;
-									_this.points[l26] = [];
-									_this.points[l26][0] = nx12;
-									_this.points[l26][1] = ny12;
+									_this.x = nx9;
+									_this.y = ny9;
+									var l17 = _this.points.length;
+									_this.points[l17] = [];
+									_this.points[l17][0] = nx9;
+									_this.points[l17][1] = ny9;
 									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d18 = _this.dim[_this.dim.length - 1];
-									if(nx12 < d18.minX) {
-										d18.minX = nx12;
+									var d11 = _this.dim[_this.dim.length - 1];
+									if(nx9 < d11.minX) {
+										d11.minX = nx9;
 									}
-									if(nx12 > d18.maxX) {
-										d18.maxX = nx12;
+									if(nx9 > d11.maxX) {
+										d11.maxX = nx9;
 									}
-									if(ny12 < d18.minY) {
-										d18.minY = ny12;
+									if(ny9 < d11.minY) {
+										d11.minY = ny9;
 									}
-									if(ny12 > d18.maxY) {
-										d18.maxY = ny12;
+									if(ny9 > d11.maxY) {
+										d11.maxY = ny9;
 									}
 									_this.contour.reset();
 								}
@@ -20357,42 +17781,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							if(_this.turtleHistoryOn) {
 								_this.historyAdd("FORWARD");
-								_this.historyParameters.push(distance8);
+								_this.historyParameters.push(distance6);
 							}
 							if(_this.repeatCommands) {
 								_this.turtleCommands.push("FORWARD");
-								_this.turtleParameters.push(distance8);
+								_this.turtleParameters.push(distance6);
 							} else {
-								var nx13 = _this.x + distance8 * Math.cos(_this.rotation);
-								var ny13 = _this.y + distance8 * Math.sin(_this.rotation);
+								var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
+								var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
 								if(_this.penIsDown) {
-									_this.lastDistance = distance8;
-									_this.lineTo(nx13,ny13);
+									_this.lastDistance = distance6;
+									_this.lineTo(nx10,ny10);
 								} else {
 									if(_this.endLine == 2 || _this.endLine == 3) {
 										_this.contour.end(_this.width);
 									}
-									_this.x = nx13;
-									_this.y = ny13;
-									var l27 = _this.points.length;
-									_this.points[l27] = [];
-									_this.points[l27][0] = nx13;
-									_this.points[l27][1] = ny13;
+									_this.x = nx10;
+									_this.y = ny10;
+									var l18 = _this.points.length;
+									_this.points[l18] = [];
+									_this.points[l18][0] = nx10;
+									_this.points[l18][1] = ny10;
 									_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 									_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 									_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-									var d19 = _this.dim[_this.dim.length - 1];
-									if(nx13 < d19.minX) {
-										d19.minX = nx13;
+									var d12 = _this.dim[_this.dim.length - 1];
+									if(nx10 < d12.minX) {
+										d12.minX = nx10;
 									}
-									if(nx13 > d19.maxX) {
-										d19.maxX = nx13;
+									if(nx10 > d12.maxX) {
+										d12.maxX = nx10;
 									}
-									if(ny13 < d19.minY) {
-										d19.minY = ny13;
+									if(ny10 < d12.minY) {
+										d12.minY = ny10;
 									}
-									if(ny13 > d19.maxY) {
-										d19.maxY = ny13;
+									if(ny10 > d12.maxY) {
+										d12.maxY = ny10;
 									}
 									_this.contour.reset();
 								}
@@ -20664,42 +18088,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						++j;
 						break;
 					case "SET_POSITION":
-						var x4 = v[j];
-						var y4 = v[j + 1];
+						var x2 = v[j];
+						var y2 = v[j + 1];
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("SET_POSITION");
-							_this.historyParameters.push(x4);
-							_this.historyParameters.push(y4);
+							_this.historyParameters.push(x2);
+							_this.historyParameters.push(y2);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("SET_POSITION");
-							_this.turtleParameters.push(x4);
-							_this.turtleParameters.push(y4);
+							_this.turtleParameters.push(x2);
+							_this.turtleParameters.push(y2);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = x4;
-							_this.y = y4;
-							var l28 = _this.points.length;
-							_this.points[l28] = [];
-							_this.points[l28][0] = x4;
-							_this.points[l28][1] = y4;
+							_this.x = x2;
+							_this.y = y2;
+							var l19 = _this.points.length;
+							_this.points[l19] = [];
+							_this.points[l19][0] = x2;
+							_this.points[l19][1] = y2;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d20 = _this.dim[_this.dim.length - 1];
-							if(x4 < d20.minX) {
-								d20.minX = x4;
+							var d13 = _this.dim[_this.dim.length - 1];
+							if(x2 < d13.minX) {
+								d13.minX = x2;
 							}
-							if(x4 > d20.maxX) {
-								d20.maxX = x4;
+							if(x2 > d13.maxX) {
+								d13.maxX = x2;
 							}
-							if(y4 < d20.minY) {
-								d20.minY = y4;
+							if(y2 < d13.minY) {
+								d13.minY = y2;
 							}
-							if(y4 > d20.maxY) {
-								d20.maxY = y4;
+							if(y2 > d13.maxY) {
+								d13.maxY = y2;
 							}
 							_this.contour.reset();
 						}
@@ -20724,6 +18148,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						} else {
 							_this.pen.currentColor = -27273;
 						}
+						break;
+					case "TRIANGLE_ARCH":
+						var distance7 = v[j];
+						var distance21 = v[j + 1];
+						var radius5 = v[j + 2];
+						if(_this.turtleHistoryOn) {
+							_this.historyAdd("TRIANGLE_ARCH");
+							_this.historyParameters.push(distance7);
+							_this.historyParameters.push(distance21);
+							_this.historyParameters.push(radius5);
+						}
+						if(_this.repeatCommands) {
+							_this.turtleCommands.push("TRIANGLE_ARCH");
+							_this.turtleParameters.push(distance7);
+							_this.turtleParameters.push(distance21);
+							_this.turtleParameters.push(radius5);
+						} else {
+							var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
+							var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
+							if(_this.penIsDown) {
+								var thruX1 = _this.x + distance21 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
+								var thruY1 = _this.y + distance21 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
+								if(_this.fill) {
+									_this.pen.triangle2DFill(_this.x,_this.y,thruX1,thruY1,nx11,ny11);
+								}
+								_this.lineTo(thruX1,thruY1);
+								_this.lineTo(nx11,ny11);
+								if(_this.fill) {
+									_this.lineTo(_this.x,_this.y);
+								}
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = nx11;
+								_this.y = ny11;
+								var l20 = _this.points.length;
+								_this.points[l20] = [];
+								_this.points[l20][0] = nx11;
+								_this.points[l20][1] = ny11;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d14 = _this.dim[_this.dim.length - 1];
+								if(nx11 < d14.minX) {
+									d14.minX = nx11;
+								}
+								if(nx11 > d14.maxX) {
+									d14.maxX = nx11;
+								}
+								if(ny11 < d14.minY) {
+									d14.minY = ny11;
+								}
+								if(ny11 > d14.maxY) {
+									d14.maxY = ny11;
+								}
+								_this.contour.reset();
+							} else {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = nx11;
+								_this.y = ny11;
+								var l21 = _this.points.length;
+								_this.points[l21] = [];
+								_this.points[l21][0] = nx11;
+								_this.points[l21][1] = ny11;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d15 = _this.dim[_this.dim.length - 1];
+								if(nx11 < d15.minX) {
+									d15.minX = nx11;
+								}
+								if(nx11 > d15.maxX) {
+									d15.maxX = nx11;
+								}
+								if(ny11 < d15.minY) {
+									d15.minY = ny11;
+								}
+								if(ny11 > d15.maxY) {
+									d15.maxY = ny11;
+								}
+								_this.contour.reset();
+							}
+						}
+						j += 3;
 						break;
 					case "WEST":
 						if(_this.turtleHistoryOn) {
@@ -20769,13 +18279,13 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 		_this.turtleParameters.length = 0;
 		var _this1 = _this;
 		if(_this1.turtleHistoryOn) {
-			_this1.historyAdd("FORWARD_CURVE_RIGHT");
+			_this1.historyAdd("ARCH_BEZIER");
 			_this1.historyParameters.push(300);
 			_this1.historyParameters.push(150);
 			_this1.historyParameters.push(30);
 		}
 		if(_this1.repeatCommands) {
-			_this1.turtleCommands.push("FORWARD_CURVE_RIGHT");
+			_this1.turtleCommands.push("ARCH_BEZIER");
 			_this1.turtleParameters.push(300);
 			_this1.turtleParameters.push(150);
 			_this1.turtleParameters.push(30);
@@ -21073,8 +18583,171 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					j += 2;
 					break;
+				case "ARCH_BEZIER":
+					var distance = v[j];
+					var distance2 = v[j + 1];
+					var radius1 = v[j + 2];
+					if(_this.turtleHistoryOn) {
+						_this.historyAdd("ARCH_BEZIER");
+						_this.historyParameters.push(distance);
+						_this.historyParameters.push(distance2);
+						_this.historyParameters.push(radius1);
+					}
+					if(_this.repeatCommands) {
+						_this.turtleCommands.push("ARCH_BEZIER");
+						_this.turtleParameters.push(distance);
+						_this.turtleParameters.push(distance2);
+						_this.turtleParameters.push(radius1);
+					} else {
+						var nx1 = _this.x + distance * Math.cos(_this.rotation);
+						var ny1 = _this.y + distance * Math.sin(_this.rotation);
+						if(_this.penIsDown) {
+							var thruX = _this.x + distance2 * Math.cos(_this.rotation) - radius1 * Math.cos(_this.rotation + Math.PI / 2);
+							var thruY = _this.y + distance2 * Math.sin(_this.rotation) - radius1 * Math.sin(_this.rotation + Math.PI / 2);
+							var newx = 2 * thruX - 0.5 * (_this.x + nx1);
+							var newy = 2 * thruY - 0.5 * (_this.y + ny1);
+							_this.tempArr = [];
+							var p = _this.tempArr;
+							var ax = _this.x;
+							var ay = _this.y;
+							var x = ax - newx;
+							var y = ay - newy;
+							var x1 = newx - nx1;
+							var y1 = newy - ny1;
+							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
+							if(approxDistance == 0) {
+								approxDistance = 0.000001;
+							}
+							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
+							var l2 = p.length;
+							p[l2++] = ax;
+							p[l2++] = ay;
+							var t = step;
+							while(t < 1.) {
+								var u = 1 - t;
+								p[l2++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx1;
+								var u1 = 1 - t;
+								p[l2++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny1;
+								t += step;
+							}
+							p[l2++] = nx1;
+							p[l2++] = ny1;
+							var arr1 = _this.tempArr;
+							var withMove = false;
+							if(withMove == null) {
+								withMove = true;
+							}
+							var l3 = arr1.length;
+							var i3 = 2;
+							if(withMove) {
+								var x_ = arr1[0];
+								var y_ = arr1[1];
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = x_;
+								_this.y = y_;
+								var l4 = _this.points.length;
+								_this.points[l4] = [];
+								_this.points[l4][0] = x_;
+								_this.points[l4][1] = y_;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d1 = _this.dim[_this.dim.length - 1];
+								if(x_ < d1.minX) {
+									d1.minX = x_;
+								}
+								if(x_ > d1.maxX) {
+									d1.maxX = x_;
+								}
+								if(y_ < d1.minY) {
+									d1.minY = y_;
+								}
+								if(y_ > d1.maxY) {
+									d1.maxY = y_;
+								}
+								_this.contour.reset();
+							} else {
+								_this.lineTo(arr1[0],arr1[1]);
+							}
+							var cx1 = (arr1[0] + arr1[l3 - 2]) / 2;
+							var cy1 = (arr1[1] + arr1[l3 - 1]) / 2;
+							var ox1 = _this.x;
+							var oy1 = _this.y;
+							while(i3 < l3) {
+								if(_this.fill && _this.penIsDown) {
+									if(i3 > 0 && i3 < l3 - 2) {
+										_this.pen.triangle2DFill(arr1[i3 - 2],arr1[i3 - 1],arr1[i3],arr1[i3 + 1],cx1,cy1);
+									}
+								}
+								_this.lineTo(arr1[i3],arr1[i3 + 1]);
+								i3 += 2;
+							}
+							if(_this.fill && _this.penIsDown) {
+								if(_this.endLine == 2 || _this.endLine == 3) {
+									_this.contour.end(_this.width);
+								}
+								_this.x = ox1;
+								_this.y = oy1;
+								var l5 = _this.points.length;
+								_this.points[l5] = [];
+								_this.points[l5][0] = ox1;
+								_this.points[l5][1] = oy1;
+								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+								var d2 = _this.dim[_this.dim.length - 1];
+								if(ox1 < d2.minX) {
+									d2.minX = ox1;
+								}
+								if(ox1 > d2.maxX) {
+									d2.maxX = ox1;
+								}
+								if(oy1 < d2.minY) {
+									d2.minY = oy1;
+								}
+								if(oy1 > d2.maxY) {
+									d2.maxY = oy1;
+								}
+								_this.contour.reset();
+								_this.lineTo(arr1[l3 - 2],arr1[l3 - 1]);
+							}
+							_this.x = nx1;
+							_this.y = ny1;
+						} else {
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx1;
+							_this.y = ny1;
+							var l6 = _this.points.length;
+							_this.points[l6] = [];
+							_this.points[l6][0] = nx1;
+							_this.points[l6][1] = ny1;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d3 = _this.dim[_this.dim.length - 1];
+							if(nx1 < d3.minX) {
+								d3.minX = nx1;
+							}
+							if(nx1 > d3.maxX) {
+								d3.maxX = nx1;
+							}
+							if(ny1 < d3.minY) {
+								d3.minY = ny1;
+							}
+							if(ny1 > d3.maxY) {
+								d3.maxY = ny1;
+							}
+							_this.contour.reset();
+						}
+					}
+					j += 3;
+					break;
 				case "ARC_SIDES":
-					var radius1 = v[j];
+					var radius2 = v[j];
 					var degrees1 = v[j + 1];
 					var sides = v[j + 2];
 					if(sides == null) {
@@ -21083,24 +18756,24 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this.turtleHistoryOn) {
 						if(sides == 24) {
 							_this.historyAdd("ARC");
-							_this.historyParameters.push(radius1);
+							_this.historyParameters.push(radius2);
 							_this.historyParameters.push(degrees1);
 						} else {
 							_this.historyAdd("ARC_SIDES");
-							_this.historyParameters.push(radius1);
+							_this.historyParameters.push(radius2);
 							_this.historyParameters.push(degrees1);
 							_this.historyParameters.push(sides);
 						}
 					}
-					if(radius1 != 0) {
+					if(radius2 != 0) {
 						if(_this.repeatCommands) {
 							if(sides == 24) {
 								_this.turtleCommands.push("ARC");
-								_this.turtleParameters.push(radius1);
+								_this.turtleParameters.push(radius2);
 								_this.turtleParameters.push(degrees1);
 							} else {
 								_this.turtleCommands.push("ARC_SIDES");
-								_this.turtleParameters.push(radius1);
+								_this.turtleParameters.push(radius2);
 								_this.turtleParameters.push(degrees1);
 								_this.turtleParameters.push(sides);
 							}
@@ -21108,15 +18781,15 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							var beta1 = degrees1 * Math.PI / 180 / sides;
 							var alpha1 = (Math.PI - beta1) / 2;
 							var rotate1 = -(Math.PI / 2 - alpha1);
-							var baseLength1 = 0.5 * radius1 * Math.sin(beta1 / 2);
-							var ox1 = _this.x;
-							var oy1 = _this.y;
-							var arr1 = [];
-							arr1.push(_this.x);
-							arr1.push(_this.y);
+							var baseLength1 = 0.5 * radius2 * Math.sin(beta1 / 2);
+							var ox2 = _this.x;
+							var oy2 = _this.y;
+							var arr2 = [];
+							arr2.push(_this.x);
+							arr2.push(_this.y);
 							var _g5 = 0;
 							while(_g5 < 48) {
-								var i3 = _g5++;
+								var i4 = _g5++;
 								_this.rotation += rotate1;
 								var wasHistoryOn2 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -21128,107 +18801,107 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength1);
 								} else {
-									var nx1 = _this.x + baseLength1 * Math.cos(_this.rotation);
-									var ny1 = _this.y + baseLength1 * Math.sin(_this.rotation);
+									var nx2 = _this.x + baseLength1 * Math.cos(_this.rotation);
+									var ny2 = _this.y + baseLength1 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength1;
-										_this.lineTo(nx1,ny1);
+										_this.lineTo(nx2,ny2);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx1;
-										_this.y = ny1;
-										var l2 = _this.points.length;
-										_this.points[l2] = [];
-										_this.points[l2][0] = nx1;
-										_this.points[l2][1] = ny1;
+										_this.x = nx2;
+										_this.y = ny2;
+										var l7 = _this.points.length;
+										_this.points[l7] = [];
+										_this.points[l7][0] = nx2;
+										_this.points[l7][1] = ny2;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d1 = _this.dim[_this.dim.length - 1];
-										if(nx1 < d1.minX) {
-											d1.minX = nx1;
+										var d4 = _this.dim[_this.dim.length - 1];
+										if(nx2 < d4.minX) {
+											d4.minX = nx2;
 										}
-										if(nx1 > d1.maxX) {
-											d1.maxX = nx1;
+										if(nx2 > d4.maxX) {
+											d4.maxX = nx2;
 										}
-										if(ny1 < d1.minY) {
-											d1.minY = ny1;
+										if(ny2 < d4.minY) {
+											d4.minY = ny2;
 										}
-										if(ny1 > d1.maxY) {
-											d1.maxY = ny1;
+										if(ny2 > d4.maxY) {
+											d4.maxY = ny2;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn2;
 								if(_this.fill) {
-									arr1.push(_this.x);
-									arr1.push(_this.y);
+									arr2.push(_this.x);
+									arr2.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx1 = (ox1 + arr1[arr1.length - 2]) / 2;
-								var cy1 = (oy1 + arr1[arr1.length - 1]) / 2;
-								var l3 = arr1.length;
-								var i4 = 2;
+								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
+								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
+								var l8 = arr2.length;
+								var i5 = 2;
 								var lx1 = 0.;
 								var ly1 = 0.;
-								_this.pen.triangle2DFill(ox1,oy1,arr1[0],arr1[1],cx1,cy1);
-								while(i4 < l3) {
-									if(i4 > 2) {
-										_this.pen.triangle2DFill(lx1,ly1,arr1[i4],arr1[i4 + 1],cx1,cy1);
+								_this.pen.triangle2DFill(ox2,oy2,arr2[0],arr2[1],cx2,cy2);
+								while(i5 < l8) {
+									if(i5 > 2) {
+										_this.pen.triangle2DFill(lx1,ly1,arr2[i5],arr2[i5 + 1],cx2,cy2);
 									}
-									lx1 = arr1[i4];
-									ly1 = arr1[i4 + 1];
-									i4 += 2;
+									lx1 = arr2[i5];
+									ly1 = arr2[i5 + 1];
+									i5 += 2;
 								}
 							}
-							arr1.length = 0;
+							arr2.length = 0;
 						}
 					}
 					j += 3;
 					break;
 				case "BACKWARD":
-					var distance = v[j];
+					var distance1 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("BACKWARD");
-						_this.historyParameters.push(distance);
+						_this.historyParameters.push(distance1);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("BACKWARD");
-						_this.turtleParameters.push(distance);
+						_this.turtleParameters.push(distance1);
 					} else {
-						var nx2 = _this.x + distance * Math.cos(_this.rotation + Math.PI);
-						var ny2 = _this.y + distance * Math.sin(_this.rotation + Math.PI);
+						var nx3 = _this.x + distance1 * Math.cos(_this.rotation + Math.PI);
+						var ny3 = _this.y + distance1 * Math.sin(_this.rotation + Math.PI);
 						if(_this.penIsDown) {
-							_this.lineTo(nx2,ny2);
+							_this.lineTo(nx3,ny3);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx2;
-							_this.y = ny2;
-							var l4 = _this.points.length;
-							_this.points[l4] = [];
-							_this.points[l4][0] = nx2;
-							_this.points[l4][1] = ny2;
+							_this.x = nx3;
+							_this.y = ny3;
+							var l9 = _this.points.length;
+							_this.points[l9] = [];
+							_this.points[l9][0] = nx3;
+							_this.points[l9][1] = ny3;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d2 = _this.dim[_this.dim.length - 1];
-							if(nx2 < d2.minX) {
-								d2.minX = nx2;
+							var d5 = _this.dim[_this.dim.length - 1];
+							if(nx3 < d5.minX) {
+								d5.minX = nx3;
 							}
-							if(nx2 > d2.maxX) {
-								d2.maxX = nx2;
+							if(nx3 > d5.maxX) {
+								d5.maxX = nx3;
 							}
-							if(ny2 < d2.minY) {
-								d2.minY = ny2;
+							if(ny3 < d5.minY) {
+								d5.minY = ny3;
 							}
-							if(ny2 > d2.maxY) {
-								d2.maxY = ny2;
+							if(ny3 > d5.maxY) {
+								d5.maxY = ny3;
 							}
 							_this.contour.reset();
 						}
@@ -21268,26 +18941,26 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "CIRCLE":
-					var radius2 = v[j];
+					var radius3 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("CIRCLE");
-						_this.historyParameters.push(radius2);
+						_this.historyParameters.push(radius3);
 					}
-					if(radius2 != 0) {
+					if(radius3 != 0) {
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("CIRCLE");
-							_this.turtleParameters.push(radius2);
+							_this.turtleParameters.push(radius3);
 						} else {
 							var beta2 = 2 * Math.PI / 24;
 							var alpha2 = (Math.PI - beta2) / 2;
 							var rotate2 = -(Math.PI / 2 - alpha2);
-							var baseLength2 = 0.5 * radius2 * Math.sin(beta2 / 2);
-							var ox2 = _this.x;
-							var oy2 = _this.y;
-							var arr2 = [];
+							var baseLength2 = 0.5 * radius3 * Math.sin(beta2 / 2);
+							var ox3 = _this.x;
+							var oy3 = _this.y;
+							var arr3 = [];
 							var _g6 = 0;
 							while(_g6 < 48) {
-								var i5 = _g6++;
+								var i6 = _g6++;
 								_this.rotation += rotate2;
 								var wasHistoryOn3 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -21299,69 +18972,69 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength2);
 								} else {
-									var nx3 = _this.x + baseLength2 * Math.cos(_this.rotation);
-									var ny3 = _this.y + baseLength2 * Math.sin(_this.rotation);
+									var nx4 = _this.x + baseLength2 * Math.cos(_this.rotation);
+									var ny4 = _this.y + baseLength2 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength2;
-										_this.lineTo(nx3,ny3);
+										_this.lineTo(nx4,ny4);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx3;
-										_this.y = ny3;
-										var l5 = _this.points.length;
-										_this.points[l5] = [];
-										_this.points[l5][0] = nx3;
-										_this.points[l5][1] = ny3;
+										_this.x = nx4;
+										_this.y = ny4;
+										var l10 = _this.points.length;
+										_this.points[l10] = [];
+										_this.points[l10][0] = nx4;
+										_this.points[l10][1] = ny4;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d3 = _this.dim[_this.dim.length - 1];
-										if(nx3 < d3.minX) {
-											d3.minX = nx3;
+										var d6 = _this.dim[_this.dim.length - 1];
+										if(nx4 < d6.minX) {
+											d6.minX = nx4;
 										}
-										if(nx3 > d3.maxX) {
-											d3.maxX = nx3;
+										if(nx4 > d6.maxX) {
+											d6.maxX = nx4;
 										}
-										if(ny3 < d3.minY) {
-											d3.minY = ny3;
+										if(ny4 < d6.minY) {
+											d6.minY = ny4;
 										}
-										if(ny3 > d3.maxY) {
-											d3.maxY = ny3;
+										if(ny4 > d6.maxY) {
+											d6.maxY = ny4;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn3;
 								if(_this.fill) {
-									arr2.push(_this.x);
-									arr2.push(_this.y);
+									arr3.push(_this.x);
+									arr3.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx2 = (ox2 + arr2[arr2.length - 2]) / 2;
-								var cy2 = (oy2 + arr2[arr2.length - 1]) / 2;
-								var l6 = arr2.length;
-								var i6 = 2;
+								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
+								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
+								var l11 = arr3.length;
+								var i7 = 2;
 								var lx2 = 0.;
 								var ly2 = 0.;
-								while(i6 < l6) {
-									if(i6 > 2) {
-										_this.pen.triangle2DFill(lx2,ly2,arr2[i6],arr2[i6 + 1],cx2,cy2);
+								while(i7 < l11) {
+									if(i7 > 2) {
+										_this.pen.triangle2DFill(lx2,ly2,arr3[i7],arr3[i7 + 1],cx3,cy3);
 									}
-									lx2 = arr2[i6];
-									ly2 = arr2[i6 + 1];
-									i6 += 2;
+									lx2 = arr3[i7];
+									ly2 = arr3[i7 + 1];
+									i7 += 2;
 								}
 							}
-							arr2.length = 0;
+							arr3.length = 0;
 						}
 					}
 					++j;
 					break;
 				case "CIRCLE_SIDES":
-					var radius3 = v[j];
+					var radius4 = v[j];
 					var sides1 = v[j + 1];
 					if(sides1 == null) {
 						sides1 = 24;
@@ -21369,34 +19042,34 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					if(_this.turtleHistoryOn) {
 						if(sides1 == 24) {
 							_this.historyAdd("CIRCLE");
-							_this.historyParameters.push(radius3);
+							_this.historyParameters.push(radius4);
 						} else {
 							_this.historyAdd("CIRCLE_SIDES");
-							_this.historyParameters.push(radius3);
+							_this.historyParameters.push(radius4);
 							_this.historyParameters.push(sides1);
 						}
 					}
-					if(radius3 != 0) {
+					if(radius4 != 0) {
 						if(_this.repeatCommands) {
 							if(sides1 == 24) {
 								_this.turtleCommands.push("CIRCLE");
-								_this.turtleParameters.push(radius3);
+								_this.turtleParameters.push(radius4);
 							} else {
 								_this.turtleCommands.push("CIRCLE_SIDES");
-								_this.turtleParameters.push(radius3);
+								_this.turtleParameters.push(radius4);
 								_this.turtleParameters.push(sides1);
 							}
 						} else {
 							var beta3 = 2 * Math.PI / sides1;
 							var alpha3 = (Math.PI - beta3) / 2;
 							var rotate3 = -(Math.PI / 2 - alpha3);
-							var baseLength3 = 0.5 * radius3 * Math.sin(beta3 / 2);
-							var ox3 = _this.x;
-							var oy3 = _this.y;
-							var arr3 = [];
+							var baseLength3 = 0.5 * radius4 * Math.sin(beta3 / 2);
+							var ox4 = _this.x;
+							var oy4 = _this.y;
+							var arr4 = [];
 							var _g7 = 0;
 							while(_g7 < 48) {
-								var i7 = _g7++;
+								var i8 = _g7++;
 								_this.rotation += rotate3;
 								var wasHistoryOn4 = _this.turtleHistoryOn;
 								_this.turtleHistoryOn = false;
@@ -21408,63 +19081,63 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 									_this.turtleCommands.push("FORWARD");
 									_this.turtleParameters.push(baseLength3);
 								} else {
-									var nx4 = _this.x + baseLength3 * Math.cos(_this.rotation);
-									var ny4 = _this.y + baseLength3 * Math.sin(_this.rotation);
+									var nx5 = _this.x + baseLength3 * Math.cos(_this.rotation);
+									var ny5 = _this.y + baseLength3 * Math.sin(_this.rotation);
 									if(_this.penIsDown) {
 										_this.lastDistance = baseLength3;
-										_this.lineTo(nx4,ny4);
+										_this.lineTo(nx5,ny5);
 									} else {
 										if(_this.endLine == 2 || _this.endLine == 3) {
 											_this.contour.end(_this.width);
 										}
-										_this.x = nx4;
-										_this.y = ny4;
-										var l7 = _this.points.length;
-										_this.points[l7] = [];
-										_this.points[l7][0] = nx4;
-										_this.points[l7][1] = ny4;
+										_this.x = nx5;
+										_this.y = ny5;
+										var l12 = _this.points.length;
+										_this.points[l12] = [];
+										_this.points[l12][0] = nx5;
+										_this.points[l12][1] = ny5;
 										_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 										_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 										_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-										var d4 = _this.dim[_this.dim.length - 1];
-										if(nx4 < d4.minX) {
-											d4.minX = nx4;
+										var d7 = _this.dim[_this.dim.length - 1];
+										if(nx5 < d7.minX) {
+											d7.minX = nx5;
 										}
-										if(nx4 > d4.maxX) {
-											d4.maxX = nx4;
+										if(nx5 > d7.maxX) {
+											d7.maxX = nx5;
 										}
-										if(ny4 < d4.minY) {
-											d4.minY = ny4;
+										if(ny5 < d7.minY) {
+											d7.minY = ny5;
 										}
-										if(ny4 > d4.maxY) {
-											d4.maxY = ny4;
+										if(ny5 > d7.maxY) {
+											d7.maxY = ny5;
 										}
 										_this.contour.reset();
 									}
 								}
 								_this.turtleHistoryOn = wasHistoryOn4;
 								if(_this.fill) {
-									arr3.push(_this.x);
-									arr3.push(_this.y);
+									arr4.push(_this.x);
+									arr4.push(_this.y);
 								}
 							}
 							if(_this.fill) {
-								var cx3 = (ox3 + arr3[arr3.length - 2]) / 2;
-								var cy3 = (oy3 + arr3[arr3.length - 1]) / 2;
-								var l8 = arr3.length;
-								var i8 = 2;
+								var cx4 = (ox4 + arr4[arr4.length - 2]) / 2;
+								var cy4 = (oy4 + arr4[arr4.length - 1]) / 2;
+								var l13 = arr4.length;
+								var i9 = 2;
 								var lx3 = 0.;
 								var ly3 = 0.;
-								while(i8 < l8) {
-									if(i8 > 2) {
-										_this.pen.triangle2DFill(lx3,ly3,arr3[i8],arr3[i8 + 1],cx3,cy3);
+								while(i9 < l13) {
+									if(i9 > 2) {
+										_this.pen.triangle2DFill(lx3,ly3,arr4[i9],arr4[i9 + 1],cx4,cy4);
 									}
-									lx3 = arr3[i8];
-									ly3 = arr3[i8 + 1];
-									i8 += 2;
+									lx3 = arr4[i9];
+									ly3 = arr4[i9 + 1];
+									i9 += 2;
 								}
 							}
-							arr3.length = 0;
+							arr4.length = 0;
 						}
 					}
 					j += 2;
@@ -21532,45 +19205,45 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "FORWARD":
-					var distance1 = v[j];
+					var distance3 = v[j];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("FORWARD");
-						_this.historyParameters.push(distance1);
+						_this.historyParameters.push(distance3);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("FORWARD");
-						_this.turtleParameters.push(distance1);
+						_this.turtleParameters.push(distance3);
 					} else {
-						var nx5 = _this.x + distance1 * Math.cos(_this.rotation);
-						var ny5 = _this.y + distance1 * Math.sin(_this.rotation);
+						var nx6 = _this.x + distance3 * Math.cos(_this.rotation);
+						var ny6 = _this.y + distance3 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
-							_this.lastDistance = distance1;
-							_this.lineTo(nx5,ny5);
+							_this.lastDistance = distance3;
+							_this.lineTo(nx6,ny6);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx5;
-							_this.y = ny5;
-							var l9 = _this.points.length;
-							_this.points[l9] = [];
-							_this.points[l9][0] = nx5;
-							_this.points[l9][1] = ny5;
+							_this.x = nx6;
+							_this.y = ny6;
+							var l14 = _this.points.length;
+							_this.points[l14] = [];
+							_this.points[l14][0] = nx6;
+							_this.points[l14][1] = ny6;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d5 = _this.dim[_this.dim.length - 1];
-							if(nx5 < d5.minX) {
-								d5.minX = nx5;
+							var d8 = _this.dim[_this.dim.length - 1];
+							if(nx6 < d8.minX) {
+								d8.minX = nx6;
 							}
-							if(nx5 > d5.maxX) {
-								d5.maxX = nx5;
+							if(nx6 > d8.maxX) {
+								d8.maxX = nx6;
 							}
-							if(ny5 < d5.minY) {
-								d5.minY = ny5;
+							if(ny6 < d8.minY) {
+								d8.minY = ny6;
 							}
-							if(ny5 > d5.maxY) {
-								d5.maxY = ny5;
+							if(ny6 > d8.maxY) {
+								d8.maxY = ny6;
 							}
 							_this.contour.reset();
 						}
@@ -21587,175 +19260,12 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this.turtleCommands.push("FORWARD_CHANGE");
 						_this.turtleParameters.push(deltaDistance);
 					} else {
-						var distance2 = _this.lastDistance + deltaDistance;
-						var nx6 = _this.x + distance2 * Math.cos(_this.rotation);
-						var ny6 = _this.y + distance2 * Math.sin(_this.rotation);
+						var distance4 = _this.lastDistance + deltaDistance;
+						var nx7 = _this.x + distance4 * Math.cos(_this.rotation);
+						var ny7 = _this.y + distance4 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
-							_this.lastDistance = distance2 + deltaDistance;
-							_this.lineTo(nx6,ny6);
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx6;
-							_this.y = ny6;
-							var l10 = _this.points.length;
-							_this.points[l10] = [];
-							_this.points[l10][0] = nx6;
-							_this.points[l10][1] = ny6;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d6 = _this.dim[_this.dim.length - 1];
-							if(nx6 < d6.minX) {
-								d6.minX = nx6;
-							}
-							if(nx6 > d6.maxX) {
-								d6.maxX = nx6;
-							}
-							if(ny6 < d6.minY) {
-								d6.minY = ny6;
-							}
-							if(ny6 > d6.maxY) {
-								d6.maxY = ny6;
-							}
-							_this.contour.reset();
-						}
-					}
-					++j;
-					break;
-				case "FORWARD_CURVE_LEFT":
-					var distance3 = v[j];
-					var distance21 = v[j + 1];
-					var radius4 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_CURVE_LEFT");
-						_this.historyParameters.push(distance3);
-						_this.historyParameters.push(distance21);
-						_this.historyParameters.push(radius4);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_CURVE_LEFT");
-						_this.turtleParameters.push(distance3);
-						_this.turtleParameters.push(distance21);
-						_this.turtleParameters.push(radius4);
-					} else {
-						var nx7 = _this.x + distance3 * Math.cos(_this.rotation);
-						var ny7 = _this.y + distance3 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX = _this.x + distance21 * Math.cos(_this.rotation) + radius4 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY = _this.y + distance21 * Math.sin(_this.rotation) + radius4 * Math.sin(_this.rotation + Math.PI / 2);
-							var newx = 2 * thruX - 0.5 * (_this.x + nx7);
-							var newy = 2 * thruY - 0.5 * (_this.y + ny7);
-							_this.tempArr = [];
-							var p = _this.tempArr;
-							var ax = _this.x;
-							var ay = _this.y;
-							var x = ax - newx;
-							var y = ay - newy;
-							var x1 = newx - nx7;
-							var y1 = newy - ny7;
-							var approxDistance = Math.sqrt(x * x + y * y) + Math.sqrt(x1 * x1 + y1 * y1);
-							if(approxDistance == 0) {
-								approxDistance = 0.000001;
-							}
-							var step = Math.min(1 / (approxDistance * 0.707),cornerContour_CurveMath_quadStep);
-							var l11 = p.length;
-							p[l11++] = ax;
-							p[l11++] = ay;
-							var t = step;
-							while(t < 1.) {
-								var u = 1 - t;
-								p[l11++] = Math.pow(u,2) * ax + 2 * u * t * newx + Math.pow(t,2) * nx7;
-								var u1 = 1 - t;
-								p[l11++] = Math.pow(u1,2) * ay + 2 * u1 * t * newy + Math.pow(t,2) * ny7;
-								t += step;
-							}
-							p[l11++] = nx7;
-							p[l11++] = ny7;
-							var arr4 = _this.tempArr;
-							var withMove = false;
-							if(withMove == null) {
-								withMove = true;
-							}
-							var l12 = arr4.length;
-							var i9 = 2;
-							if(withMove) {
-								var x_ = arr4[0];
-								var y_ = arr4[1];
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = x_;
-								_this.y = y_;
-								var l13 = _this.points.length;
-								_this.points[l13] = [];
-								_this.points[l13][0] = x_;
-								_this.points[l13][1] = y_;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d7 = _this.dim[_this.dim.length - 1];
-								if(x_ < d7.minX) {
-									d7.minX = x_;
-								}
-								if(x_ > d7.maxX) {
-									d7.maxX = x_;
-								}
-								if(y_ < d7.minY) {
-									d7.minY = y_;
-								}
-								if(y_ > d7.maxY) {
-									d7.maxY = y_;
-								}
-								_this.contour.reset();
-							} else {
-								_this.lineTo(arr4[0],arr4[1]);
-							}
-							var cx4 = (arr4[0] + arr4[l12 - 2]) / 2;
-							var cy4 = (arr4[1] + arr4[l12 - 1]) / 2;
-							var ox4 = _this.x;
-							var oy4 = _this.y;
-							while(i9 < l12) {
-								if(_this.fill && _this.penIsDown) {
-									if(i9 > 0 && i9 < l12 - 2) {
-										_this.pen.triangle2DFill(arr4[i9 - 2],arr4[i9 - 1],arr4[i9],arr4[i9 + 1],cx4,cy4);
-									}
-								}
-								_this.lineTo(arr4[i9],arr4[i9 + 1]);
-								i9 += 2;
-							}
-							if(_this.fill && _this.penIsDown) {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = ox4;
-								_this.y = oy4;
-								var l14 = _this.points.length;
-								_this.points[l14] = [];
-								_this.points[l14][0] = ox4;
-								_this.points[l14][1] = oy4;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d8 = _this.dim[_this.dim.length - 1];
-								if(ox4 < d8.minX) {
-									d8.minX = ox4;
-								}
-								if(ox4 > d8.maxX) {
-									d8.maxX = ox4;
-								}
-								if(oy4 < d8.minY) {
-									d8.minY = oy4;
-								}
-								if(oy4 > d8.maxY) {
-									d8.maxY = oy4;
-								}
-								_this.contour.reset();
-								_this.lineTo(arr4[l12 - 2],arr4[l12 - 1]);
-							}
-							_this.x = nx7;
-							_this.y = ny7;
+							_this.lastDistance = distance4 + deltaDistance;
+							_this.lineTo(nx7,ny7);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
@@ -21785,170 +19295,7 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 							_this.contour.reset();
 						}
 					}
-					j += 3;
-					break;
-				case "FORWARD_CURVE_RIGHT":
-					var distance4 = v[j];
-					var distance22 = v[j + 1];
-					var radius5 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_CURVE_RIGHT");
-						_this.historyParameters.push(distance4);
-						_this.historyParameters.push(distance22);
-						_this.historyParameters.push(radius5);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_CURVE_RIGHT");
-						_this.turtleParameters.push(distance4);
-						_this.turtleParameters.push(distance22);
-						_this.turtleParameters.push(radius5);
-					} else {
-						var nx8 = _this.x + distance4 * Math.cos(_this.rotation);
-						var ny8 = _this.y + distance4 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX1 = _this.x + distance22 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY1 = _this.y + distance22 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
-							var newx1 = 2 * thruX1 - 0.5 * (_this.x + nx8);
-							var newy1 = 2 * thruY1 - 0.5 * (_this.y + ny8);
-							_this.tempArr = [];
-							var p1 = _this.tempArr;
-							var ax1 = _this.x;
-							var ay1 = _this.y;
-							var x2 = ax1 - newx1;
-							var y2 = ay1 - newy1;
-							var x3 = newx1 - nx8;
-							var y3 = newy1 - ny8;
-							var approxDistance1 = Math.sqrt(x2 * x2 + y2 * y2) + Math.sqrt(x3 * x3 + y3 * y3);
-							if(approxDistance1 == 0) {
-								approxDistance1 = 0.000001;
-							}
-							var step1 = Math.min(1 / (approxDistance1 * 0.707),cornerContour_CurveMath_quadStep);
-							var l16 = p1.length;
-							p1[l16++] = ax1;
-							p1[l16++] = ay1;
-							var t1 = step1;
-							while(t1 < 1.) {
-								var u2 = 1 - t1;
-								p1[l16++] = Math.pow(u2,2) * ax1 + 2 * u2 * t1 * newx1 + Math.pow(t1,2) * nx8;
-								var u3 = 1 - t1;
-								p1[l16++] = Math.pow(u3,2) * ay1 + 2 * u3 * t1 * newy1 + Math.pow(t1,2) * ny8;
-								t1 += step1;
-							}
-							p1[l16++] = nx8;
-							p1[l16++] = ny8;
-							var arr5 = _this.tempArr;
-							var withMove1 = false;
-							if(withMove1 == null) {
-								withMove1 = true;
-							}
-							var l17 = arr5.length;
-							var i10 = 2;
-							if(withMove1) {
-								var x_1 = arr5[0];
-								var y_1 = arr5[1];
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = x_1;
-								_this.y = y_1;
-								var l18 = _this.points.length;
-								_this.points[l18] = [];
-								_this.points[l18][0] = x_1;
-								_this.points[l18][1] = y_1;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d10 = _this.dim[_this.dim.length - 1];
-								if(x_1 < d10.minX) {
-									d10.minX = x_1;
-								}
-								if(x_1 > d10.maxX) {
-									d10.maxX = x_1;
-								}
-								if(y_1 < d10.minY) {
-									d10.minY = y_1;
-								}
-								if(y_1 > d10.maxY) {
-									d10.maxY = y_1;
-								}
-								_this.contour.reset();
-							} else {
-								_this.lineTo(arr5[0],arr5[1]);
-							}
-							var cx5 = (arr5[0] + arr5[l17 - 2]) / 2;
-							var cy5 = (arr5[1] + arr5[l17 - 1]) / 2;
-							var ox5 = _this.x;
-							var oy5 = _this.y;
-							while(i10 < l17) {
-								if(_this.fill && _this.penIsDown) {
-									if(i10 > 0 && i10 < l17 - 2) {
-										_this.pen.triangle2DFill(arr5[i10 - 2],arr5[i10 - 1],arr5[i10],arr5[i10 + 1],cx5,cy5);
-									}
-								}
-								_this.lineTo(arr5[i10],arr5[i10 + 1]);
-								i10 += 2;
-							}
-							if(_this.fill && _this.penIsDown) {
-								if(_this.endLine == 2 || _this.endLine == 3) {
-									_this.contour.end(_this.width);
-								}
-								_this.x = ox5;
-								_this.y = oy5;
-								var l19 = _this.points.length;
-								_this.points[l19] = [];
-								_this.points[l19][0] = ox5;
-								_this.points[l19][1] = oy5;
-								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d11 = _this.dim[_this.dim.length - 1];
-								if(ox5 < d11.minX) {
-									d11.minX = ox5;
-								}
-								if(ox5 > d11.maxX) {
-									d11.maxX = ox5;
-								}
-								if(oy5 < d11.minY) {
-									d11.minY = oy5;
-								}
-								if(oy5 > d11.maxY) {
-									d11.maxY = oy5;
-								}
-								_this.contour.reset();
-								_this.lineTo(arr5[l17 - 2],arr5[l17 - 1]);
-							}
-							_this.x = nx8;
-							_this.y = ny8;
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx8;
-							_this.y = ny8;
-							var l20 = _this.points.length;
-							_this.points[l20] = [];
-							_this.points[l20][0] = nx8;
-							_this.points[l20][1] = ny8;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d12 = _this.dim[_this.dim.length - 1];
-							if(nx8 < d12.minX) {
-								d12.minX = nx8;
-							}
-							if(nx8 > d12.maxX) {
-								d12.maxX = nx8;
-							}
-							if(ny8 < d12.minY) {
-								d12.minY = ny8;
-							}
-							if(ny8 > d12.maxY) {
-								d12.maxY = ny8;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
+					++j;
 					break;
 				case "FORWARD_FACTOR":
 					var factor = v[j];
@@ -21961,213 +19308,41 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						_this.turtleParameters.push(factor);
 					} else {
 						var distance5 = _this.lastDistance * factor;
-						var nx9 = _this.x + distance5 * Math.cos(_this.rotation);
-						var ny9 = _this.y + distance5 * Math.sin(_this.rotation);
+						var nx8 = _this.x + distance5 * Math.cos(_this.rotation);
+						var ny8 = _this.y + distance5 * Math.sin(_this.rotation);
 						if(_this.penIsDown) {
 							_this.lastDistance = distance5;
-							_this.lineTo(nx9,ny9);
+							_this.lineTo(nx8,ny8);
 						} else {
 							if(_this.endLine == 2 || _this.endLine == 3) {
 								_this.contour.end(_this.width);
 							}
-							_this.x = nx9;
-							_this.y = ny9;
-							var l21 = _this.points.length;
-							_this.points[l21] = [];
-							_this.points[l21][0] = nx9;
-							_this.points[l21][1] = ny9;
+							_this.x = nx8;
+							_this.y = ny8;
+							var l16 = _this.points.length;
+							_this.points[l16] = [];
+							_this.points[l16][0] = nx8;
+							_this.points[l16][1] = ny8;
 							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d13 = _this.dim[_this.dim.length - 1];
-							if(nx9 < d13.minX) {
-								d13.minX = nx9;
+							var d10 = _this.dim[_this.dim.length - 1];
+							if(nx8 < d10.minX) {
+								d10.minX = nx8;
 							}
-							if(nx9 > d13.maxX) {
-								d13.maxX = nx9;
+							if(nx8 > d10.maxX) {
+								d10.maxX = nx8;
 							}
-							if(ny9 < d13.minY) {
-								d13.minY = ny9;
+							if(ny8 < d10.minY) {
+								d10.minY = ny8;
 							}
-							if(ny9 > d13.maxY) {
-								d13.maxY = ny9;
+							if(ny8 > d10.maxY) {
+								d10.maxY = ny8;
 							}
 							_this.contour.reset();
 						}
 					}
 					++j;
-					break;
-				case "FORWARD_TRIANGLE_LEFT":
-					var distance6 = v[j];
-					var distance23 = v[j + 1];
-					var radius6 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_TRIANGLE_LEFT");
-						_this.historyParameters.push(distance6);
-						_this.historyParameters.push(distance23);
-						_this.historyParameters.push(radius6);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_TRIANGLE_LEFT");
-						_this.turtleParameters.push(distance6);
-						_this.turtleParameters.push(distance23);
-						_this.turtleParameters.push(radius6);
-					} else {
-						var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
-						var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX2 = _this.x + distance23 * Math.cos(_this.rotation) + radius6 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY2 = _this.y + distance23 * Math.sin(_this.rotation) + radius6 * Math.sin(_this.rotation + Math.PI / 2);
-							if(_this.fill) {
-								_this.pen.triangle2DFill(_this.x,_this.y,thruX2,thruY2,nx10,ny10);
-							}
-							_this.lineTo(thruX2,thruY2);
-							_this.lineTo(nx10,ny10);
-							if(_this.fill) {
-								_this.lineTo(_this.x,_this.y);
-							}
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx10;
-							_this.y = ny10;
-							var l22 = _this.points.length;
-							_this.points[l22] = [];
-							_this.points[l22][0] = nx10;
-							_this.points[l22][1] = ny10;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d14 = _this.dim[_this.dim.length - 1];
-							if(nx10 < d14.minX) {
-								d14.minX = nx10;
-							}
-							if(nx10 > d14.maxX) {
-								d14.maxX = nx10;
-							}
-							if(ny10 < d14.minY) {
-								d14.minY = ny10;
-							}
-							if(ny10 > d14.maxY) {
-								d14.maxY = ny10;
-							}
-							_this.contour.reset();
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx10;
-							_this.y = ny10;
-							var l23 = _this.points.length;
-							_this.points[l23] = [];
-							_this.points[l23][0] = nx10;
-							_this.points[l23][1] = ny10;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d15 = _this.dim[_this.dim.length - 1];
-							if(nx10 < d15.minX) {
-								d15.minX = nx10;
-							}
-							if(nx10 > d15.maxX) {
-								d15.maxX = nx10;
-							}
-							if(ny10 < d15.minY) {
-								d15.minY = ny10;
-							}
-							if(ny10 > d15.maxY) {
-								d15.maxY = ny10;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
-					break;
-				case "FORWARD_TRIANGLE_RIGHT":
-					var distance7 = v[j];
-					var distance24 = v[j + 1];
-					var radius7 = v[j + 2];
-					if(_this.turtleHistoryOn) {
-						_this.historyAdd("FORWARD_TRIANGLE_RIGHT");
-						_this.historyParameters.push(distance7);
-						_this.historyParameters.push(distance24);
-						_this.historyParameters.push(radius7);
-					}
-					if(_this.repeatCommands) {
-						_this.turtleCommands.push("FORWARD_TRIANGLE_RIGHT");
-						_this.turtleParameters.push(distance7);
-						_this.turtleParameters.push(distance24);
-						_this.turtleParameters.push(radius7);
-					} else {
-						var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
-						var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
-						if(_this.penIsDown) {
-							var thruX3 = _this.x + distance24 * Math.cos(_this.rotation) - radius7 * Math.cos(_this.rotation + Math.PI / 2);
-							var thruY3 = _this.y + distance24 * Math.sin(_this.rotation) - radius7 * Math.sin(_this.rotation + Math.PI / 2);
-							if(_this.fill) {
-								_this.pen.triangle2DFill(_this.x,_this.y,thruX3,thruY3,nx11,ny11);
-							}
-							_this.lineTo(thruX3,thruY3);
-							_this.lineTo(nx11,ny11);
-							if(_this.fill) {
-								_this.lineTo(_this.x,_this.y);
-							}
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx11;
-							_this.y = ny11;
-							var l24 = _this.points.length;
-							_this.points[l24] = [];
-							_this.points[l24][0] = nx11;
-							_this.points[l24][1] = ny11;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d16 = _this.dim[_this.dim.length - 1];
-							if(nx11 < d16.minX) {
-								d16.minX = nx11;
-							}
-							if(nx11 > d16.maxX) {
-								d16.maxX = nx11;
-							}
-							if(ny11 < d16.minY) {
-								d16.minY = ny11;
-							}
-							if(ny11 > d16.maxY) {
-								d16.maxY = ny11;
-							}
-							_this.contour.reset();
-						} else {
-							if(_this.endLine == 2 || _this.endLine == 3) {
-								_this.contour.end(_this.width);
-							}
-							_this.x = nx11;
-							_this.y = ny11;
-							var l25 = _this.points.length;
-							_this.points[l25] = [];
-							_this.points[l25][0] = nx11;
-							_this.points[l25][1] = ny11;
-							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
-							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
-							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-							var d17 = _this.dim[_this.dim.length - 1];
-							if(nx11 < d17.minX) {
-								d17.minX = nx11;
-							}
-							if(nx11 > d17.maxX) {
-								d17.maxX = nx11;
-							}
-							if(ny11 < d17.minY) {
-								d17.minY = ny11;
-							}
-							if(ny11 > d17.maxY) {
-								d17.maxY = ny11;
-							}
-							_this.contour.reset();
-						}
-					}
-					j += 3;
 					break;
 				case "GREEN":
 					if(_this.turtleHistoryOn) {
@@ -22224,10 +19399,10 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					}
 					break;
 				case "MOVE_PEN":
-					var distance8 = v[j];
+					var distance6 = v[j];
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("MOVE_PEN");
-						_this.turtleParameters.push(distance8);
+						_this.turtleParameters.push(distance6);
 					} else if(_this.penIsDown) {
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("PEN_UP");
@@ -22239,42 +19414,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 						}
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance8);
+							_this.historyParameters.push(distance6);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else {
-							var nx12 = _this.x + distance8 * Math.cos(_this.rotation);
-							var ny12 = _this.y + distance8 * Math.sin(_this.rotation);
+							var nx9 = _this.x + distance6 * Math.cos(_this.rotation);
+							var ny9 = _this.y + distance6 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance8;
-								_this.lineTo(nx12,ny12);
+								_this.lastDistance = distance6;
+								_this.lineTo(nx9,ny9);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx12;
-								_this.y = ny12;
-								var l26 = _this.points.length;
-								_this.points[l26] = [];
-								_this.points[l26][0] = nx12;
-								_this.points[l26][1] = ny12;
+								_this.x = nx9;
+								_this.y = ny9;
+								var l17 = _this.points.length;
+								_this.points[l17] = [];
+								_this.points[l17][0] = nx9;
+								_this.points[l17][1] = ny9;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d18 = _this.dim[_this.dim.length - 1];
-								if(nx12 < d18.minX) {
-									d18.minX = nx12;
+								var d11 = _this.dim[_this.dim.length - 1];
+								if(nx9 < d11.minX) {
+									d11.minX = nx9;
 								}
-								if(nx12 > d18.maxX) {
-									d18.maxX = nx12;
+								if(nx9 > d11.maxX) {
+									d11.maxX = nx9;
 								}
-								if(ny12 < d18.minY) {
-									d18.minY = ny12;
+								if(ny9 < d11.minY) {
+									d11.minY = ny9;
 								}
-								if(ny12 > d18.maxY) {
-									d18.maxY = ny12;
+								if(ny9 > d11.maxY) {
+									d11.maxY = ny9;
 								}
 								_this.contour.reset();
 							}
@@ -22290,42 +19465,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						if(_this.turtleHistoryOn) {
 							_this.historyAdd("FORWARD");
-							_this.historyParameters.push(distance8);
+							_this.historyParameters.push(distance6);
 						}
 						if(_this.repeatCommands) {
 							_this.turtleCommands.push("FORWARD");
-							_this.turtleParameters.push(distance8);
+							_this.turtleParameters.push(distance6);
 						} else {
-							var nx13 = _this.x + distance8 * Math.cos(_this.rotation);
-							var ny13 = _this.y + distance8 * Math.sin(_this.rotation);
+							var nx10 = _this.x + distance6 * Math.cos(_this.rotation);
+							var ny10 = _this.y + distance6 * Math.sin(_this.rotation);
 							if(_this.penIsDown) {
-								_this.lastDistance = distance8;
-								_this.lineTo(nx13,ny13);
+								_this.lastDistance = distance6;
+								_this.lineTo(nx10,ny10);
 							} else {
 								if(_this.endLine == 2 || _this.endLine == 3) {
 									_this.contour.end(_this.width);
 								}
-								_this.x = nx13;
-								_this.y = ny13;
-								var l27 = _this.points.length;
-								_this.points[l27] = [];
-								_this.points[l27][0] = nx13;
-								_this.points[l27][1] = ny13;
+								_this.x = nx10;
+								_this.y = ny10;
+								var l18 = _this.points.length;
+								_this.points[l18] = [];
+								_this.points[l18][0] = nx10;
+								_this.points[l18][1] = ny10;
 								_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 								_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 								_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-								var d19 = _this.dim[_this.dim.length - 1];
-								if(nx13 < d19.minX) {
-									d19.minX = nx13;
+								var d12 = _this.dim[_this.dim.length - 1];
+								if(nx10 < d12.minX) {
+									d12.minX = nx10;
 								}
-								if(nx13 > d19.maxX) {
-									d19.maxX = nx13;
+								if(nx10 > d12.maxX) {
+									d12.maxX = nx10;
 								}
-								if(ny13 < d19.minY) {
-									d19.minY = ny13;
+								if(ny10 < d12.minY) {
+									d12.minY = ny10;
 								}
-								if(ny13 > d19.maxY) {
-									d19.maxY = ny13;
+								if(ny10 > d12.maxY) {
+									d12.maxY = ny10;
 								}
 								_this.contour.reset();
 							}
@@ -22597,42 +19772,42 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					++j;
 					break;
 				case "SET_POSITION":
-					var x4 = v[j];
-					var y4 = v[j + 1];
+					var x2 = v[j];
+					var y2 = v[j + 1];
 					if(_this.turtleHistoryOn) {
 						_this.historyAdd("SET_POSITION");
-						_this.historyParameters.push(x4);
-						_this.historyParameters.push(y4);
+						_this.historyParameters.push(x2);
+						_this.historyParameters.push(y2);
 					}
 					if(_this.repeatCommands) {
 						_this.turtleCommands.push("SET_POSITION");
-						_this.turtleParameters.push(x4);
-						_this.turtleParameters.push(y4);
+						_this.turtleParameters.push(x2);
+						_this.turtleParameters.push(y2);
 					} else {
 						if(_this.endLine == 2 || _this.endLine == 3) {
 							_this.contour.end(_this.width);
 						}
-						_this.x = x4;
-						_this.y = y4;
-						var l28 = _this.points.length;
-						_this.points[l28] = [];
-						_this.points[l28][0] = x4;
-						_this.points[l28][1] = y4;
+						_this.x = x2;
+						_this.y = y2;
+						var l19 = _this.points.length;
+						_this.points[l19] = [];
+						_this.points[l19][0] = x2;
+						_this.points[l19][1] = y2;
 						_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
 						_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
 						_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
-						var d20 = _this.dim[_this.dim.length - 1];
-						if(x4 < d20.minX) {
-							d20.minX = x4;
+						var d13 = _this.dim[_this.dim.length - 1];
+						if(x2 < d13.minX) {
+							d13.minX = x2;
 						}
-						if(x4 > d20.maxX) {
-							d20.maxX = x4;
+						if(x2 > d13.maxX) {
+							d13.maxX = x2;
 						}
-						if(y4 < d20.minY) {
-							d20.minY = y4;
+						if(y2 < d13.minY) {
+							d13.minY = y2;
 						}
-						if(y4 > d20.maxY) {
-							d20.maxY = y4;
+						if(y2 > d13.maxY) {
+							d13.maxY = y2;
 						}
 						_this.contour.reset();
 					}
@@ -22657,6 +19832,92 @@ cornerContourWebGLTest_CornerContourWebGLTurtle.prototype = {
 					} else {
 						_this.pen.currentColor = -27273;
 					}
+					break;
+				case "TRIANGLE_ARCH":
+					var distance7 = v[j];
+					var distance21 = v[j + 1];
+					var radius5 = v[j + 2];
+					if(_this.turtleHistoryOn) {
+						_this.historyAdd("TRIANGLE_ARCH");
+						_this.historyParameters.push(distance7);
+						_this.historyParameters.push(distance21);
+						_this.historyParameters.push(radius5);
+					}
+					if(_this.repeatCommands) {
+						_this.turtleCommands.push("TRIANGLE_ARCH");
+						_this.turtleParameters.push(distance7);
+						_this.turtleParameters.push(distance21);
+						_this.turtleParameters.push(radius5);
+					} else {
+						var nx11 = _this.x + distance7 * Math.cos(_this.rotation);
+						var ny11 = _this.y + distance7 * Math.sin(_this.rotation);
+						if(_this.penIsDown) {
+							var thruX1 = _this.x + distance21 * Math.cos(_this.rotation) - radius5 * Math.cos(_this.rotation + Math.PI / 2);
+							var thruY1 = _this.y + distance21 * Math.sin(_this.rotation) - radius5 * Math.sin(_this.rotation + Math.PI / 2);
+							if(_this.fill) {
+								_this.pen.triangle2DFill(_this.x,_this.y,thruX1,thruY1,nx11,ny11);
+							}
+							_this.lineTo(thruX1,thruY1);
+							_this.lineTo(nx11,ny11);
+							if(_this.fill) {
+								_this.lineTo(_this.x,_this.y);
+							}
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx11;
+							_this.y = ny11;
+							var l20 = _this.points.length;
+							_this.points[l20] = [];
+							_this.points[l20][0] = nx11;
+							_this.points[l20][1] = ny11;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d14 = _this.dim[_this.dim.length - 1];
+							if(nx11 < d14.minX) {
+								d14.minX = nx11;
+							}
+							if(nx11 > d14.maxX) {
+								d14.maxX = nx11;
+							}
+							if(ny11 < d14.minY) {
+								d14.minY = ny11;
+							}
+							if(ny11 > d14.maxY) {
+								d14.maxY = ny11;
+							}
+							_this.contour.reset();
+						} else {
+							if(_this.endLine == 2 || _this.endLine == 3) {
+								_this.contour.end(_this.width);
+							}
+							_this.x = nx11;
+							_this.y = ny11;
+							var l21 = _this.points.length;
+							_this.points[l21] = [];
+							_this.points[l21][0] = nx11;
+							_this.points[l21][1] = ny11;
+							_this.pointsClock[_this.pointsClock.length] = _this.contour.pointsClock.slice();
+							_this.pointsAnti[_this.pointsAnti.length] = _this.contour.pointsAnti.slice();
+							_this.dim[_this.dim.length] = { minX : Infinity, maxX : -Infinity, minY : Infinity, maxY : -Infinity};
+							var d15 = _this.dim[_this.dim.length - 1];
+							if(nx11 < d15.minX) {
+								d15.minX = nx11;
+							}
+							if(nx11 > d15.maxX) {
+								d15.maxX = nx11;
+							}
+							if(ny11 < d15.minY) {
+								d15.minY = ny11;
+							}
+							if(ny11 > d15.maxY) {
+								d15.maxY = ny11;
+							}
+							_this.contour.reset();
+						}
+					}
+					j += 3;
 					break;
 				case "WEST":
 					if(_this.turtleHistoryOn) {
